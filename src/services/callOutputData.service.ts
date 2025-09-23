@@ -11,7 +11,7 @@ import path from "path";
 import fs from 'fs';
 import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { UserCallingData } from "../entities/UserCallingData";
+import { UserCallingData } from "../entities/CallOutputData";
 
 
 

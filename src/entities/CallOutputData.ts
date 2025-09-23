@@ -8,7 +8,7 @@ import { Common } from './Common';
 
 
 // MainCategory entity representing main categories
-@Entity({ name: 'user_calling_data' })
+@Entity({ name: 'call_output_data' })
 // @Check('priority >= 0') // Ensure priority is non-negative
 export class UserCallingData extends Common {
 

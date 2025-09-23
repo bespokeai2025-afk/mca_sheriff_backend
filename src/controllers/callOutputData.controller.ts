@@ -8,7 +8,7 @@ import { Multer } from "multer";
 
 // Import utilities and services
 import { errorWithData, errorWithoutData } from "../config/ApiResponse";
-import { userCallingDataService } from "../services/userCallingData.service";
+import { userCallingDataService } from "../services/callOutputData.service";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
 
