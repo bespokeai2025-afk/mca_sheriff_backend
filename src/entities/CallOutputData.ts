@@ -6,7 +6,11 @@
 import { Entity, Column, Check, OneToMany, JoinColumn } from 'typeorm';
 import { Common } from './Common';
 
-
+export enum CallStatus {
+  CONNECTED = "connected",
+  USER_BUSY = "user_busy",
+  DISCONNECTED = "disconnected",
+}
 // MainCategory entity representing main categories
 @Entity({ name: 'call_output_data' })
 // @Check('priority >= 0') // Ensure priority is non-negative
@@ -28,8 +32,14 @@ export class UserCallingData extends Common {
     @Column({ type: 'text' })
     end_reason: string;
 
-   @Column({ type: 'text', nullable: false })
-    call_status: string;
+   @Column({
+    type: 'enum',
+    enum: CallStatus,
+    nullable: true,      // allow null values
+    default: null,       // explicitly default to null
+  })
+  call_status: CallStatus | null;
+
 
     // Contact Information
   @Column({ type: 'text', nullable: false })
