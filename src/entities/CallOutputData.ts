@@ -14,7 +14,7 @@ export enum CallStatus {
 // MainCategory entity representing main categories
 @Entity({ name: 'call_output_data' })
 // @Check('priority >= 0') // Ensure priority is non-negative
-export class UserCallingData extends Common {
+export class CallOutputData extends Common {
 
     // Name of the main category
     @Column({ type: 'text' })

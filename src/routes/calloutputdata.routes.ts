@@ -10,10 +10,10 @@ import { validateRequest } from "../middlewares/otp.validation";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 
 // Import controller methods
-import { activefaq, createUsercallingData, deletefaq, getfaq, getfaqById, updatefaq } from "../controllers/callOutputData.controller";
+import { activefaq, createCallOutputData, deletefaq, getfaq, getfaqById, updatefaq } from "../controllers/callOutputData.controller";
 
 // Import validation middleware
-import { validateusercallingdata, validateUserID } from "../middlewares/usercallingdata.validation";
+import { validateCallOutputData, validateUserID } from "../middlewares/calloutputdata.validation";
 
 // Import file upload configuration
 import upload from "../config/multerConfig";
@@ -32,11 +32,11 @@ router.get("/", verifyAccessToken, getfaqById);
 
 
 // Create a new main category
-router.post("/create", verifyAccessToken, upload.single('image'), validateusercallingdata, validateRequest, createUsercallingData);
+router.post("/create", verifyAccessToken, upload.single('image'), validateCallOutputData, validateRequest, createCallOutputData);
 
 
 // Update an existing main category
-router.put("/update/:id", verifyAccessToken, upload.single('image'), validateUserID, validateusercallingdata, validateRequest, updatefaq)
+router.put("/update/:id", verifyAccessToken, upload.single('image'), validateUserID, validateCallOutputData, validateRequest, updatefaq)
 
 
 // Delete a main category

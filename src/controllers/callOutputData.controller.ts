@@ -8,13 +8,13 @@ import { Multer } from "multer";
 
 // Import utilities and services
 import { errorWithData, errorWithoutData } from "../config/ApiResponse";
-import { userCallingDataService } from "../services/callOutputData.service";
+import { callOutputDataService } from "../services/callOutputData.service";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
 
 
 // Initialize services and repositories
-const usercallingdataservice = new userCallingDataService();
+const calloutputdataservice = new callOutputDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
 
 
@@ -34,7 +34,7 @@ export const getfaq = async (req: Request, res: Response): Promise<any> => {
         const { pageSize, currentPage } = req.query;
 
 
-        const response = await usercallingdataservice.getfaq(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
+        const response = await calloutputdataservice.getfaq(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData('something went wrong', { error: error });
@@ -57,7 +57,7 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        const response = await usercallingdataservice.findfaqById(req.query.id as string, req.verifyUser);
+        const response = await calloutputdataservice.findfaqById(req.query.id as string, req.verifyUser);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
@@ -71,7 +71,7 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
  * @param res - Express response object
  * @returns JSON response with the created faq or error
  */
-export const createUsercallingData = async (req: Request, res: Response): Promise<any> => {
+export const createCallOutputData = async (req: Request, res: Response): Promise<any> => {
 
     try {
         if (!req.user) {
@@ -89,7 +89,7 @@ export const createUsercallingData = async (req: Request, res: Response): Promis
 
         const data = { ...req.body, image: (req.file as Express.Multer.File & { location: string })?.location || null };
 
-        const response = await usercallingdataservice.createUsercallingData(data, req.verifyUser);
+        const response = await calloutputdataservice.createCallOutputData(data, req.verifyUser);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
@@ -125,7 +125,7 @@ export const updatefaq = async (req: Request, res: Response): Promise<any> => {
             delete data.image;
         }
 
-        const response: any = await usercallingdataservice.updatefaq(req.params.id, data, req.verifyUser);
+        const response: any = await calloutputdataservice.updatefaq(req.params.id, data, req.verifyUser);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
@@ -153,7 +153,7 @@ export const deletefaq = async (req: Request, res: Response): Promise<any> => {
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        const response = await usercallingdataservice.deletefaq(req.params.id, req.verifyUser);
+        const response = await calloutputdataservice.deletefaq(req.params.id, req.verifyUser);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
@@ -174,7 +174,7 @@ export const activefaq = async (req: Request, res: Response): Promise<any> => {
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        const response = await usercallingdataservice.activefaq(req.params.id, req.verifyUser);
+        const response = await calloutputdataservice.activefaq(req.params.id, req.verifyUser);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
