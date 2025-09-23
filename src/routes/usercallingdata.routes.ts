@@ -10,7 +10,7 @@ import { validateRequest } from "../middlewares/otp.validation";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 
 // Import controller methods
-import { activefaq, createUsercallingData, deletefaq, getfaq, getfaqById, updatefaq } from "../controllers/userCallingData.controller";
+import { activefaq, createUsercallingData, deletefaq, getfaq, getfaqById, updatefaq } from "../controllers/callOutputData.controller";
 
 // Import validation middleware
 import { validateusercallingdata, validateUserID } from "../middlewares/usercallingdata.validation";
