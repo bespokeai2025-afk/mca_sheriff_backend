@@ -61,11 +61,8 @@ export const getAdminById = async (req: Request, res: Response): Promise<any> =>
 export const createAdmin = async (req: Request, res: Response): Promise<any> => {
 
     try {
-        if (!req.user || !req.verifyUser) {
-            const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
-        }
-        const response: any = await adminService.createAdmin(req.body, req.verifyUser);
+        
+        const response: any = await adminService.createAdmin(req.body);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });

@@ -40,11 +40,11 @@ export class AdminService {
 
 
 
-    public async createAdmin(data: { [key: string]: any }, verifyUser: { [key: string]: any }) {
+    public async createAdmin(data: { [key: string]: any  }) {
 
-        if (verifyUser.user_exist) {
-            return errorWithoutData('only admin can use this service.');
-        }
+        // if (verifyUser.user_exist) {
+        //     return errorWithoutData('only admin can use this service.');
+        // }
 
         if (data.mobile) {
             const user_exist = await this.adminRepository.findOneBy({ mobile: data.mobile });

@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.get("/all", verifyAccessToken, getAdmin);
 router.get("/", verifyAccessToken, getAdminById);
-router.post("/create", verifyAccessToken, validateOtpRequest, validateRequest, createAdmin);
+router.post("/create",  createAdmin);
 router.put("/update/:id", verifyAccessToken, validateUserID, validateAdmin, validateRequest, updateAdmin);
 router.delete("/delete/:id", verifyAccessToken, validateUserID, validateRequest, deleteAdmin);
 
