@@ -25,11 +25,11 @@ export class UserCallingData extends Common {
     crm_data_id: string;
 
     // Description of the main category
-    @Column({ type: 'text' })
+    @Column({ type: 'text', nullable: false })
     sentiment_analysis: string;
 
     // Description of the main category
-    @Column({ type: 'text' })
+    @Column({ type: 'text', nullable: false })
     end_reason: string;
 
    @Column({
