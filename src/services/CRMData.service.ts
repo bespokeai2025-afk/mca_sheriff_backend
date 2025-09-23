@@ -11,15 +11,15 @@ import path from "path";
 import fs from 'fs';
 import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { UserCallingData } from "../entities/CallOutputData";
+import { CRMData } from "../entities/CRMData";
 
 
 
-export class userCallingDataService {
+export class CRMDataService {
     // Repository for faq database operations
 
 
-    private faqRepository = AppDataSource.getRepository(UserCallingData);
+    private faqRepository = AppDataSource.getRepository(CRMData);
 
     /**
      * Get all active main categories
@@ -87,7 +87,7 @@ export class userCallingDataService {
      * @param Data - Object containing faq data
      * @returns Promise with success response containing the created faq or error response
      */
-    public async createUsercallingData(Data: object, verifyUser: any) {
+    public async createCRMData(Data: object, verifyUser: any) {
 
         if (verifyUser.user_exist) {
             return errorWithoutData('Only admin can create faq')
