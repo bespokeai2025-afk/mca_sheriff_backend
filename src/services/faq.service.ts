@@ -1,0 +1,174 @@
+/**
+ * Service for handling faq business logic
+ * Handles database operations and business rules for main categories
+ */
+
+import { errorWithData, errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
+import { AppDataSource } from "../config/database";
+import path from "path";
+
+// Import AWS S3 related dependencies
+import fs from 'fs';
+import s3 from "../config/s3Bucket";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { FAQ } from "../entities/Faq";
+
+
+
+export class faqService {
+    // Repository for faq database operations
+
+
+    private faqRepository = AppDataSource.getRepository(FAQ);
+
+    /**
+     * Get all active main categories
+     * @returns Promise with success response containing categories or error response
+     */
+    public async getfaq(verifyUser: any, pageSize: number, currentPage: number) {
+
+
+        let whereCondition = {};
+        if (verifyUser.user_exist) {
+            whereCondition = { isActive: true, isDeleted: false };
+        }
+        if(verifyUser.admin_exist)
+            {
+        
+                whereCondition = {isDeleted: false };
+    
+        }
+
+        const [mainCategories, totalItems] = await this.faqRepository.findAndCount({
+            where: { isActive: true, isDeleted: false },
+            order: { createdAt: 'DESC' },
+            skip: (currentPage - 1) * pageSize,
+            take: pageSize
+        });
+
+
+        const totalPages = Math.ceil(totalItems / pageSize);
+
+        if (totalItems >= 1 && totalPages < currentPage) {
+            return errorWithoutData("Page limit exceeded")
+        }
+        return successWithData("faq data ", mainCategories, {
+            totalItems,
+            totalPages,
+            currentPage,
+            pageSize
+        });
+
+    }
+
+    /**
+     * Find a faq by ID
+     * @param id - The ID of the faq to find
+     * @returns Promise with success response containing the faq or error response if not found
+     */
+    public async findfaqById(id: string, verifyUser: any) {
+
+        let faq = null;
+        if (verifyUser.admin_exist) {
+            faq = await this.faqRepository.findOne({ where: { id: id, isDeleted: false } })
+        } else {
+            faq = await this.faqRepository.findOne({ where: { isActive: true, isDeleted: false, id: id } })
+        }
+
+        if (!faq) {
+            return errorWithoutData('faq not found')
+        }
+
+        return successWithData("faq found", faq);
+    }
+
+    /**
+     * Create a new faq
+     * @param Data - Object containing faq data
+     * @returns Promise with success response containing the created faq or error response
+     */
+    public async createfaq(Data: object, verifyUser: any) {
+
+        if (verifyUser.user_exist) {
+            return errorWithoutData('Only admin can create faq')
+        }
+
+        const newfaq = await this.faqRepository.create(Data)
+
+        const faq = await this.faqRepository.save(newfaq)
+
+        if (!faq) {
+            return errorWithoutData('faq not created')
+        }
+        return successWithData("faq created successfully", faq);
+
+    }
+
+    /**
+     * Update an existing faq
+     * @param id - The ID of the faq to update
+     * @param Data - Object containing updated faq data
+     * @returns Promise with success response or error response
+     */
+    public async updatefaq(id: string, Data: { [key: string]: any }, verifyUser: any) {
+
+
+
+        if (verifyUser.user_exist) {
+            return errorWithoutData('Only admin can update faq')
+        }
+
+        const faq = await this.faqRepository.findOneBy({ id, isActive: true, isDeleted: false });
+        if (!faq) {
+            return errorWithoutData('faq not found')
+        }
+
+        if (faq.image && Data.image) {
+            const oldKey = faq.image.split(".com/")[1];
+            await s3.send(new DeleteObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME!, Key: oldKey }));
+        }
+
+
+        const updatedData = JSON.parse(JSON.stringify(Data));
+        await this.faqRepository.update(id.toString(), updatedData);
+        return successWithoutData('faq updated successfully');
+
+    }
+
+    /**
+     * Soft delete a faq
+     * @param id - The ID of the faq to delete
+     * @returns Promise with success response or error response
+     */
+
+    public async deletefaq(id: string, verifyUser: any) {
+        if (verifyUser.user_exist) {
+            return errorWithoutData("user cann't update attendance")
+        }
+        const faq = await this.faqRepository.findOneBy({ id });
+
+        if (!faq) {
+            return errorWithoutData(" faq not found");
+        }
+
+        faq.isDeleted = true; // Mark as soft deleted
+        await this.faqRepository.save(faq);
+
+        return successWithoutData(" faq soft deleted successfully");
+    }
+    public async activefaq(id: string, verifyUser: any) {
+        if (verifyUser.user_exist) {
+            return errorWithoutData("user cann't update attendance")
+        }
+        const faq = await this.faqRepository.findOneBy({ id });
+
+        if (!faq) {
+            return errorWithoutData("faq not found");
+        }
+
+        faq.isActive = !faq.isActive; // Mark as deleted
+        await this.faqRepository.save(faq);
+
+        return successWithoutData("faq dectivetd successfully");
+    }
+}

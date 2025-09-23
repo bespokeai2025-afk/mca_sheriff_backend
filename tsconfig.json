@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "target": "ES6",
+    "experimentalDecorators": true, // Important for enabling decorators
+    "emitDecoratorMetadata": true, // Important for TypeORM and other decorators
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "strictPropertyInitialization": false,
+  },
+  "include": [
+    "src/**/*.ts",
+     "src/views"
+  ]
+}

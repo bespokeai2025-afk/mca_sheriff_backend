@@ -1,0 +1,43 @@
+# Node.js dependencies
+node_modules/
+logs/
+.env
+#
+hello.txt
+
+# src/config/database.ts
+
+# TypeScript output
+dist/
+#build/
+
+# Environment variable file
+
+
+# TypeORM migration files (if generated at runtime, otherwise include in the migrations folder)
+*.log
+
+# IDE/editor directories and files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Typescript local type definitions (if not using a type registry)
+typings/
+
+# npm package lock file (optional, for consistency across all machines)
+#package-lock.json
+
+# TypeORM CLI generated files
+ormconfig.json
+
+# Jest / Mocha / Testing framework output
+coverage/
+
+# Typescript declaration files if generated
+*.d.ts
+
+# Any other specific files you might want to exclude
