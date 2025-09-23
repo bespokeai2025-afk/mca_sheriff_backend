@@ -28,11 +28,8 @@ export class UserCallingData extends Common {
     @Column({ type: 'text' })
     end_reason: string;
 
-     // Description of the main category
-    @Column({ type: 'text' })
-    time: string;
-
-     
+   @Column({ type: 'text', nullable: false })
+    call_status: string;
 
     // Contact Information
   @Column({ type: 'text', nullable: false })
@@ -99,11 +96,19 @@ export class UserCallingData extends Common {
 
   @Column({ type: 'text', nullable: false })
     telephony_identifier_twilio_call_sid: string;
-    // Description of the main category
-    @Column({ type: 'text', nullable: false })
-    call_status: string;
+   
 
-  
+    
+  @Column({ type: 'text', nullable: false })
+event: string;
+
+  @Column({ type: 'text', nullable: false })
+   call_type: string;
+
+ @Column({ type: 'text', nullable: false })
+    agent_version: string;
+
+ 
 }
 
    
