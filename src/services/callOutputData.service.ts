@@ -12,7 +12,7 @@ import fs from 'fs';
 import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CallOutputData } from "../entities/CallOutputData";
-
+import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
 
 
 export class callOutputDataService {
@@ -20,7 +20,7 @@ export class callOutputDataService {
 
 
     private faqRepository = AppDataSource.getRepository(CallOutputData);
-
+ private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
     /**
      * Get all active main categories
      * @returns Promise with success response containing categories or error response
@@ -110,31 +110,82 @@ export class callOutputDataService {
      * @param Data - Object containing updated faq data
      * @returns Promise with success response or error response
      */
-    public async updatefaq(id: string, Data: { [key: string]: any }, verifyUser: any) {
+    // public async updateCallOutputData(id: string, Data: { [key: string]: any }, verifyUser: any) {
 
 
 
+    //     if (verifyUser.user_exist) {
+    //         return errorWithoutData('Only admin can update call output data')
+    //     }
+
+    //     const faq = await this.faqRepository.findOneBy({ id, isActive: true, isDeleted: false });
+    //     if (!faq) {
+    //         return errorWithoutData('call output data not found')
+    //     }
+
+    //     // if (faq.image && Data.image) {
+    //     //     const oldKey = faq.image.split(".com/")[1];
+    //     //     await s3.send(new DeleteObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME!, Key: oldKey }));
+    //     // }
+
+
+    //     const updatedData = JSON.parse(JSON.stringify(Data));
+    //     await this.faqRepository.update(id.toString(), updatedData);
+    //     return successWithoutData('call output data updated successfully');
+
+    // }
+    public async updateCallOutputData(id: string, Data: { [key: string]: any }, verifyUser: any) {
         if (verifyUser.user_exist) {
-            return errorWithoutData('Only admin can update faq')
+            return errorWithoutData("Only admin can update call output data");
         }
 
         const faq = await this.faqRepository.findOneBy({ id, isActive: true, isDeleted: false });
         if (!faq) {
-            return errorWithoutData('faq not found')
+            return errorWithoutData("call output data not found");
         }
 
-        // if (faq.image && Data.image) {
-        //     const oldKey = faq.image.split(".com/")[1];
-        //     await s3.send(new DeleteObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME!, Key: oldKey }));
-        // }
-
-
+        // Update main table
         const updatedData = JSON.parse(JSON.stringify(Data));
         await this.faqRepository.update(id.toString(), updatedData);
-        return successWithoutData('faq updated successfully');
 
+        // Insert into history table
+        const historyRecord = this.historyRepository.create({
+            call_output_data_id: id,
+            crm_data_id: updatedData.crm_data_id ?? faq.crm_data_id,
+            vendor_id: updatedData.vendor_id ?? faq.vendor_id,
+            sentiment_analysis: updatedData.sentiment_analysis ?? faq.sentiment_analysis,
+            end_reason: updatedData.end_reason ?? faq.end_reason,
+            call_status: updatedData.call_status ?? faq.call_status,
+            agent_name: updatedData.agent_name ?? faq.agent_name,
+            customer_name: updatedData.customer_name ?? faq.customer_name,
+            from_number: updatedData.from_number ?? faq.from_number,
+            to_number: updatedData.to_number ?? faq.to_number,
+            start_timestamp: updatedData.start_timestamp ?? faq.start_timestamp,
+            end_timestamp: updatedData.end_timestamp ?? faq.end_timestamp,
+            duration_ms: updatedData.duration_ms ?? faq.duration_ms,
+            direction: updatedData.direction ?? faq.direction,
+            transcript: updatedData.transcript ?? faq.transcript,
+            call_summary: updatedData.call_summary ?? faq.call_summary,
+            recording_url: updatedData.recording_url ?? faq.recording_url,
+            user_sentiment: updatedData.user_sentiment ?? faq.user_sentiment,
+            call_successful: updatedData.call_successful ?? faq.call_successful,
+            customer_was_satisfied: updatedData.customer_was_satisfied ?? faq.customer_was_satisfied,
+            reason_for_call: updatedData.reason_for_call ?? faq.reason_for_call,
+            call_cost_combined_cost: updatedData.call_cost_combined_cost ?? faq.call_cost_combined_cost,
+            latency_e2e_p50: updatedData.latency_e2e_p50 ?? faq.latency_e2e_p50,
+            disconnection_reason: updatedData.disconnection_reason ?? faq.disconnection_reason,
+            llm_token_usage_average: updatedData.llm_token_usage_average ?? faq.llm_token_usage_average,
+            telephony_identifier_twilio_call_sid: updatedData.telephony_identifier_twilio_call_sid ?? faq.telephony_identifier_twilio_call_sid,
+            event: updatedData.event ?? faq.event,
+            call_type: updatedData.call_type ?? faq.call_type,
+            agent_version: updatedData.agent_version ?? faq.agent_version,
+        });
+
+        await this.historyRepository.save(historyRecord);
+
+        return successWithoutData("call output data updated successfully");
     }
-
+    
     /**
      * Soft delete a faq
      * @param id - The ID of the faq to delete

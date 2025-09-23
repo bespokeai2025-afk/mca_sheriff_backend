@@ -7,7 +7,7 @@ import { Request, Response } from "express";
 import { Multer } from "multer";
 
 // Import utilities and services
-import { errorWithData, errorWithoutData } from "../config/ApiResponse";
+import { errorWithData, errorWithoutData, successWithData } from "../config/ApiResponse";
 import { callOutputDataService } from "../services/callOutputData.service";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
@@ -103,7 +103,7 @@ export const createCallOutputData = async (req: Request, res: Response): Promise
  * @param res - Express response object
  * @returns JSON response with success message or error
  */
-export const updatefaq = async (req: Request, res: Response): Promise<any> => {
+export const updateCallOutputData = async (req: Request, res: Response): Promise<any> => {
 
     try {
         if (!req.user) {
@@ -113,19 +113,19 @@ export const updatefaq = async (req: Request, res: Response): Promise<any> => {
         const user = await adminRepository.findOneBy({ id: req.user.id })
 
         if (!user) {
-            const response = errorWithoutData('only admin can update man faq');
+            const response = errorWithoutData('only admin can update call output data ');
             return res.status(response.result ? 200 : 400).json(response);
         }
 
         let data = req.body;
-        if (req.file) {
-            data.image = (req.file as Express.Multer.File & { location: string })?.location || null;
+        // if (req.file) {
+        //     data.image = (req.file as Express.Multer.File & { location: string })?.location || null;
 
-        } else {
-            delete data.image;
-        }
+        // } else {
+        //     delete data.image;
+        // }
 
-        const response: any = await calloutputdataservice.updatefaq(req.params.id, data, req.verifyUser);
+        const response: any = await calloutputdataservice.updateCallOutputData(req.params.id, data, req.verifyUser);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });

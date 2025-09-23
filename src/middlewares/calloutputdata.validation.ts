@@ -1,17 +1,13 @@
 import { body, param } from "express-validator";
 
 export const validateCallOutputData = [
-  body("vendor_id")
+   body("vendor_id")
     .notEmpty().withMessage("Vendor ID is required.")
-    .isString().withMessage("Vendor ID must be a string")
-    .trim()
-    .escape(),
+    .isUUID().withMessage("Vendor ID must be a valid UUID"),
 
   body("crm_data_id")
     .notEmpty().withMessage("CRM Data ID is required.")
-    .isString().withMessage("CRM Data ID must be a string")
-    .trim()
-    .escape(),
+    .isUUID().withMessage("CRM Data ID must be a valid UUID"),
 
 //   body("sentiment_analysis")
 //     .notEmpty().withMessage("Sentiment analysis is required.")

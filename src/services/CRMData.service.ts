@@ -100,7 +100,7 @@ export class CRMDataService {
         if (!faq) {
             return errorWithoutData('faq not created')
         }
-        return successWithData("faq created successfully", faq);
+        return successWithData("crm data created successfully", faq);
 
     }
 
