@@ -59,6 +59,7 @@ import cookieParser from "cookie-parser";
 import limiter from './config/rate-limit';
 import { DateTime } from "luxon";
 import userCallingDataRoutes from './routes/usercallingdata.routes'
+import CRMDataRoutes from './routes/crmdata.routes'
 // Load environment variables
 dotenv.config()
 import { logRequest, logResponse, logError } from "./logger";
@@ -142,6 +143,7 @@ app.use('/survey-answers', suerveyanswersRoutes)
 app.use('/survey', userseruveryRouters)
 app.use('/attendance-otp', attendanceotp) // Event attendance routes
 app.use('/user-calling-data', userCallingDataRoutes)
+app.use('/crm-data', CRMDataRoutes)
 
 app.use(multerErrorHandler);
 
