@@ -133,9 +133,9 @@ export class callOutputDataService {
       }
 
       // 3️⃣ Validate existence of body
-      if (!raw?.body) {
-        return errorWithoutData("Invalid request: missing body inside raw_data");
-      }
+    //   if (!raw?.body) {
+    //     return errorWithoutData("Invalid request: missing body inside raw_data");
+    //   }
 
       // 4️⃣ Map request body to DB entity structure
       const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw.body);
