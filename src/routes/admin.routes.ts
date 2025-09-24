@@ -18,5 +18,5 @@ router.post("/send-otp", validateOtpRequest, validateRequest, sendOtpToAdmin);
 router.post("/verify-otp", validateOTP, validateRequest, verifyOTPForAdmin);
 
 router.post('/logout/:id', verifyAccessToken, validateUserID, validateRequest, logoutAdmin)
-// router.post('/login',  loginAdminWithEmailPassword)
+router.post('/login',  loginAdminWithEmailPassword)
 export default router;

@@ -87,20 +87,36 @@ export class callOutputDataService {
      * @param Data - Object containing faq data
      * @returns Promise with success response containing the created faq or error response
      */
-    public async createCallOutputData(Data: object ) {
+    // public async createCallOutputData(Data: object ) {
 
       
 
-        const newfaq = await this.faqRepository.create(Data)
+    //     const newfaq = await this.faqRepository.create(Data)
 
-        const faq = await this.faqRepository.save(newfaq)
+    //     const faq = await this.faqRepository.save(newfaq)
 
-        if (!faq) {
-            return errorWithoutData('faq not created')
-        }
-        return successWithData("call output data created successfully", faq);
+    //     if (!faq) {
+    //         return errorWithoutData('faq not created')
+    //     }
+    //     return successWithData("call output data created successfully", faq);
 
+    // }
+public async createCallOutputData(Data: object) {
+    // Create a new entity instance
+    const newfaq = await this.faqRepository.create(Data);
+
+   
+    console.log("Before save (newfaq):", newfaq);
+
+    // Save to DB
+    const faq = await this.faqRepository.save(newfaq);
+
+    if (!faq) {
+        return errorWithoutData("faq not created");
     }
+
+    return successWithData("call output data created successfully", faq);
+}
 
     /**
      * Update an existing faq
