@@ -12,31 +12,82 @@ import fs from 'fs';
 import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
-
-
+import axios from "axios";
 
 export class CRMDataService {
     // Repository for faq database operations
-
-
     private faqRepository = AppDataSource.getRepository(CRMData);
 
     /**
      * Get all active main categories
      * @returns Promise with success response containing categories or error response
      */
-    public async getfaq(verifyUser: any, pageSize: number, currentPage: number) {
+    // public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
 
+    //     let whereCondition = {};
+    //     if (verifyUser.user_exist) {
+    //         whereCondition = { isActive: true, isDeleted: false };
+    //     }
+    //     if (verifyUser.admin_exist) {
+    //         whereCondition = { isDeleted: false };
+    //     }
+
+    //     const [mainCategories, totalItems] = await this.faqRepository.findAndCount({
+    //         where: { isActive: true, isDeleted: false },
+    //         order: { createdAt: 'DESC' },
+    //         skip: (currentPage - 1) * pageSize,
+    //         take: pageSize
+    //     });
+
+    //     const totalPages = Math.ceil(totalItems / pageSize);
+
+    //     if (totalItems >= 1 && totalPages < currentPage) {
+    //         return errorWithoutData("Page limit exceeded")
+    //     }
+
+    //     // ✅ RetellAI API Integration
+    //     try {
+    //         for (const crm of mainCategories) {
+    //             if ((crm as any).mobile_number) {   // make sure your entity has a phoneNumber field
+    //                 const payload = {
+    //                     from_number: "+18326624593",
+    //                     to_number: (crm as any).mobile_number,
+    //                     llm_id: "default",
+    //                     voice_id: "voice-1",
+    //                     retell_llm_dynamic_variables: {
+    //                         greeting: "Hello, this is a test call from Retell!"
+    //                     }
+    //                 };
+
+    //                 await axios.post("https://api.retellai.com/v2/create-phone-call", payload, {
+    //                     headers: {
+    //                         Authorization: "Bearer key_356dc6fbbd933c9b159e0411e4fa",
+    //                         "Content-Type": "application/json"
+    //                     }
+    //                 });
+    //             }
+    //         }
+    //     } catch (error: any) {
+    //         console.error("RetellAI API error:", error?.response?.data || error.message);
+    //     }
+
+    //     return successWithData("CRM data ", mainCategories, {
+    //         totalItems,
+    //         totalPages,
+    //         currentPage,
+    //         pageSize
+    //     });
+
+    // }
+
+      public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
 
         let whereCondition = {};
         if (verifyUser.user_exist) {
             whereCondition = { isActive: true, isDeleted: false };
         }
-        if(verifyUser.admin_exist)
-            {
-        
-                whereCondition = {isDeleted: false };
-    
+        if (verifyUser.admin_exist) {
+            whereCondition = { isDeleted: false };
         }
 
         const [mainCategories, totalItems] = await this.faqRepository.findAndCount({
@@ -46,13 +97,47 @@ export class CRMDataService {
             take: pageSize
         });
 
-
         const totalPages = Math.ceil(totalItems / pageSize);
 
         if (totalItems >= 1 && totalPages < currentPage) {
             return errorWithoutData("Page limit exceeded")
         }
-        return successWithData("faq data ", mainCategories, {
+
+        // ✅ RetellAI API Integration (using tasks array)
+        try {
+            const tasks: { to_number: string }[] = [];
+
+            for (const crm of mainCategories) {
+                if ((crm as any).mobile_number) {   // ensure entity has phoneNumber field
+                    tasks.push({ to_number: (crm as any).mobile_number });
+                }
+            }
+
+            if (tasks.length > 0) {
+                const payload = {
+                    from_number: "+18326624593",
+                    tasks: tasks,
+                    llm_id: "default",
+                    voice_id: "voice-1",
+                    retell_llm_dynamic_variables: {
+                        greeting: "Hello, this is a test call from Retell!"
+                    }
+                };
+
+                const response = await axios.post("https://api.retellai.com/create-batch-call", payload, {
+                    headers: {
+                        Authorization: "Bearer key_356dc6fbbd933c9b159e0411e4fa",
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                console.log("RetellAI response:", response.data);
+            }
+        } catch (error: any) {
+            console.error("RetellAI API error:", error?.response?.data || error.message);
+        }
+
+        return successWithData("CRM data ", mainCategories, {
             totalItems,
             totalPages,
             currentPage,
@@ -60,6 +145,7 @@ export class CRMDataService {
         });
 
     }
+
 
     /**
      * Find a faq by ID
@@ -112,8 +198,6 @@ export class CRMDataService {
      */
     public async updatefaq(id: string, Data: { [key: string]: any }, verifyUser: any) {
 
-
-
         if (verifyUser.user_exist) {
             return errorWithoutData('Only admin can update faq')
         }
@@ -128,7 +212,6 @@ export class CRMDataService {
         //     await s3.send(new DeleteObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME!, Key: oldKey }));
         // }
 
-
         const updatedData = JSON.parse(JSON.stringify(Data));
         await this.faqRepository.update(id.toString(), updatedData);
         return successWithoutData('faq updated successfully');
@@ -140,7 +223,6 @@ export class CRMDataService {
      * @param id - The ID of the faq to delete
      * @returns Promise with success response or error response
      */
-
     public async deletefaq(id: string, verifyUser: any) {
         if (verifyUser.user_exist) {
             return errorWithoutData("user cann't update attendance")
@@ -156,6 +238,7 @@ export class CRMDataService {
 
         return successWithoutData(" faq soft deleted successfully");
     }
+
     public async activefaq(id: string, verifyUser: any) {
         if (verifyUser.user_exist) {
             return errorWithoutData("user cann't update attendance")

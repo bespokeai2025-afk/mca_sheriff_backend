@@ -10,7 +10,7 @@ import { validateRequest } from "../middlewares/otp.validation";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 
 // Import controller methods
-import { activefaq, createUsercallingData, deletefaq, getfaq, getfaqById, updatefaq } from "../controllers/callOutputData.controller";
+import { activefaq, createUsercallingData, deletefaq, getUsercallingData, getfaqById, updatefaq } from "../controllers/callOutputData.controller";
 
 // Import validation middleware
 import { validateusercallingdata, validateUserID } from "../middlewares/usercallingdata.validation";
@@ -24,7 +24,7 @@ const router = express.Router();
 
 
 // Get all main categories
-router.get("/all", verifyAccessToken, getfaq);
+router.get("/all", verifyAccessToken, getUsercallingData);
 
 
 // Get a specific main category by ID

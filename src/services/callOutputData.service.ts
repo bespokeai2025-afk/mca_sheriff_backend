@@ -25,7 +25,7 @@ export class userCallingDataService {
      * Get all active main categories
      * @returns Promise with success response containing categories or error response
      */
-    public async getfaq(verifyUser: any, pageSize: number, currentPage: number) {
+    public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
 
 
         let whereCondition = {};
@@ -52,7 +52,7 @@ export class userCallingDataService {
         if (totalItems >= 1 && totalPages < currentPage) {
             return errorWithoutData("Page limit exceeded")
         }
-        return successWithData("faq data ", mainCategories, {
+        return successWithData("User calling data ", mainCategories, {
             totalItems,
             totalPages,
             currentPage,
