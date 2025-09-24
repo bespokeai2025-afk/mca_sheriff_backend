@@ -12,12 +12,12 @@ export enum CallStatus {
 export class CallOutputData extends Common {
 
    // Name of the main category
-    @Column({ type: 'text', nullable: false })
-    vendor_id: string;
+    // @Column({ type: 'text', nullable: false })
+    // vendor_id: string;
 
     // Description of the main category
-    @Column({ type: 'text', nullable: false })
-    crm_data_id: string;
+    // @Column({ type: 'text', nullable: false })
+    // crm_data_id: string;
 
 
   //   // Description of the main category
