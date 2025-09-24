@@ -101,9 +101,20 @@ export const createCallOutputData = async (req: Request, res: Response): Promise
     // 🔍 Log the full request body
     console.log("👉 Incoming Request Body:", JSON.stringify(req.body, null, 2));
 
-    // 🔍 If you only care about raw_data
+    // 🔍 Check raw_data properly
     if (req.body.raw_data) {
-      console.log("👉 Raw Data Payload:", JSON.stringify(req.body.raw_data, null, 2));
+      if (typeof req.body.raw_data === "string") {
+        // raw_data is stringified JSON
+        try {
+          const parsed = JSON.parse(req.body.raw_data);
+          console.log("👉 Raw Data Payload (parsed):", JSON.stringify(parsed, null, 2));
+        } catch (err) {
+          console.log("👉 Raw Data Payload (raw string):", req.body.raw_data);
+        }
+      } else {
+        // raw_data is already an object
+        console.log("👉 Raw Data Payload (object):", JSON.stringify(req.body.raw_data, null, 2));
+      }
     }
 
     const response = await calloutputdataservice.createCallOutputData(req.body);
@@ -119,6 +130,7 @@ export const createCallOutputData = async (req: Request, res: Response): Promise
     res.status(400).json(response);
   }
 };
+
 
 /**
  * Update an existing faq
