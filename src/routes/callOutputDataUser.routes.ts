@@ -10,7 +10,7 @@ import { validateRequest } from "../middlewares/otp.validation";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 
 // Import controller methods
-import { activefaq, createCallOutputData, deletefaq, getfaq, getfaqById, updateCallOutputData } from "../controllers/callOutputData.controller";
+import { activefaq, createCallOutputData, deletefaq, getUsercallingData, getfaqById, updateCallOutputData } from "../controllers/callOutputData.controller";
 
 // Import validation middleware
 import { validateCallOutputData, validateUserID } from "../middlewares/calloutputdata.validation";
@@ -24,7 +24,7 @@ const router = express.Router();
 
 
 // Get all main categories
-router.get("/all", verifyAccessToken, getfaq);
+router.get("/all", verifyAccessToken, getUsercallingData);
 
 
 // Get a specific main category by ID
@@ -32,9 +32,9 @@ router.get("/", verifyAccessToken, getfaqById);
 
 
 // Create a new main category
+
 // router.post("/create", verifyAccessToken,  validateCallOutputData, validateRequest, createCallOutputData);
 router.post("/create", createCallOutputData);
-
 
 // Update an existing main category
 router.put("/update/:id", updateCallOutputData)

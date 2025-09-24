@@ -24,7 +24,7 @@ const adminRepository = AppDataSource.getRepository(Admin);
  * @param res - Express response object
  * @returns JSON response with all main faq or error
  */
-export const getfaq = async (req: Request, res: Response): Promise<any> => {
+export const getUsercallingData = async (req: Request, res: Response): Promise<any> => {
 
     try {
         if (!req.user) {
@@ -34,7 +34,7 @@ export const getfaq = async (req: Request, res: Response): Promise<any> => {
         const { pageSize, currentPage } = req.query;
 
 
-        const response = await calloutputdataservice.getfaq(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
+        const response = await calloutputdataservice.getUsercallingData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData('something went wrong', { error: error });

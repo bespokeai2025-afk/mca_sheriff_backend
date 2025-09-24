@@ -58,7 +58,7 @@ import { deleteOldOTPs } from "./utils/deleteOldOTPs";
 import cookieParser from "cookie-parser";
 import limiter from './config/rate-limit';
 import { DateTime } from "luxon";
-import callOutputDataRoutes from './routes/calloutputdata.routes'
+import callOutputDataRoutes from './routes/callOutputDataUser.routes'
 import CRMDataRoutes from './routes/crmdata.routes'
 // Load environment variables
 dotenv.config()
