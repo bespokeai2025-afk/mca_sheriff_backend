@@ -24,7 +24,7 @@ const router = express.Router();
 
 
 // Get all main categories
-router.get("/all", verifyAccessToken, getCRMData);
+router.get("/start-batch-calling", verifyAccessToken, getCRMData);
 
 
 // Get a specific main category by ID

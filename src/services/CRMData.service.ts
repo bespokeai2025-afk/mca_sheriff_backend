@@ -80,71 +80,151 @@ export class CRMDataService {
 
     // }
 
-      public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
+    //   public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
 
-        let whereCondition = {};
-        if (verifyUser.user_exist) {
-            whereCondition = { isActive: true, isDeleted: false };
-        }
-        if (verifyUser.admin_exist) {
-            whereCondition = { isDeleted: false };
-        }
+    //     let whereCondition = {};
+    //     if (verifyUser.user_exist) {
+    //         whereCondition = { isActive: true, isDeleted: false };
+    //     }
+    //     if (verifyUser.admin_exist) {
+    //         whereCondition = { isDeleted: false };
+    //     }
 
-        const [mainCategories, totalItems] = await this.faqRepository.findAndCount({
-            where: { isActive: true, isDeleted: false },
-            order: { createdAt: 'DESC' },
-            skip: (currentPage - 1) * pageSize,
-            take: pageSize
-        });
+    //     const [mainCategories, totalItems] = await this.faqRepository.findAndCount({
+    //         where: { isActive: true, isDeleted: false },
+    //         order: { createdAt: 'DESC' },
+    //         skip: (currentPage - 1) * pageSize,
+    //         take: pageSize
+    //     });
 
-        const totalPages = Math.ceil(totalItems / pageSize);
+    //     const totalPages = Math.ceil(totalItems / pageSize);
 
-        if (totalItems >= 1 && totalPages < currentPage) {
-            return errorWithoutData("Page limit exceeded")
-        }
+    //     if (totalItems >= 1 && totalPages < currentPage) {
+    //         return errorWithoutData("Page limit exceeded")
+    //     }
 
-        // ✅ RetellAI API Integration (using tasks array)
-        try {
-            const tasks: { to_number: string }[] = [];
+    //     let retellResponse=null;
 
-            for (const crm of mainCategories) {
-                if ((crm as any).mobile_number) {   // ensure entity has phoneNumber field
-                    tasks.push({ to_number: (crm as any).mobile_number });
-                }
+    //     // ✅ RetellAI API Integration (using tasks array)
+    //     try {
+    //         const tasks: { to_number: string }[] = [];
+
+    //         for (const crm of mainCategories) {
+    //             if ((crm as any).mobile_number) {   // ensure entity has phoneNumber field
+    //                 tasks.push({ to_number: (crm as any).mobile_number });
+    //             }
+    //         }
+
+    //         if (tasks.length > 0) {
+    //             const payload = {
+    //                 from_number: "+18326624593",
+    //                 tasks: tasks,
+    //                 llm_id: "default",
+    //                 voice_id: "voice-1",
+    //                 retell_llm_dynamic_variables: {
+    //                     greeting: "Hello, this is a test call from Retell!"
+    //                 }
+    //             };
+
+    //             const response = await axios.post("https://api.retellai.com/create-batch-call", payload, {
+    //                 headers: {
+    //                     Authorization: "Bearer key_356dc6fbbd933c9b159e0411e4fa",
+    //                     "Content-Type": "application/json"
+    //                 }
+    //             });
+
+    //             retellResponse=response;
+    //             console.log("RetellAI response:", response.data);
+    //         }
+    //     } catch (error: any) {
+    //         console.error("RetellAI API error:", error?.response?.data || error.message);
+    //     }
+
+    //     return successWithData("CRM data ", mainCategories, {
+    //         totalItems,
+    //         totalPages,
+    //         currentPage,
+    //         pageSize,
+            
+    //     });
+
+    // }
+public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
+    let whereCondition = {};
+    if (verifyUser.user_exist) {
+        whereCondition = { isActive: true, isDeleted: false };
+    }
+    if (verifyUser.admin_exist) {
+        whereCondition = { isDeleted: false };
+    }
+
+    const [mainCategories, totalItems] = await this.faqRepository.findAndCount({
+        where: whereCondition, // ✅ used dynamic condition
+        order: { createdAt: 'DESC' },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize
+    });
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    if (totalItems >= 1 && totalPages < currentPage) {
+        return errorWithoutData("Page limit exceeded");
+    }
+
+    let retellResponse: any = null;
+
+    // ✅ RetellAI API Integration (using tasks array)
+    try {
+        const tasks: { to_number: string }[] = [];
+
+        for (const crm of mainCategories) {
+            if ((crm as any).mobile_number) {
+                tasks.push({ to_number: (crm as any).mobile_number });
             }
+        }
 
-            if (tasks.length > 0) {
-                const payload = {
-                    from_number: "+18326624593",
-                    tasks: tasks,
-                    llm_id: "default",
-                    voice_id: "voice-1",
-                    retell_llm_dynamic_variables: {
-                        greeting: "Hello, this is a test call from Retell!"
-                    }
-                };
+        if (tasks.length > 0) {
+            const payload = {
+                from_number: "+18326624593",
+                tasks: tasks,
+                llm_id: "default",
+                voice_id: "voice-1",
+                retell_llm_dynamic_variables: {
+                    greeting: "Hello, this is a test call from Retell!"
+                }
+            };
 
-                const response = await axios.post("https://api.retellai.com/create-batch-call", payload, {
+            const response = await axios.post(
+                "https://api.retellai.com/create-batch-call",
+                payload,
+                {
                     headers: {
                         Authorization: "Bearer key_356dc6fbbd933c9b159e0411e4fa",
                         "Content-Type": "application/json"
                     }
-                });
+                }
+            );
 
-                console.log("RetellAI response:", response.data);
-            }
-        } catch (error: any) {
-            console.error("RetellAI API error:", error?.response?.data || error.message);
+            retellResponse = response.data;
+            console.log("RetellAI response:", response.data);
         }
-
-        return successWithData("CRM data ", mainCategories, {
-            totalItems,
-            totalPages,
-            currentPage,
-            pageSize
-        });
-
+    } catch (error: any) {
+        console.error("RetellAI API error:", error?.response?.data || error.message);
     }
+
+    // ✅ Attach retellResponse into each CRM record (optional, if you want per record)
+    const enrichedCategories = mainCategories.map((crm: any) => ({
+        ...crm,
+        retellResponse
+    }));
+
+    return successWithData("CRM data", enrichedCategories, {
+        totalItems,
+        totalPages,
+        currentPage,
+        pageSize,
+    });
+}
 
 
     /**
