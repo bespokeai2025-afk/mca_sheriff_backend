@@ -122,7 +122,9 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
-    console.log("👉 Incoming Request Body:", req.body);
+    console.log("👉 Incoming Request Body:",  Object.entries(req.body.raw_data).forEach(([key, value]) => {
+    console.log(`   ${key}:`, value);
+  }));
 
     // 🔍 Check raw_data properly
     if (req.body.raw_data) {
