@@ -87,11 +87,9 @@ export class callOutputDataService {
      * @param Data - Object containing faq data
      * @returns Promise with success response containing the created faq or error response
      */
-    public async createCallOutputData(Data: object, verifyUser: any) {
+    public async createCallOutputData(Data: object ) {
 
-        if (verifyUser.user_exist) {
-            return errorWithoutData('Only admin can create call output')
-        }
+      
 
         const newfaq = await this.faqRepository.create(Data)
 

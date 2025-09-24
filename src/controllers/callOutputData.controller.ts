@@ -74,22 +74,22 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
 export const createCallOutputData = async (req: Request, res: Response): Promise<any> => {
 
     try {
-        if (!req.user) {
-            const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
-        }
-        const user = await adminRepository.findOneBy({ id: req.user.id })
+    //     //if (!req.user) {
+    //         const response = errorWithoutData("Authentication failed");
+    //         return res.status(response.result ? 200 : 400).json(response);
+    //    // }
+    //     const user = await adminRepository.findOneBy({ id: req.user.id })
 
-        if (!user) {
-            const response = errorWithoutData('only admin can create a faq');
-            return res.status(response.result ? 200 : 400).json(response);
-        }
+    //     if (!user) {
+    //         const response = errorWithoutData('only admin can create a faq');
+    //         return res.status(response.result ? 200 : 400).json(response);
+    //     }
 
         
 
-        const data = { ...req.body, image: (req.file as Express.Multer.File & { location: string })?.location || null };
+        const data = { ...req.body};
 
-        const response = await calloutputdataservice.createCallOutputData(data, req.verifyUser);
+        const response = await calloutputdataservice.createCallOutputData(data);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });

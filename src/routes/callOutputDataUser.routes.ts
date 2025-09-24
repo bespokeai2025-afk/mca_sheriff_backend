@@ -28,11 +28,11 @@ router.get("/all", verifyAccessToken, getUsercallingData);
 
 
 // Get a specific main category by ID
-router.get("/", verifyAccessToken, getfaqById);
+//router.get("/", verifyAccessToken, getfaqById);
 
 
 // Create a new main category
-
+// 
 // router.post("/create", verifyAccessToken,  validateCallOutputData, validateRequest, createCallOutputData);
 router.post("/create", createCallOutputData);
 
