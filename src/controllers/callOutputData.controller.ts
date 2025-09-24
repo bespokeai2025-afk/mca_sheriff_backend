@@ -99,7 +99,7 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
-    console.log("👉 Incoming Request Body:", JSON.stringify(req.body, null, 2));
+    console.log("👉 Incoming Request Body:", req.body, null, 2);
 
     // 🔍 If you only care about raw_data
     if (req.body.raw_data) {
