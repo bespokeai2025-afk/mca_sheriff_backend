@@ -96,50 +96,14 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
 //         return res.status(response.result ? 200 : 400).json(response);
 //     }
 // };
-// export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     // 🔍 Log the full request body
-//     console.log("👉 Incoming Request Body:", JSON.stringify(req.body, null, 2));
-
-//     // 🔍 If you only care about raw_data
-//     if (req.body.raw_data) {
-//       console.log("👉 Raw Data Payload:", JSON.stringify(req.body.raw_data, null, 2));
-//     }
-
-//     const response = await calloutputdataservice.createCallOutputData(req.body);
-
-//     // 🔍 Log service response before sending
-//     console.log("✅ Service Response:", response);
-
-//     res.status(response.result ? 200 : 400).json(response);
-//   } catch (error) {
-//     console.error("❌ Error creating call output data:", error);
-
-//     const response = errorWithData("Something went wrong", { error });
-//     res.status(400).json(response);
-//   }
-// };
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
-    console.log("👉 Incoming Request Body:",  Object.entries(req.body.raw_data).forEach(([key, value]) => {
-    console.log(`   ${key}:`, value);
-  }));
+    console.log("👉 Incoming Request Body:", JSON.stringify(req.body, null, 2));
 
-    // 🔍 Check raw_data properly
+    // 🔍 If you only care about raw_data
     if (req.body.raw_data) {
-      if (typeof req.body.raw_data === "string") {
-        // raw_data is stringified JSON
-        try {
-          const parsed = JSON.parse(req.body.raw_data);
-          console.log("👉 Raw Data Payload (parsed):", JSON.stringify(parsed, null, 2));
-        } catch (err) {
-          console.log("👉 Raw Data Payload (raw string):", req.body.raw_data);
-        }
-      } else {
-        // raw_data is already an object
-        console.log("👉 Raw Data Payload (object):", JSON.stringify(req.body.raw_data, null, 2));
-      }
+      console.log("👉 Raw Data Payload:", JSON.stringify(req.body.raw_data, null, 2));
     }
 
     const response = await calloutputdataservice.createCallOutputData(req.body);
