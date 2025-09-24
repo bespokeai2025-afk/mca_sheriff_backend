@@ -2,7 +2,7 @@ import { errorWithoutData, successWithData, successWithoutData } from "../config
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
 import { User } from "../entities/User";
-import { deleteUserToken } from "../utils/jwtUtils";
+import { deleteUserToken, generateTokens } from "../utils/jwtUtils";
 
 export class AdminService {
 
@@ -125,5 +125,41 @@ export class AdminService {
         return successWithoutData("admin Logout Successfully")
 
     }
+    
+public async loginAdminWithEmailPassword(data: { email?: string; password?: string }) {
+  // Validate input
+  if (!data.email || !data.password) {
+    return errorWithoutData("Email and password are required");
+  }
+
+  // Check if user exists
+  const user = await this.adminRepository.findOneBy({ email: data.email });
+  if (!user) {
+    return errorWithoutData("Invalid email or password");
+  }
+
+  // Check if active and not deleted
+  if (!user.isActive || user.isDeleted) {
+    return errorWithoutData("User is not allowed to login");
+  }
+
+  // Compare plain text passwords
+  if (user.password !== data.password) {
+    return errorWithoutData("Invalid email or password");
+  }
+
+  // Generate tokens
+  const { accessToken, refreshToken } = await generateTokens(user);
+
+  const responseData = {
+    id: user.id,
+    email: user.email,
+    mobile: user.mobile,
+    accessToken,
+    refreshToken,
+  };
+
+  return successWithData("Login successful", responseData);
+}
 
 }

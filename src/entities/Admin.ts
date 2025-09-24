@@ -20,6 +20,10 @@ export class Admin extends Common {
     @Column({ type: "varchar", length: 255, unique: true, nullable: true })
     email: string
 
+        // Email of the admin (unique)
+    @Column({ type: "varchar", length: 255, unique: false, nullable: true })
+    password: string
+
     // Flag indicating if the OTP is verified
     @Column({ type: "boolean", default: false })
     is_otp_verified: boolean

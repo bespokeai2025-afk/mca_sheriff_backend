@@ -127,3 +127,14 @@ export const logoutAdmin = async (req: Request, res: Response): Promise<any> => 
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+
+export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
+      try {
+        
+        const response: any = await adminService.loginAdminWithEmailPassword(req.body);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData("something went wrong", { error: error });
+        return res.status(response.result ? 200 : 400).json(response);
+    }
+};

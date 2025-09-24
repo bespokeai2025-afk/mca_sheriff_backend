@@ -8,7 +8,7 @@ import dotenv from 'dotenv'
 import { errorWithoutData } from "../config/ApiResponse";
 dotenv.config()
 
-const ACCESS_TOKEN_EXPIRY: string = process.env.ACCESS_TOKEN_EXPIRY || "5h";
+const ACCESS_TOKEN_EXPIRY: string = process.env.ACCESS_TOKEN_EXPIRY || "23d";
 const REFRESH_TOKEN_EXPIRY: string = process.env.REFRESH_TOKEN_EXPIRY || "30d";
 
 export const generateTokens = async (user: User | Admin) => {

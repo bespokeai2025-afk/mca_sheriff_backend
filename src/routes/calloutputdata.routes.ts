@@ -32,11 +32,12 @@ router.get("/", verifyAccessToken, getfaqById);
 
 
 // Create a new main category
-router.post("/create", verifyAccessToken,  validateCallOutputData, validateRequest, createCallOutputData);
+// router.post("/create", verifyAccessToken,  validateCallOutputData, validateRequest, createCallOutputData);
+router.post("/create", createCallOutputData);
 
 
 // Update an existing main category
-router.put("/update/:id", verifyAccessToken,  validateUserID, validateCallOutputData, validateRequest, updateCallOutputData)
+router.put("/update/:id", updateCallOutputData)
 
 
 // Delete a main category
