@@ -96,6 +96,29 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
 //         return res.status(response.result ? 200 : 400).json(response);
 //     }
 // };
+// export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     // 🔍 Log the full request body
+//     console.log("👉 Incoming Request Body:", JSON.stringify(req.body, null, 2));
+
+//     // 🔍 If you only care about raw_data
+//     if (req.body.raw_data) {
+//       console.log("👉 Raw Data Payload:", JSON.stringify(req.body.raw_data, null, 2));
+//     }
+
+//     const response = await calloutputdataservice.createCallOutputData(req.body);
+
+//     // 🔍 Log service response before sending
+//     console.log("✅ Service Response:", response);
+
+//     res.status(response.result ? 200 : 400).json(response);
+//   } catch (error) {
+//     console.error("❌ Error creating call output data:", error);
+
+//     const response = errorWithData("Something went wrong", { error });
+//     res.status(400).json(response);
+//   }
+// };
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
@@ -130,7 +153,6 @@ export const createCallOutputData = async (req: Request, res: Response): Promise
     res.status(400).json(response);
   }
 };
-
 
 /**
  * Update an existing faq
