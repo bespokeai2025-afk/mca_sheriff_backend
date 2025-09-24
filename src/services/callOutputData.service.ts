@@ -114,49 +114,94 @@ export class callOutputDataService {
 //     return successWithData("call output data created successfully", faq);
 // }
 
- public async createCallOutputData(reqBody: any) {
-    try {
-      let raw = reqBody.raw_data;
+//  public async createCallOutputData(reqBody: any) {
+//     try {
+//       let raw = reqBody.raw_data;
 
-      // 1️⃣ Parse JSON string if raw_data is a string
-      if (typeof raw === "string") {
-        try {
-          raw = JSON.parse(raw);
-        } catch (parseErr) {
-          return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
-        }
+//       // 1️⃣ Parse JSON string if raw_data is a string
+//       if (typeof raw === "string") {
+//         try {
+//           raw = JSON.parse(raw);
+//         } catch (parseErr) {
+//           return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
+//         }
+//       }
+
+//       // 2️⃣ Handle array (if data comes wrapped in an array, pick first)
+//       if (Array.isArray(raw)) {
+//         raw = raw[0];
+//       }
+
+//       // 3️⃣ Validate existence of body
+//     //   if (!raw?.body) {
+//     //     return errorWithoutData("Invalid request: missing body inside raw_data");
+//     //   }
+
+//       // 4️⃣ Map request body to DB entity structure
+//       const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw.body);
+//       console.log("📥 Final Mapped Data for DB:", mappedData);
+
+//       // 5️⃣ Create entity instance
+//       const newCallData = this.faqRepository.create(mappedData);
+
+//       // 6️⃣ Save to DB
+//       const saved = await this.faqRepository.save(newCallData);
+
+//       if (!saved) {
+//         return errorWithoutData("Call output data not created");
+//       }
+
+//       return successWithData("Call output data created successfully", saved);
+//     } catch (error) {
+//       console.error("❌ Error creating call output data:", error);
+//       return errorWithData("Failed to create call output data", { error: (error as Error).message });
+//     }
+//   }
+
+public async createCallOutputData(reqBody: any) {
+  try {
+    let raw = reqBody.raw_data;
+
+    // 1️⃣ Parse JSON string if raw_data is a string
+    if (typeof raw === "string") {
+      try {
+        raw = JSON.parse(raw);
+      } catch (parseErr) {
+        return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
       }
-
-      // 2️⃣ Handle array (if data comes wrapped in an array, pick first)
-      if (Array.isArray(raw)) {
-        raw = raw[0];
-      }
-
-      // 3️⃣ Validate existence of body
-    //   if (!raw?.body) {
-    //     return errorWithoutData("Invalid request: missing body inside raw_data");
-    //   }
-
-      // 4️⃣ Map request body to DB entity structure
-      const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw.body);
-      console.log("📥 Final Mapped Data for DB:", mappedData);
-
-      // 5️⃣ Create entity instance
-      const newCallData = this.faqRepository.create(mappedData);
-
-      // 6️⃣ Save to DB
-      const saved = await this.faqRepository.save(newCallData);
-
-      if (!saved) {
-        return errorWithoutData("Call output data not created");
-      }
-
-      return successWithData("Call output data created successfully", saved);
-    } catch (error) {
-      console.error("❌ Error creating call output data:", error);
-      return errorWithData("Failed to create call output data", { error: (error as Error).message });
     }
+
+    // 2️⃣ Handle array (if data comes wrapped in an array, pick first)
+    if (Array.isArray(raw)) {
+      raw = raw[0];
+    }
+
+    // 3️⃣ Ensure raw is an object
+    if (!raw || typeof raw !== "object") {
+      return errorWithoutData("Invalid request: raw_data is missing or malformed");
+    }
+
+    // 4️⃣ Pass raw directly (not raw.body!)
+    const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+    console.log("📥 Final Mapped Data for DB:", mappedData);
+
+    // 5️⃣ Create entity instance
+    const newCallData = this.faqRepository.create(mappedData);
+
+    // 6️⃣ Save to DB
+    const saved = await this.faqRepository.save(newCallData);
+
+    if (!saved) {
+      return errorWithoutData("Call output data not created");
+    }
+
+    return successWithData("Call output data created successfully", saved);
+  } catch (error) {
+    console.error("❌ Error creating call output data:", error);
+    return errorWithData("Failed to create call output data", { error: (error as Error).message });
   }
+}
+
     /**
      * Update an existing faq
      * @param id - The ID of the faq to update
