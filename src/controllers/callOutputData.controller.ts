@@ -103,7 +103,7 @@ export const createCallOutputData = async (req: Request, res: Response): Promise
 
     // 🔍 If you only care about raw_data
     if (req.body.raw_data) {
-      console.log("👉 Raw Data Payload:", JSON.stringify(req.body.raw_data, null, 2));
+      console.log("👉 Raw Data Payload:", req.body.raw_data);
     }
 
     const response = await calloutputdataservice.createCallOutputData(req.body);
