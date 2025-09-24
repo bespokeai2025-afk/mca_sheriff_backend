@@ -71,32 +71,40 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
  * @param res - Express response object
  * @returns JSON response with the created faq or error
  */
-export const createCallOutputData = async (req: Request, res: Response): Promise<any> => {
+// export const createCallOutputData = async (req: Request, res: Response): Promise<any> => {
 
-    try {
-    //     //if (!req.user) {
-    //         const response = errorWithoutData("Authentication failed");
-    //         return res.status(response.result ? 200 : 400).json(response);
-    //    // }
-    //     const user = await adminRepository.findOneBy({ id: req.user.id })
+//     try {
+//     //     //if (!req.user) {
+//     //         const response = errorWithoutData("Authentication failed");
+//     //         return res.status(response.result ? 200 : 400).json(response);
+//     //    // }
+//     //     const user = await adminRepository.findOneBy({ id: req.user.id })
 
-    //     if (!user) {
-    //         const response = errorWithoutData('only admin can create a faq');
-    //         return res.status(response.result ? 200 : 400).json(response);
-    //     }
+//     //     if (!user) {
+//     //         const response = errorWithoutData('only admin can create a faq');
+//     //         return res.status(response.result ? 200 : 400).json(response);
+//     //     }
 
         
 
-        const data = { ...req.body};
+//         const data = { ...req.body};
 
-        const response = await calloutputdataservice.createCallOutputData(data);
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData("something went wrong", { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
-    }
+//         const response = await calloutputdataservice.createCallOutputData(data);
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData("something went wrong", { error: error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
+export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const response = await calloutputdataservice.createCallOutputData(req.body);
+    res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    const response = errorWithData("Something went wrong", { error });
+    res.status(400).json(response);
+  }
 };
-
 /**
  * Update an existing faq
  * @param req - Express request object with faq ID in params and updated data in body
