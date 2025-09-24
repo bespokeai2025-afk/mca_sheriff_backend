@@ -106,7 +106,7 @@ public async createCallOutputData(Data: object) {
     const newfaq = await this.faqRepository.create(Data);
 
    
-    console.log("Before save (newfaq):", newfaq);
+    console.log("call dataaaaaaaaaaaaaa", newfaq);
 
     // Save to DB
     const faq = await this.faqRepository.save(newfaq);
