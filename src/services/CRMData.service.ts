@@ -266,7 +266,7 @@ public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) 
         if (!faq) {
             return errorWithoutData('faq not created')
         }
-        return successWithData("faq created successfully", faq);
+        return successWithData("crm data created successfully", faq);
 
     }
 

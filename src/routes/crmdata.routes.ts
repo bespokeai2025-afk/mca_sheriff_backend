@@ -32,7 +32,7 @@ router.get("/", verifyAccessToken, getfaqById);
 
 
 // Create a new main category
-router.post("/create", verifyAccessToken, upload.single('image'), validatecrmdata, validateRequest, createCRMData);
+router.post("/create", verifyAccessToken, validatecrmdata, validateRequest, createCRMData);
 
 
 // Update an existing main category

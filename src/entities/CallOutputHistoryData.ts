@@ -12,18 +12,21 @@ export enum CallStatus {
   DISCONNECTED = "disconnected",
 }
 // MainCategory entity representing main categories
-@Entity({ name: 'call_output_data' })
+@Entity({ name: 'call_output_history_data' })
 // @Check('priority >= 0') // Ensure priority is non-negative
-export class CallOutputData extends Common {
+export class CallOutputHistoryData extends Common {
 
     // Name of the main category
     @Column({ type: 'text' })
-    vendor_id: string;
+    call_output_data_id: string;
 
-    // Description of the main category
+      // Description of the main category
     @Column({ type: 'text' })
     crm_data_id: string;
 
+     @Column({ type: 'text' })
+    vendor_id: string;
+    
     // Description of the main category
     @Column({ type: 'text', nullable: false })
     sentiment_analysis: string;

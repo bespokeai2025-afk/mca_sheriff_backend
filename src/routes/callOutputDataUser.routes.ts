@@ -28,15 +28,16 @@ router.get("/all", verifyAccessToken, getUsercallingData);
 
 
 // Get a specific main category by ID
-router.get("/", verifyAccessToken, getfaqById);
+//router.get("/", verifyAccessToken, getfaqById);
 
 
 // Create a new main category
-router.post("/create", verifyAccessToken, upload.single('image'), validateCallOutputData, createCallOutputData);
-
+// 
+// router.post("/create", verifyAccessToken,  validateCallOutputData, validateRequest, createCallOutputData);
+router.post("/create", createCallOutputData);
 
 // Update an existing main category
-router.put("/update/:id", verifyAccessToken, upload.single('image'), validateUserID, validateCallOutputData, validateRequest, updateCallOutputData)
+router.put("/update/:id", updateCallOutputData)
 
 
 // Delete a main category

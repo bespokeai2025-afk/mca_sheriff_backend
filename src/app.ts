@@ -58,7 +58,7 @@ import { deleteOldOTPs } from "./utils/deleteOldOTPs";
 import cookieParser from "cookie-parser";
 import limiter from './config/rate-limit';
 import { DateTime } from "luxon";
-import callOutputDataRoutes from './routes/callOutputData.routes'
+import callOutputDataRoutes from './routes/callOutputDataUser.routes'
 import CRMDataRoutes from './routes/crmdata.routes'
 // Load environment variables
 dotenv.config()
@@ -142,7 +142,7 @@ app.use('/survey-qustions', surveyRoutes)
 app.use('/survey-answers', suerveyanswersRoutes)
 app.use('/survey', userseruveryRouters)
 app.use('/attendance-otp', attendanceotp) // Event attendance routes
-app.use('/user-calling-data', callOutputDataRoutes)
+app.use('/call-output-data', callOutputDataRoutes)
 app.use('/crm-data', CRMDataRoutes)
 
 app.use(multerErrorHandler);

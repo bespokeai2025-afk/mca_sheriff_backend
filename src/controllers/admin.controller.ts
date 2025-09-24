@@ -61,11 +61,8 @@ export const getAdminById = async (req: Request, res: Response): Promise<any> =>
 export const createAdmin = async (req: Request, res: Response): Promise<any> => {
 
     try {
-        if (!req.user || !req.verifyUser) {
-            const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
-        }
-        const response: any = await adminService.createAdmin(req.body, req.verifyUser);
+        
+        const response: any = await adminService.createAdmin(req.body);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
@@ -127,6 +124,17 @@ export const logoutAdmin = async (req: Request, res: Response): Promise<any> => 
     } catch (error) {
         // Handle any errors that occur during the process
         const response = errorWithData('something went wrong', { error: error });
+        return res.status(response.result ? 200 : 400).json(response);
+    }
+};
+
+export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
+      try {
+        
+        const response: any = await adminService.loginAdminWithEmailPassword(req.body);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData("something went wrong", { error: error });
         return res.status(response.result ? 200 : 400).json(response);
     }
 };

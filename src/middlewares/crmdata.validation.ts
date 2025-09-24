@@ -4,6 +4,11 @@ import { body, param } from "express-validator";
 
 export const validatecrmdata = [
   
+  body('name')
+        .notEmpty().withMessage("name is required.")
+        .isString().withMessage("name must be a string")
+        .trim()
+        .escape(),
 
     body('mobile_number')
         .notEmpty().withMessage("Mobile number is required.")
@@ -11,6 +16,7 @@ export const validatecrmdata = [
         .isLength({ min: 10, max: 15 }).withMessage("Mobile number must be between 10 to 15 characters")
         .trim()
         .escape(),
+
 ];
 
 export const validateUserID = [
