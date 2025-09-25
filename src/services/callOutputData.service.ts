@@ -50,6 +50,43 @@ export class callOutputDataService {
 
     } 
 
+
+    public async getUsercallingHistory(verifyUser: any, pageSize: number, currentPage: number) {
+
+
+        let whereCondition = {};
+        if (verifyUser.user_exist) {
+            whereCondition = { isActive: true, isDeleted: false };
+        }
+        if (verifyUser.admin_exist) {
+
+            whereCondition = { isDeleted: false };
+
+        }
+
+        const [mainCategories, totalItems] = await this.historyRepository.findAndCount({
+            where: { isActive: true, isDeleted: false },
+            order: { createdAt: 'DESC' },
+            skip: (currentPage - 1) * pageSize,
+            take: pageSize
+        });
+
+
+        const totalPages = Math.ceil(totalItems / pageSize);
+
+        if (totalItems >= 1 && totalPages < currentPage) {
+            return errorWithoutData("Page limit exceeded")
+        }
+        return successWithData("User history data get successfully !", mainCategories, {
+            totalItems,
+            totalPages,
+            currentPage,
+            pageSize
+        });
+
+    } 
+
+
     public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
     try {
         let whereCondition: any = {};

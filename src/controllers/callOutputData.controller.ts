@@ -7,6 +7,7 @@ import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
 // Initialize services and repositories
 const calloutputdataservice = new callOutputDataService();
+const userhistoryservice = new callOutputDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
 
 export const getUsercallingData = async (req: Request, res: Response): Promise<any> => {
@@ -20,6 +21,25 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
 
 
         const response = await calloutputdataservice.getUsercallingData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData('something went wrong', { error: error });
+        return res.status(response.result ? 200 : 400).json(response);
+    }
+};
+
+
+export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+        if (!req.user) {
+            const response = errorWithoutData("Authentication failed");
+            return res.status(response.result ? 200 : 400).json(response);
+        }
+        const { pageSize, currentPage } = req.query;
+
+
+        const response = await calloutputdataservice.getUsercallingHistory(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData('something went wrong', { error: error });
