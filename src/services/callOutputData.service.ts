@@ -61,15 +61,11 @@ export class callOutputDataService {
         }
 
         // 🔹 Count total items
-        const totalItems = await this.callOutputRepository.count({ where: whereCondition });
-        const totalPages = Math.ceil(totalItems / pageSize);
-
-        if (totalItems >= 1 && totalPages < currentPage) {
-            return errorWithoutData("Page limit exceeded");
-        }
+        const totalCall = await this.callOutputRepository.count({ where: whereCondition });
+    
 
         // 🔹 Count only positive & neutral sentimentAnalysis
-        const sentimentCounts = await this.callOutputRepository
+        const successCounts = await this.callOutputRepository
             .createQueryBuilder("call")
             .select("call.sentimentAnalysis", "sentimentAnalysis")
             .addSelect("COUNT(*)", "count")
@@ -78,8 +74,17 @@ export class callOutputDataService {
             .groupBy("call.sentimentAnalysis")
             .getRawMany();
 
+         const failureCounts = await this.callOutputRepository
+            .createQueryBuilder("call")
+            .select("call.sentimentAnalysis", "sentimentAnalysis")
+            .addSelect("COUNT(*)", "count")
+            .where(whereCondition)
+            .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Negative"] })
+            .groupBy("call.sentimentAnalysis")
+            .getRawMany();
+
         // 🔹 Count callStatus distribution
-        const statusCounts = await this.callOutputRepository
+        const notConnectedCounts = await this.callOutputRepository
             .createQueryBuilder("call")
             .select("call.callStatus", "callStatus")
             .addSelect("COUNT(*)", "count")
@@ -89,12 +94,10 @@ export class callOutputDataService {
 
         // 🔹 Return only counts
         return successWithData("User call detail Count", {
-            totalItems,
-            totalPages,
-            currentPage,
-            pageSize,
-            sentimentCounts,
-            statusCounts
+            totalCall,
+            successCounts,
+            failureCounts,
+            notConnectedCounts
         } as any);
 
     } catch (error) {
