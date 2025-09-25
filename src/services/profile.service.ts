@@ -1,6 +1,6 @@
 import { User } from "../entities/User";
 import { AppDataSource } from "../config/database";
-import { UserReferralCode } from "../entities/UserReferralCode";
+// import { UserReferralCode } from "../entities/UserReferralCode";
 import { errorWithData, errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
 // import { RewardsHistory } from "../entities/RewardHistory";
 // import { NotificationService } from './notification.service';
@@ -14,7 +14,7 @@ import { DeviceTokenService } from "./deviceToken.service";
 const deviceTokenService = new DeviceTokenService();
 export class ProfileService {
     private userRepository = AppDataSource.getRepository(User);
-    private referralCodeRepository = AppDataSource.getRepository(UserReferralCode)
+    // private referralCodeRepository = AppDataSource.getRepository(UserReferralCode)
     // private rewardsHistoryRepository = AppDataSource.getRepository(RewardsHistory);
 
 

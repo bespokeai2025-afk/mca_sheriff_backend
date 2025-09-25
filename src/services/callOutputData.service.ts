@@ -5,12 +5,13 @@ import path from "path";
 import fs from 'fs';
 import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { CRMData } from "../entities/CRMData";
 import { CallOutputData } from "../entities/CallOutputData";
 import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
 import { mapCallOutputData } from "../utils/mapper";
 
 export class callOutputDataService {
-    private callRepository = AppDataSource.getRepository(CallOutputData);
+    private callOutputRepository = AppDataSource.getRepository(CallOutputData);
     private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
 
     public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
@@ -26,7 +27,7 @@ export class callOutputDataService {
 
         }
 
-        const [mainCategories, totalItems] = await this.callRepository.findAndCount({
+        const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
             where: { isActive: true, isDeleted: false },
             order: { createdAt: 'DESC' },
             skip: (currentPage - 1) * pageSize,
@@ -46,125 +47,126 @@ export class callOutputDataService {
             pageSize
         });
 
-    }
-
-    public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
-        try {
-            let whereCondition: any = {};
-            if (verifyUser.user_exist) {
-                whereCondition = { isActive: true, isDeleted: false };
-            }
-            if (verifyUser.admin_exist) {
-                whereCondition = { isDeleted: false };
-            }
-
-            // Fetch paginated results
-            const [mainCategories, totalItems] = await this.callRepository.findAndCount({
-                where: whereCondition,
-                order: { createdAt: 'DESC' },
-                skip: (currentPage - 1) * pageSize,
-                take: pageSize
-            });
-
-            const totalPages = Math.ceil(totalItems / pageSize);
-
-            if (totalItems >= 1 && totalPages < currentPage) {
-                return errorWithoutData("Page limit exceeded");
-            }
-
-            // 🔹 Count only positive & neutral sentimentAnalysis
-            const sentimentCounts = await this.callRepository
-                .createQueryBuilder("call")
-                .select("call.sentimentAnalysis", "sentimentAnalysis")
-                .addSelect("COUNT(*)", "count")
-                .where(whereCondition)
-                .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["positive", "neutral"] })
-                .groupBy("call.sentimentAnalysis")
-                .getRawMany();
-
-            // 🔹 Count callStatus distribution
-            const statusCounts = await this.callRepository
-                .createQueryBuilder("call")
-                .select("call.callStatus", "callStatus")
-                .addSelect("COUNT(*)", "count")
-                .where(whereCondition)
-                .groupBy("call.callStatus")
-                .getRawMany();
-
-            return successWithData("User call detail Count", mainCategories, {
-                totalItems,
-                totalPages,
-                currentPage,
-                pageSize,
-                sentimentCounts,
-                statusCounts
-            } as any); // quick fix
-
-
-        } catch (error) {
-            console.error("Error in getUserCallData:", error);
-            return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
-        }
-    }
-
-
-
+    } 
     public async createCallOutputData(reqBody: any) {
-        try {
-            let raw = reqBody.raw_data;
+  try {
+    let raw = reqBody.raw_data;
 
-            // 1️⃣ Parse JSON string if raw_data is a string
-            if (typeof raw === "string") {
-                try {
-                    raw = JSON.parse(raw);
-                } catch (parseErr) {
-                    return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
-                }
-            }
-
-            // 2️⃣ Handle array (if data comes wrapped in an array, pick first)
-            if (Array.isArray(raw)) {
-                raw = raw[0];
-            }
-
-            // 3️⃣ Ensure raw is an object
-            if (!raw || typeof raw !== "object") {
-                return errorWithoutData("Invalid request: raw_data is missing or malformed");
-            }
-
-            // 4️⃣ Pass raw directly (not raw.body!)
-            const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
-            console.log("📥 Final Mapped Data for DB:", mappedData);
-
-            // 5️⃣ Create entity instance
-            const newCallData = this.callRepository.create(mappedData);
-
-            // 6️⃣ Save to DB
-            const saved = await this.callRepository.save(newCallData);
-
-            if (!saved) {
-                return errorWithoutData("Call output data not created");
-            }
-
-            return successWithData("Call output data created successfully", saved);
-        } catch (error) {
-            console.error("❌ Error creating call output data:", error);
-            return errorWithData("Failed to create call output data", { error: (error as Error).message });
-        }
+    // 1️⃣ Parse JSON string if raw_data is a string
+    if (typeof raw === "string") {
+      try {
+        raw = JSON.parse(raw);
+      } catch (parseErr) {
+        return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
+      }
     }
+
+    // 2️⃣ Handle array input
+    if (Array.isArray(raw)) {
+      raw = raw[0];
+    }
+
+    // 3️⃣ Ensure raw is object
+    if (!raw || typeof raw !== "object") {
+      return errorWithoutData("Invalid request: raw_data is missing or malformed");
+    }
+
+    // 4️⃣ Map into CallOutputData fields
+    const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+    console.log("📥 Final Mapped Data for DB:", mappedData);
+
+    const { toNumber } = mappedData;
+    if (!toNumber) {
+      return errorWithoutData("to_number is required for call output");
+    }
+
+    // 5️⃣ Check if CallOutputData already exists for this toNumber
+    const existing = await this.callOutputRepository.findOne({
+      where: { toNumber },
+    });
+
+    let saved: CallOutputData;
+
+    if (existing) {
+      console.log("🔄 Updating existing CallOutputData:", existing.id);
+
+      // Merge new values into existing record
+      const updated = this.callOutputRepository.merge(existing, mappedData);
+      saved = await this.callOutputRepository.save(updated);
+
+      return successWithData("Call output data updated successfully", saved);
+    } else {
+      console.log("➕ Creating new CallOutputData");
+
+      const newCallData = this.callOutputRepository.create(mappedData);
+      saved = await this.callOutputRepository.save(newCallData);
+
+      return successWithData("Call output data created successfully", saved);
+    }
+  } catch (error) {
+    console.error("❌ Error creating call output data:", error);
+    return errorWithData("Failed to create call output data", {
+      error: (error as Error).message,
+    });
+  }
+}
+ 
+    // public async createCallOutputData(reqBody: any) {
+    // try {
+    //     let raw = reqBody.raw_data;
+
+    //     // 1️⃣ Parse JSON string if raw_data is a string
+    //     if (typeof raw === "string") {
+    //     try {
+    //         raw = JSON.parse(raw);
+    //     } catch (parseErr) {
+    //         return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
+    //     }
+    //     }
+
+    //     // 2️⃣ Handle array (if data comes wrapped in an array, pick first)
+    //     if (Array.isArray(raw)) {
+    //     raw = raw[0];
+    //     }
+
+    //     // 3️⃣ Ensure raw is an object
+    //     if (!raw || typeof raw !== "object") {
+    //     return errorWithoutData("Invalid request: raw_data is missing or malformed");
+    //     }
+
+    //     // 4️⃣ Pass raw directly (not raw.body!)
+    //     const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+    //     console.log("📥 Final Mapped Data for DB:", mappedData);
+
+    //     // 5️⃣ Create entity instance
+    //     const newCallData = this.callOutputRepository.create(mappedData);
+
+    //     // 6️⃣ Save to DB
+    //     const saved = await this.callOutputRepository.save(newCallData);
+
+    //     if (!saved) {
+    //     return errorWithoutData("Call output data not created");
+    //     }
+
+    //     return successWithData("Call output data created successfully", saved);
+    // } catch (error) {
+    //     console.error("❌ Error creating call output data:", error);
+    //     return errorWithData("Failed to create call output data", { error: (error as Error).message });
+    // }
+    // }  
     public async updateCallOutputData(id: string, Data: { [key: string]: any }, verifyUser: any) {
         if (verifyUser.user_exist) {
             return errorWithoutData("Only admin can update call output data");
         }
 
-        const faq = await this.callRepository.findOneBy({ id, isActive: true, isDeleted: false });
+        const faq = await this.callOutputRepository.findOneBy({ id, isActive: true, isDeleted: false });
         if (!faq) {
             return errorWithoutData("call output data not found");
         }
 
         // Update main table
         const updatedData = JSON.parse(JSON.stringify(Data));
-        await this.callRepository.update(id.toString(), updatedData);
+        await this.callOutputRepository.update(id.toString(), updatedData);
 
         // Insert into history table
         const historyRecord = this.historyRepository.create({
@@ -206,14 +208,14 @@ export class callOutputDataService {
         if (verifyUser.user_exist) {
             return errorWithoutData("user cann't update attendance")
         }
-        const faq = await this.callRepository.findOneBy({ id });
+        const faq = await this.callOutputRepository.findOneBy({ id });
 
         if (!faq) {
             return errorWithoutData(" faq not found");
         }
 
         faq.isDeleted = true; // Mark as soft deleted
-        await this.callRepository.save(faq);
+        await this.callOutputRepository.save(faq);
 
         return successWithoutData(" faq soft deleted successfully");
     }

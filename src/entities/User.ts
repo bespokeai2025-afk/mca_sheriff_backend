@@ -2,7 +2,7 @@ import { Entity, Column, OneToMany, OneToOne } from "typeorm";
 import { Common } from "./Common";
 import { RefreshToken } from "./RefreshToken";
 import { OTPVerification } from "./OtpVerification";
-import { UserReferralCode } from "./UserReferralCode";
+// import { UserReferralCode } from "./UserReferralCode";
 // import { RewardsHistory } from "./RewardHistory";
 // import { EventAttendance } from "./EventAttendance";
 import { EmailVerification } from "./EmailVerification";
@@ -76,8 +76,8 @@ export class User extends Common {
     otpVerification: OTPVerification;
 
     // Relationship with UserReferralCode entity
-    @OneToOne(() => UserReferralCode)
-    userReferralCode: UserReferralCode;
+    // @OneToOne(() => UserReferralCode)
+    // userReferralCode: UserReferralCode;
 
     // @OneToMany(() => Feedback, (feedback) => feedback.id)
     // feedback: Feedback;

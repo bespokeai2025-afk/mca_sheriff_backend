@@ -4,7 +4,7 @@ import { verifyOTP } from "../controllers/otp.controller";
 import { validateProfile } from "../middlewares/profile.validation";
 // import { CompleteProfile } from "../controllers/profile.controller";
 // import { validateUserReferralCode } from "../middlewares/userReferralCode.validation";
-import { VerifyReferralCode } from "../controllers/userReferralCode.controller";
+// import { VerifyReferralCode } from "../controllers/userReferralCode.controller";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 import { refreshAccessToken } from "../controllers/auth.controller";
 
