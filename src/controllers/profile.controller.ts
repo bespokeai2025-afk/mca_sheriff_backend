@@ -5,18 +5,18 @@ import { errorWithData, errorWithoutData } from "../config/ApiResponse";
 const profileService = new ProfileService();
 
 // Controller to handle profile completion
-export const CompleteProfile = async (req: Request, res: Response): Promise<any> => {
-    try {
-        const { mobile, name } = req.body;
+// export const CompleteProfile = async (req: Request, res: Response): Promise<any> => {
+//     try {
+//         const { mobile, name } = req.body;
 
-        var response = await profileService.completeProfile(mobile, name, req.verifyUser);
+//         var response = await profileService.completeProfile(mobile, name, req.verifyUser);
     
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData('something went wrong', { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
-    }
-};
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData('something went wrong', { error: error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
 
 export const getProfile = async (req: Request, res: Response): Promise<any> => {
     try {

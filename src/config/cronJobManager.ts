@@ -1,29 +1,28 @@
 import cron from "node-cron";
 import { DataSource } from "typeorm";
-import { Event } from "../entities/Event";
+
 import { User } from '../entities/User';
-import { NotificationType } from '../entities/NotificationType';
-import { Notification } from '../entities/Notification'; // Adjust the import path as necessary
+// import { NotificationType } from '../entities/NotificationType';
+// import { Notification } from '../entities/Notification'; // Adjust the import path as necessary
 
 import { AppDataSource } from "../config/database";
-import { NotificationService } from "../services/notification.service";
-import { TomorrowEvent } from "../entities/Tomorrow_events";
-import { EventRegistration } from "../entities/EventRegistration";
-import { PushNotification } from '../entities/PushNotification';
-import { createBatchNotificationJob, createTopicNotificationJob } from "../workers/notification.worker";
+// import { NotificationService } from "../services/notification.service";
+// import { TomorrowEvent } from "../entities/Tomorrow_events";
+
+// import { PushNotification } from '../entities/PushNotification';
 import { LessThan } from 'typeorm';
-import { PushNotificationService } from "../services/pushNotification.service";
+// import { PushNotificationService } from "../services/pushNotification.service";
 
 
-const notificationService = new NotificationService();
-const pushNotificationService = new PushNotificationService();
+// const notificationService = new NotificationService();
+// const pushNotificationService = new PushNotificationService();
 
 export class CronJobManager {
   constructor(private dataSource: DataSource) { }
-  private eventRepository = AppDataSource.getRepository(Event);
-  private notificationRepository = AppDataSource.getRepository(Notification);
-  private registrationRepository = AppDataSource.getRepository(EventRegistration);
-  private notificationTypeRepository = AppDataSource.getRepository(NotificationType);
+  // private eventRepository = AppDataSource.getRepository(Event);
+  // private notificationRepository = AppDataSource.getRepository(Notification);
+  // private registrationRepository = AppDataSource.getRepository(EventRegistration);
+  // private notificationTypeRepository = AppDataSource.getRepository(NotificationType);
   // ✅ 1️⃣ Update completed events
   async updateCompletedEvents(): Promise<void> {
     const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -36,32 +35,32 @@ export class CronJobManager {
       const currentTime = now.toTimeString().split(" ")[0]; // "HH:mm:ss"
 
       // ✅ 1. Mark events as Completed
-      const eventsToUpdate = await this.eventRepository
-        .createQueryBuilder("event")
-        .andWhere(
-          `(event.to_date < :currentDate OR (event.to_date = :currentDate AND event.to_time < CAST(:currentTime AS time)))`,
-          { currentDate, currentTime }
-        )
-        .getMany();
-      console.log("eventsToUpdate :", eventsToUpdate.length)
-      // console.log(eventsToUpdate, "eventsToUpdate")
-      if (eventsToUpdate.length > 0) {
-        await this.dataSource
-          .createQueryBuilder()
-          .update(Event)
-          .set({ status: "Completed" })
-          .where("id IN (:...eventIds)", { eventIds: eventsToUpdate.map(event => event.id) })
-          .execute();
+      // const eventsToUpdate = await this.eventRepository
+      //   .createQueryBuilder("event")
+      //   .andWhere(
+      //     `(event.to_date < :currentDate OR (event.to_date = :currentDate AND event.to_time < CAST(:currentTime AS time)))`,
+      //     { currentDate, currentTime }
+      //   )
+      //   .getMany();
+      // console.log("eventsToUpdate :", eventsToUpdate.length)
+      // // console.log(eventsToUpdate, "eventsToUpdate")
+      // if (eventsToUpdate.length > 0) {
+      //   await this.dataSource
+      //     .createQueryBuilder()
+      //     .update(Event)
+      //     .set({ status: "Completed" })
+      //     .where("id IN (:...eventIds)", { eventIds: eventsToUpdate.map(event => event.id) })
+      //     .execute();
 
-        console.log(`✅ Updated ${eventsToUpdate.length} events to "Completed" status.`);
+      //   console.log(`✅ Updated ${eventsToUpdate.length} events to "Completed" status.`);
 
-        await this.notificationRepository
-          .createQueryBuilder()
-          .delete()
-          .where("event_id IN (:...eventIds)", { eventIds: eventsToUpdate.map(event => event.id) })
-          .execute();
-        console.log(`✅ Deleted notifications for completed events.`);
-      }
+      //   await this.notificationRepository
+      //     .createQueryBuilder()
+      //     .delete()
+      //     .where("event_id IN (:...eventIds)", { eventIds: eventsToUpdate.map(event => event.id) })
+      //     .execute();
+      //   console.log(`✅ Deleted notifications for completed events.`);
+      // }
 
       // ✅ 2. Mark events as Running
       const runningEventsToUpdate = await this.dataSource
@@ -97,30 +96,30 @@ export class CronJobManager {
   }
 
 
-  async fetchDailyPushNotifications(): Promise<any> {
-    const pushNotification = AppDataSource.getRepository(PushNotification);
-    const today = new Date();
-    // today.setHours(0, 0, 0, 0);
+  // async fetchDailyPushNotifications(): Promise<any> {
+  //   const pushNotification = AppDataSource.getRepository(PushNotification);
+  //   const today = new Date();
+  //   // today.setHours(0, 0, 0, 0);
 
-    const notifications = await pushNotification.find({
-      where: {
-        scheduledTime: today, // Fetch today's notifications
-      },
-    });
+  //   const notifications = await pushNotification.find({
+  //     where: {
+  //       scheduledTime: today, // Fetch today's notifications
+  //     },
+  //   });
 
-    for (const notif of notifications) {
-      if (notif.topic != "" && notif.topic.length > 2) {
+  //   for (const notif of notifications) {
+  //     if (notif.topic != "" && notif.topic.length > 2) {
 
-        const jobId = await createTopicNotificationJob(notif.title, notif.message, notif.payload, notif.topic, notif.delay)
+  //       const jobId = await createTopicNotificationJob(notif.title, notif.message, notif.payload, notif.topic, notif.delay)
 
-        await pushNotification.update(notif.id, { job_id: jobId });
-      } else {
-        createBatchNotificationJob(notif.title, notif.message, notif.payload, notif.tokens, parseInt(notif.delay))
-      }
-    }
+  //       await pushNotification.update(notif.id, { job_id: jobId });
+  //     } else {
+  //       createBatchNotificationJob(notif.title, notif.message, notif.payload, notif.tokens, parseInt(notif.delay))
+  //     }
+  //   }
 
-    console.log(`✅ Loaded ${notifications.length} notifications into Redis.`);
-  };
+  //   console.log(`✅ Loaded ${notifications.length} notifications into Redis.`);
+  // };
   async cleanupOldNotifications(): Promise<any> {
     const notificationRepo = AppDataSource.getRepository(Notification);
 
@@ -128,9 +127,9 @@ export class CronJobManager {
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
     const oldNotifications = await notificationRepo.find({
-      where: {
-        createdAt: LessThan(fifteenDaysAgo)
-      }
+      // where: {
+      //   createdAt: LessThan(fifteenDaysAgo)
+      // }
     });
 
     if (oldNotifications.length > 0) {

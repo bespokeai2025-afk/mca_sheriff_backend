@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { Notification } from './Notification'; // Adjust the import path as necessary
+// import { Notification } from './Notification'; // Adjust the import path as necessary
 import { Common } from './Common';
 import { User } from './User';
 

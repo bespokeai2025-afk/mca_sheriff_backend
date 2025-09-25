@@ -2,7 +2,7 @@ import { Entity, Column, OneToMany } from "typeorm";
 import { Common } from "./Common"
 import { RefreshToken } from "./RefreshToken"
 import { OTPVerification } from "./OtpVerification";
-import { EventAttendance } from "./EventAttendance";
+// import { EventAttendance } from "./EventAttendance";
 
 // Admin entity representing the administrators in the system
 @Entity()
@@ -37,6 +37,6 @@ export class Admin extends Common {
     otpVerification: OTPVerification
 
     // Relationship with EventAttendance entity
-    @OneToMany(() => EventAttendance, (eventAttendance) => eventAttendance.id)
-    eventAttendance: EventAttendance
+    // @OneToMany(() => EventAttendance, (eventAttendance) => eventAttendance.id)
+    // eventAttendance: EventAttendance
 }

@@ -4,19 +4,17 @@ import { AppDataSource } from "../config/database";
 import { User } from "../entities/User";
 import { deleteUserToken } from "../utils/jwtUtils";
 import { sendEmail } from "../config/mailer";
-import { NotificationService } from "./notification.service";
-import { profileCompletionQueue } from "../workers/notification.worker"
-import { Event } from '../entities/Event'
-import { MainCategory } from '../entities/MainCategory'
-import { Feedback } from "../entities/Feedback";
-const notificationService = new NotificationService();
+// import { NotificationService } from "./notification.service";
+// import { profileCompletionQueue } from "../workers/notification.worker"
+
+// const notificationService = new NotificationService();
 export class UserService {
 
     private userRepository = AppDataSource.getRepository(User);
     private adminRepository = AppDataSource.getRepository(Admin);
     private eventRepository = AppDataSource.getRepository(Event);
-    private mainCategoryRepository = AppDataSource.getRepository(MainCategory);
-    private feedbackRepository = AppDataSource.getRepository(Feedback);
+
+
 
     public async findUser(verifyUser: any, pageSize: number, currentPage: number) {
 
@@ -64,16 +62,12 @@ export class UserService {
 
         const totaluserCount = await this.userRepository.count({ where: whereCondition });
         const eventCount = await this.eventRepository.count({ where: whereCondition });
-        const mainCategoryCount = await this.mainCategoryRepository.count({ where: whereCondition });
-        const feedbackCount = await this.feedbackRepository.count({ where: whereCondition });
         const eventRepositorydata = await this.eventRepository.find({ where: whereCondition });
-        const feedbackRepositorydata = await this.feedbackRepository.find({ where: whereCondition });
         return successWithData("Counts retrieved successfully", {
             totaluserCount,
             eventCount,
-            mainCategoryCount,
-            feedbackCount
-            , eventRepositorydata, feedbackRepositorydata
+    
+             eventRepositorydata
         });
     }
 
@@ -153,19 +147,19 @@ export class UserService {
         await this.userRepository.update(id.toString(), userData);
         console.log('intialize')
 
-        await profileCompletionQueue.add(
-            'sendDelayedWelcomeNotification',
-            {
-                userId: user.id,
-                message: `🔄 Your profile details have been successfully updated`,
+        // await profileCompletionQueue.add(
+        //     'sendDelayedWelcomeNotification',
+        //     {
+        //         userId: user.id,
+        //         message: `🔄 Your profile details have been successfully updated`,
 
-            },
-            {
-                delay: 10 * 1000, // 1 minute delay
-                attempts: 3,
+        //     },
+        //     {
+        //         delay: 10 * 1000, // 1 minute delay
+        //         attempts: 3,
 
-            }
-        );
+        //     }
+        // );
         console.log('intialize2')
 
         return successWithoutData('Your details have been successfully updated');

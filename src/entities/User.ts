@@ -3,14 +3,14 @@ import { Common } from "./Common";
 import { RefreshToken } from "./RefreshToken";
 import { OTPVerification } from "./OtpVerification";
 import { UserReferralCode } from "./UserReferralCode";
-import { RewardsHistory } from "./RewardHistory";
-import { EventAttendance } from "./EventAttendance";
+// import { RewardsHistory } from "./RewardHistory";
+// import { EventAttendance } from "./EventAttendance";
 import { EmailVerification } from "./EmailVerification";
-import { Feedback } from "./Feedback";
-import { EventRegistration } from "./EventRegistration";
-import { Notification } from "./Notification";
-import { NotificationReadReceipt } from "./NotificationReadReceipt";
-import { PushNotification } from "./PushNotification";
+// import { Feedback } from "./Feedback";
+// import { EventRegistration } from "./EventRegistration";
+// import { Notification } from "./Notification";
+// import { NotificationReadReceipt } from "./NotificationReadReceipt";
+// import { PushNotification } from "./PushNotification";
 import { DeviceToken } from "./DeviceToken";
 
 // User entity representing users in the system
@@ -79,49 +79,49 @@ export class User extends Common {
     @OneToOne(() => UserReferralCode)
     userReferralCode: UserReferralCode;
 
-    @OneToMany(() => Feedback, (feedback) => feedback.id)
-    feedback: Feedback;
+    // @OneToMany(() => Feedback, (feedback) => feedback.id)
+    // feedback: Feedback;
 
     // Relationship with RewardsHistory entity
-    @OneToMany(() => RewardsHistory, (rewardHistory) => rewardHistory.id)
-    rewardHistory: RewardsHistory[];
+    // @OneToMany(() => RewardsHistory, (rewardHistory) => rewardHistory.id)
+    // rewardHistory: RewardsHistory[];
 
     // Relationship with RewardsHistory entity
-    @OneToMany(() => RewardsHistory, (referralrewardHistory) => referralrewardHistory.id)
-    referralrewardHistory: RewardsHistory[];
+    // @OneToMany(() => RewardsHistory, (referralrewardHistory) => referralrewardHistory.id)
+    // referralrewardHistory: RewardsHistory[];
 
 
     // Relationship with RewardsHistory entity
-    @OneToMany(() => RewardsHistory, (referrerRewardHistory) => referrerRewardHistory.id)
-    referrerRewardHistory: RewardsHistory[];
+    // @OneToMany(() => RewardsHistory, (referrerRewardHistory) => referrerRewardHistory.id)
+    // referrerRewardHistory: RewardsHistory[];
 
     // Relationship with EventAttendance entity
-    @OneToMany(() => EventAttendance, (eventAttendance) => eventAttendance.id)
-    eventAttendance: EventAttendance;
+    // @OneToMany(() => EventAttendance, (eventAttendance) => eventAttendance.id)
+    // eventAttendance: EventAttendance;
 
     // Relationship with EventAttendance entity
-    @OneToMany(() => EventRegistration, (eventRegistration) => eventRegistration.id)
-    eventRegistration: EventRegistration;
+    // @OneToMany(() => EventRegistration, (eventRegistration) => eventRegistration.id)
+    // eventRegistration: EventRegistration;
 
     // Relationship with EventAttendance entity
-    @OneToMany(() => EventRegistration, (eventRegistrationCancel) => eventRegistrationCancel.id)
-    eventRegistrationCancel: EventRegistration;
+    // @OneToMany(() => EventRegistration, (eventRegistrationCancel) => eventRegistrationCancel.id)
+    // eventRegistrationCancel: EventRegistration;
 
     // Relationship with EventAttendance entity
     @OneToMany(() => EmailVerification, (emailVerification) => emailVerification.id)
     emailVerification: EmailVerification;
     // 
     // Relationship with OTPVerification entity
-    @OneToMany(() => Notification, (notification) => notification.id)
-    notification: Notification;
+    // @OneToMany(() => Notification, (notification) => notification.id)
+    // notification: Notification;
 
     // Relationship with OTPVerification entity
-    @OneToMany(() => NotificationReadReceipt, (readReceipts) => readReceipts.id)
-    readReceipts: NotificationReadReceipt;
+    // @OneToMany(() => NotificationReadReceipt, (readReceipts) => readReceipts.id)
+    // readReceipts: NotificationReadReceipt;
 
     // Relationship with OTPVerification entity
-    @OneToMany(() => PushNotification, (pushNotifications) => pushNotifications.id)
-    pushNotifications: PushNotification;
+    // @OneToMany(() => PushNotification, (pushNotifications) => pushNotifications.id)
+    // pushNotifications: PushNotification;
 
     // Relationship with OTPVerification entity
     @OneToMany(() => DeviceToken, (deviceToken) => deviceToken.id)
