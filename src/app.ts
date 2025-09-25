@@ -7,25 +7,20 @@ import path from 'path';
 // Database configuration
 import { AppDataSource } from './config/database';
 // import { CronJobManager } from "./config/cronJobManager";
-// Import route handlers
 import userRoutes from './routes/user.routes';
 import profileRoutes from './routes/profile.routes';
 import authRoutes from './routes/auth.routes'
 import otpRoutes from './routes/otp.routes'
-
 import adminRoutes from './routes/admin.routes'
 import emailVerificationRoutes from './routes/EmailVerification.routes'
-
 import multerErrorHandler from "./middlewares/multerErrorHandler"; // ✅ Import the middleware
-
 import viewsRoutes from './routes/viewPages.routes'
 // import cron from "node-cron";
-
 import cookieParser from "cookie-parser";
 import limiter from './config/rate-limit';
-
 import callOutputDataRoutes from './routes/callOutputDataUser.routes'
 import CRMDataRoutes from './routes/crmdata.routes'
+import DashboardRoutes from './routes/dashboard.routes'
 // Load environment variables
 dotenv.config()
 import { logRequest, logResponse, logError } from "./logger";
@@ -75,7 +70,7 @@ app.use('/api/user', otpRoutes) // OTP verification routes
 app.use('/admin', adminRoutes) // Admin routes
 
 app.use('/call-output-data', callOutputDataRoutes)
-app.use('/crm-data', CRMDataRoutes)
+app.use('/dashboard', DashboardRoutes)
 
 app.use(multerErrorHandler);
 

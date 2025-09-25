@@ -1,53 +1,61 @@
-// services/dashboard.service.ts
 import { AppDataSource } from "../config/database";
 import { CallOutputData } from "../entities/CallOutputData";
 
 export class DashboardService {
-  //  1. Total Calls Minutes
-  static async getTotalCallMinutes(): Promise<number> {
-    const result = await AppDataSource
-      .getRepository(CallOutputData)
-      .createQueryBuilder("cod")
-      .select("SUM(cod.duration)", "totalMinutes")
+
+  private static getStartDate(months: number): Date {
+    const date = new Date();
+    date.setMonth(date.getMonth() - months);
+    return date;
+  }
+
+  // Total Call Minutes
+  static async getTotalCallMinutes(months: number): Promise<number> {
+    const startDate = this.getStartDate(months);
+    const result = await AppDataSource.getRepository(CallOutputData)
+      .createQueryBuilder("call")
+      .select("SUM(call.duration_ms)", "totalMinutes")
+      .where("call.\"createdAt\" >= :startDate", { startDate })  // <-- fix here
       .getRawOne();
 
     return Number(result?.totalMinutes || 0);
   }
 
-  //  2. Number of Calls
-  static async getNumberOfCalls(): Promise<number> {
-    const result = await AppDataSource
-      .getRepository(CallOutputData)
-      .createQueryBuilder("cod")
+  // Number of Calls
+  static async getNumberOfCalls(months: number): Promise<number> {
+    const startDate = this.getStartDate(months);
+    return AppDataSource.getRepository(CallOutputData)
+      .createQueryBuilder("call")
+      .where("call.\"createdAt\" >= :startDate", { startDate })  // <-- fix here
       .getCount();
-
-    return result;
   }
 
-  // 3. Leads (assuming leads are stored in CallOutputData with type = 'lead')
-  static async getLeadsCount(): Promise<number> {
-    const result = await AppDataSource
-      .getRepository(CallOutputData)
-      .createQueryBuilder("cod")
-      .where("cod.type = :type", { type: "lead" }) // adjust field name if different
+  // Leads (positive sentiment only)
+  static async getLeads(months: number): Promise<number> {
+    const startDate = this.getStartDate(months);
+    return AppDataSource.getRepository(CallOutputData)
+      .createQueryBuilder("call")
+      .where("call.\"createdAt\" >= :startDate", { startDate })  // <-- fix here
+      .andWhere("call.sentiment_analysis = :sentiment", { sentiment: "positive" })
       .getCount();
-
-    return result;
   }
 
-  //  4. Call Performance (group by month with positive/neutral counts)
-  static async getCallPerformance(): Promise<
-    { month: string; positive: number; neutral: number }[]
+  // Call Performance
+  static async getCallPerformance(months: number): Promise<
+    { month: string; positive: number; neutral: number; negative: number }[]
   > {
+    const startDate = this.getStartDate(months);
     const result = await AppDataSource.query(`
       SELECT 
-        TO_CHAR(cod.created_at, 'Mon') AS month,
-        SUM(CASE WHEN cod.sentiment = 'positive' THEN 1 ELSE 0 END) AS positive,
-        SUM(CASE WHEN cod.sentiment = 'neutral' THEN 1 ELSE 0 END) AS neutral
-      FROM call_output_data cod
-      GROUP BY TO_CHAR(cod.created_at, 'Mon'), DATE_PART('month', cod.created_at)
-      ORDER BY DATE_PART('month', cod.created_at)
-    `);
+        TO_CHAR("createdAt", 'Mon') AS month,
+        SUM(CASE WHEN sentiment_analysis = 'positive' THEN 1 ELSE 0 END) AS positive,
+        SUM(CASE WHEN sentiment_analysis = 'neutral' THEN 1 ELSE 0 END) AS neutral,
+        SUM(CASE WHEN sentiment_analysis = 'negative' THEN 1 ELSE 0 END) AS negative
+      FROM call_output_data
+      WHERE "createdAt" >= $1
+      GROUP BY TO_CHAR("createdAt", 'Mon'), DATE_PART('month', "createdAt")
+      ORDER BY DATE_PART('month', "createdAt")
+    `, [startDate]);
 
     return result;
   }
