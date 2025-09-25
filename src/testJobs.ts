@@ -2,9 +2,9 @@
 // import { redisConfig } from './config/redis';
 
 import { AppDataSource } from "./config/database";
-import { PushNotificationService } from "./services/pushNotification.service";
-import { createBatchNotificationJob, createTopicNotificationJob } from "./workers/notification.worker";
-import { PushNotification } from "./entities/PushNotification";
+// import { PushNotificationService } from "./services/pushNotification.service";
+// import { createBatchNotificationJob, createTopicNotificationJob } from "./workers/notification.worker";
+// import { PushNotification } from "./entities/PushNotification";
 
 // const pushNotificationService = new PushNotificationService();
 
@@ -19,7 +19,7 @@ const addTestJobs = async () => {
     ]
     const duration = 10
 
-    await createTopicNotificationJob(title, body, data, topic, "10");
+    // await createTopicNotificationJob(title, body, data, topic, "10");
     // await createBatchNotificationJob(title, body, data, tokens, 10);
 
 

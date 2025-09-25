@@ -1,5 +1,5 @@
 import { AppDataSource } from "../config/database";
-import { UserReferralCode } from "../entities/UserReferralCode";
+// import { UserReferralCode } from "../entities/UserReferralCode";
 import { errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
 import { User } from "../entities/User";
 
@@ -15,7 +15,7 @@ const deviceTokenService = new DeviceTokenService();
 // const pushNotificationService = new PushNotificationService();
 
 export class ReferralCodeService {
-    private userReferralCodeRepository = AppDataSource.getRepository(UserReferralCode)
+    // private userReferralCodeRepository = AppDataSource.getRepository(UserReferralCode)
     private userRepository = AppDataSource.getRepository(User)
     // private rewardHistoryRepository = AppDataSource.getRepository(RewardsHistory)
 
@@ -309,156 +309,156 @@ export class ReferralCodeService {
     //     // await notificationService.sendGeneralNotification(user.id, payload.notificationMessage);
     // }
 
-    public async createReferralCode(id: string, verifyUser: any): Promise<any> {
+    // public async createReferralCode(id: string, verifyUser: any): Promise<any> {
 
-        let user = await this.userRepository.findOneBy({ id })
+    //     let user = await this.userRepository.findOneBy({ id })
 
-        if (!user) {
-            return errorWithoutData('Invalid User')
-        }
-
-
-        if (verifyUser.user_exist != null && user.id != verifyUser.user_exist.id) {
-            return errorWithoutData('User is not authorized to create referral code')
-        }
-
-        if (verifyUser.admin_exist) {
-            return errorWithoutData('Admin is not authorized to create referral code')
-        }
-
-        let referral_code = await this.userReferralCodeRepository.findOne({ where: { user_id: { id: user.id } }, relations: ['user_id'] })
-
-        if (referral_code) {
-            return errorWithoutData('referral code already generated')
-        }
-
-        const new_referral_code = crypto.randomBytes(4).toString('hex').toUpperCase()
-
-        const new_code = await this.userReferralCodeRepository.create({ user_id: { id: user.id }, referral_code: new_referral_code, default_reward_coins: 50 })
-
-        await this.userReferralCodeRepository.save(new_code);
-
-        return successWithData('User Referral code Created Successfully', { referral_code: new_referral_code });
-
-    }
-
-    public async findReferralCodes(verifyUser: any, pageSize: number, currentPage: number) {
-
-        if (verifyUser.user_exist) {
-            return errorWithoutData("Users are not authorized to view referral codes")
-        }
-
-        let whereCondition = {};
-
-        const [referralCodes, totalItems] = await this.userReferralCodeRepository.findAndCount({
-            where: whereCondition,
-            order: { createdAt: 'DESC' },
-            skip: (currentPage - 1) * pageSize,
-            take: pageSize,
-            relations: ['user_id']
-        });
-
-        const totalPages = Math.ceil(totalItems / pageSize);
-
-        if (totalItems >= 1 && totalPages < currentPage) {
-            return errorWithoutData("Page limit exceeded")
-        }
-
-        return successWithData("all referral codes", referralCodes, {
-            totalItems,
-            totalPages,
-            currentPage,
-            pageSize
-        });
-    }
-
-    public async findReferralCodeById(id: string, verifyUser: any) {
-
-        let referralCode;
-        if (verifyUser.user_exist) {
-            referralCode = await this.userReferralCodeRepository.findOne({ where: { id, isActive: true, isDeleted: false }, relations: ['user_id'] });
-        } else {
-            referralCode = await this.userReferralCodeRepository.findOne({ where: { id, }, relations: ['user_id'] });
-        }
-
-        if (!referralCode) {
-            return errorWithoutData("Referral code not found");
-        }
-
-        return successWithData("Referral code found", referralCode);
-    }
-
-    public async findReferralCodeByUserId(id: string, verifyUser: any) {
-
-        const user = await this.userRepository.findOneBy({ id })
-        if (!user) {
-            return errorWithoutData("User not found");
-        }
-
-        let referralCode;
-        if (verifyUser.user_exist) {
-            referralCode = await this.userReferralCodeRepository.find({ where: { user_id: { id: user.id }, isActive: true, isDeleted: false }, relations: ['user_id'] });
-        } else {
-            referralCode = await this.userReferralCodeRepository.find({ where: { user_id: { id: user.id }, }, relations: ['user_id'] });
-        }
-
-        if (referralCode.length <= 0) {
-            return errorWithoutData("Referral code not found");
-        }
-
-        return successWithData("Referral code found", referralCode);
-    }
-    public async findReferralCodeByCode(code: string, verifyUser: any) {
-
-        let referralCode;
-        if (verifyUser.user_exist) {
-            referralCode = await this.userReferralCodeRepository.find({ where: { referral_code: code, isActive: true, isDeleted: false }, relations: ['user_id'] });
-        } else {
-            referralCode = await this.userReferralCodeRepository.find({ where: { referral_code: code }, relations: ['user_id'] });
-        }
-
-        if (referralCode.length <= 0) {
-            return errorWithoutData("Referral code not found");
-        }
-
-        return successWithData("Referral code found", referralCode);
-    }
-
-    public async updateReferralCode(id: string, data: { [key: string]: any }, verifyUser: any) {
-        if (verifyUser.user_exist) {
-            return errorWithoutData("User cannot update referral code")
-        }
-
-        const referralCode = await this.userReferralCodeRepository.findOne({ where: { id, isActive: true, isDeleted: false } });
-
-        if (!referralCode) {
-            return errorWithoutData("Referral code not found");
-        }
-
-        await this.userReferralCodeRepository.update(id, data);
-        return successWithoutData("Referral code updated successfully");
-    }
-
-    public async deleteReferralCode(id: string, verifyUser: any) {
-
-        if (verifyUser.user_exist) {
-            return errorWithoutData("User cannot delete referral code")
-        }
-
-        const referralCode = await this.userReferralCodeRepository.findOne({ where: { id, isActive: true, isDeleted: false } });
-
-        if (!referralCode) {
-            return errorWithoutData("Referral code not found");
-        }
-
-        referralCode.isDeleted = true;
-
-        referralCode.isActive = false;
+    //     if (!user) {
+    //         return errorWithoutData('Invalid User')
+    //     }
 
 
-        await this.userReferralCodeRepository.save(referralCode);
-        return successWithoutData("Referral code deleted successfully");
-    }
+    //     if (verifyUser.user_exist != null && user.id != verifyUser.user_exist.id) {
+    //         return errorWithoutData('User is not authorized to create referral code')
+    //     }
+
+    //     if (verifyUser.admin_exist) {
+    //         return errorWithoutData('Admin is not authorized to create referral code')
+    //     }
+
+    //     let referral_code = await this.userReferralCodeRepository.findOne({ where: { user_id: { id: user.id } }, relations: ['user_id'] })
+
+    //     if (referral_code) {
+    //         return errorWithoutData('referral code already generated')
+    //     }
+
+    //     const new_referral_code = crypto.randomBytes(4).toString('hex').toUpperCase()
+
+    //     const new_code = await this.userReferralCodeRepository.create({ user_id: { id: user.id }, referral_code: new_referral_code, default_reward_coins: 50 })
+
+    //     await this.userReferralCodeRepository.save(new_code);
+
+    //     return successWithData('User Referral code Created Successfully', { referral_code: new_referral_code });
+
+    // }
+
+    // public async findReferralCodes(verifyUser: any, pageSize: number, currentPage: number) {
+
+    //     if (verifyUser.user_exist) {
+    //         return errorWithoutData("Users are not authorized to view referral codes")
+    //     }
+
+    //     let whereCondition = {};
+
+    //     const [referralCodes, totalItems] = await this.userReferralCodeRepository.findAndCount({
+    //         where: whereCondition,
+    //         order: { createdAt: 'DESC' },
+    //         skip: (currentPage - 1) * pageSize,
+    //         take: pageSize,
+    //         relations: ['user_id']
+    //     });
+
+    //     const totalPages = Math.ceil(totalItems / pageSize);
+
+    //     if (totalItems >= 1 && totalPages < currentPage) {
+    //         return errorWithoutData("Page limit exceeded")
+    //     }
+
+    //     return successWithData("all referral codes", referralCodes, {
+    //         totalItems,
+    //         totalPages,
+    //         currentPage,
+    //         pageSize
+    //     });
+    // }
+
+    // public async findReferralCodeById(id: string, verifyUser: any) {
+
+    //     let referralCode;
+    //     if (verifyUser.user_exist) {
+    //         referralCode = await this.userReferralCodeRepository.findOne({ where: { id, isActive: true, isDeleted: false }, relations: ['user_id'] });
+    //     } else {
+    //         referralCode = await this.userReferralCodeRepository.findOne({ where: { id, }, relations: ['user_id'] });
+    //     }
+
+    //     if (!referralCode) {
+    //         return errorWithoutData("Referral code not found");
+    //     }
+
+    //     return successWithData("Referral code found", referralCode);
+    // }
+
+    // public async findReferralCodeByUserId(id: string, verifyUser: any) {
+
+    //     const user = await this.userRepository.findOneBy({ id })
+    //     if (!user) {
+    //         return errorWithoutData("User not found");
+    //     }
+
+    //     let referralCode;
+    //     if (verifyUser.user_exist) {
+    //         referralCode = await this.userReferralCodeRepository.find({ where: { user_id: { id: user.id }, isActive: true, isDeleted: false }, relations: ['user_id'] });
+    //     } else {
+    //         referralCode = await this.userReferralCodeRepository.find({ where: { user_id: { id: user.id }, }, relations: ['user_id'] });
+    //     }
+
+    //     if (referralCode.length <= 0) {
+    //         return errorWithoutData("Referral code not found");
+    //     }
+
+    //     return successWithData("Referral code found", referralCode);
+    // }
+    // public async findReferralCodeByCode(code: string, verifyUser: any) {
+
+    //     let referralCode;
+    //     if (verifyUser.user_exist) {
+    //         referralCode = await this.userReferralCodeRepository.find({ where: { referral_code: code, isActive: true, isDeleted: false }, relations: ['user_id'] });
+    //     } else {
+    //         referralCode = await this.userReferralCodeRepository.find({ where: { referral_code: code }, relations: ['user_id'] });
+    //     }
+
+    //     if (referralCode.length <= 0) {
+    //         return errorWithoutData("Referral code not found");
+    //     }
+
+    //     return successWithData("Referral code found", referralCode);
+    // }
+
+    // public async updateReferralCode(id: string, data: { [key: string]: any }, verifyUser: any) {
+    //     if (verifyUser.user_exist) {
+    //         return errorWithoutData("User cannot update referral code")
+    //     }
+
+    //     const referralCode = await this.userReferralCodeRepository.findOne({ where: { id, isActive: true, isDeleted: false } });
+
+    //     if (!referralCode) {
+    //         return errorWithoutData("Referral code not found");
+    //     }
+
+    //     await this.userReferralCodeRepository.update(id, data);
+    //     return successWithoutData("Referral code updated successfully");
+    // }
+
+    // public async deleteReferralCode(id: string, verifyUser: any) {
+
+    //     if (verifyUser.user_exist) {
+    //         return errorWithoutData("User cannot delete referral code")
+    //     }
+
+    //     const referralCode = await this.userReferralCodeRepository.findOne({ where: { id, isActive: true, isDeleted: false } });
+
+    //     if (!referralCode) {
+    //         return errorWithoutData("Referral code not found");
+    //     }
+
+    //     referralCode.isDeleted = true;
+
+    //     referralCode.isActive = false;
+
+
+    //     await this.userReferralCodeRepository.save(referralCode);
+    //     return successWithoutData("Referral code deleted successfully");
+    // }
 
 }
 
