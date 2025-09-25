@@ -1,13 +1,7 @@
-/**
- * Service for handling faq business logic
- * Handles database operations and business rules for main categories
- */
 import { DeepPartial } from "typeorm";
 import { errorWithData, errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
 import { AppDataSource } from "../config/database";
 import path from "path";
-
-// Import AWS S3 related dependencies
 import fs from 'fs';
 import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
