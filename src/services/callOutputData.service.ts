@@ -110,7 +110,7 @@ export class callOutputDataService {
     }
 
     public async createCallOutputData(reqBody: any) {
-  try {
+    try {
     let raw = reqBody.raw_data;
 
     // 1️⃣ Parse JSON string if raw_data is a string
