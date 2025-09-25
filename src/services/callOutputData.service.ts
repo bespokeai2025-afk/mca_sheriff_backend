@@ -14,7 +14,7 @@ export class callOutputDataService {
         private CRMDataRepository = AppDataSource.getRepository(CRMData);
     private callOutputRepository = AppDataSource.getRepository(CallOutputData);
     private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
-   
+
     public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
 
 
@@ -22,11 +22,10 @@ export class callOutputDataService {
         if (verifyUser.user_exist) {
             whereCondition = { isActive: true, isDeleted: false };
         }
-        if(verifyUser.admin_exist)
-            {
-        
-                whereCondition = {isDeleted: false };
-    
+        if (verifyUser.admin_exist) {
+
+            whereCondition = { isDeleted: false };
+
         }
 
         const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
@@ -50,6 +49,66 @@ export class callOutputDataService {
         });
 
     } 
+
+     public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
+        try {
+            let whereCondition: any = {};
+            if (verifyUser.user_exist) {
+                whereCondition = { isActive: true, isDeleted: false };
+            }
+            if (verifyUser.admin_exist) {
+                whereCondition = { isDeleted: false };
+            }
+
+            // Fetch paginated results
+            const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
+                where: whereCondition,
+                order: { createdAt: 'DESC' },
+                skip: (currentPage - 1) * pageSize,
+                take: pageSize
+            });
+
+            const totalPages = Math.ceil(totalItems / pageSize);
+
+            if (totalItems >= 1 && totalPages < currentPage) {
+                return errorWithoutData("Page limit exceeded");
+            }
+
+            // 🔹 Count only positive & neutral sentimentAnalysis
+            const sentimentCounts = await this.callOutputRepository
+                .createQueryBuilder("call")
+                .select("call.sentimentAnalysis", "sentimentAnalysis")
+                .addSelect("COUNT(*)", "count")
+                .where(whereCondition)
+                .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["positive", "neutral"] })
+                .groupBy("call.sentimentAnalysis")
+                .getRawMany();
+
+            // 🔹 Count callStatus distribution
+            const statusCounts = await this.callOutputRepository
+                .createQueryBuilder("call")
+                .select("call.callStatus", "callStatus")
+                .addSelect("COUNT(*)", "count")
+                .where(whereCondition)
+                .groupBy("call.callStatus")
+                .getRawMany();
+
+            return successWithData("User call detail Count", mainCategories, {
+                totalItems,
+                totalPages,
+                currentPage,
+                pageSize,
+                sentimentCounts,
+                statusCounts
+            } as any); // quick fix
+
+
+        } catch (error) {
+            console.error("Error in getUserCallData:", error);
+            return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
+        }
+    }
+
     public async createCallOutputData(reqBody: any) {
   try {
     let raw = reqBody.raw_data;
@@ -212,7 +271,7 @@ export class callOutputDataService {
         await this.historyRepository.save(historyRecord);
 
         return successWithoutData("call output data updated successfully");
-    }   
+    }
     public async deletefaq(id: string, verifyUser: any) {
         if (verifyUser.user_exist) {
             return errorWithoutData("user cann't update attendance")
@@ -228,5 +287,5 @@ export class callOutputDataService {
 
         return successWithoutData(" faq soft deleted successfully");
     }
-   
+
 }

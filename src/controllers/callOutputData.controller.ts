@@ -26,6 +26,33 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+
+export const getUserCallDataCount = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const verifyUser = req.user; // assume auth middleware sets this
+        if (!verifyUser) {
+            return res.status(401).json(errorWithoutData("Unauthorized"));
+        }
+
+        // Parse pagination query params
+        const pageSize = parseInt(req.query.pageSize as string) || 10;
+        const currentPage = parseInt(req.query.currentPage as string) || 1;
+
+        // Call service
+        const result = await calloutputdataservice.getUserCallDataCount(verifyUser, pageSize, currentPage);
+
+        // Send the service response directly
+        return res.status(200).json(result);
+
+    } catch (error) {
+        console.error(" Error in getUserCallData controller:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+            data: { error: (error as Error).message }
+        });
+    }
+};
+
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
