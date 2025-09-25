@@ -5,19 +5,19 @@ import { User } from "../entities/User";
 
 import crypto from 'crypto'
 import { deleteUserToken } from "../utils/jwtUtils";
-import { RewardsHistory } from "../entities/RewardHistory";
-import { NotificationService } from "./notification.service";
-import { createBatchNotificationJob, createTopicNotificationJob } from "../workers/notification.worker";
+// import { RewardsHistory } from "../entities/RewardHistory";
+// import { NotificationService } from "./notification.service";
+// import { createBatchNotificationJob, createTopicNotificationJob } from "../workers/notification.worker";
 import { DeviceTokenService } from "./deviceToken.service";
-import { PushNotificationService } from "./pushNotification.service";
-const notificationService = new NotificationService();
+// import { PushNotificationService } from "./pushNotification.service";
+// const notificationService = new NotificationService();
 const deviceTokenService = new DeviceTokenService();
-const pushNotificationService = new PushNotificationService();
+// const pushNotificationService = new PushNotificationService();
 
 export class ReferralCodeService {
     private userReferralCodeRepository = AppDataSource.getRepository(UserReferralCode)
     private userRepository = AppDataSource.getRepository(User)
-    private rewardHistoryRepository = AppDataSource.getRepository(RewardsHistory)
+    // private rewardHistoryRepository = AppDataSource.getRepository(RewardsHistory)
 
     // public async verifyReferralCode(mobile: string, referralCode: string, verifyUser: any): Promise<any> {
 
@@ -236,78 +236,78 @@ export class ReferralCodeService {
     //     return successWithData("Referral code is valid", { referralCode: code.referral_code, reward: rewardCoins });
     // }
 
-    public async verifyReferralCode(mobile: string, referralCode: string, verifyUser: any): Promise<any> {
-        const user = await this.userRepository.findOneBy({ mobile });
-        if (!user || user.id !== verifyUser.user_exist.id) return errorWithoutData("Invalid user or not authenticated");
+    // public async verifyReferralCode(mobile: string, referralCode: string, verifyUser: any): Promise<any> {
+    //     const user = await this.userRepository.findOneBy({ mobile });
+    //     if (!user || user.id !== verifyUser.user_exist.id) return errorWithoutData("Invalid user or not authenticated");
 
-        const code = await this.userReferralCodeRepository.findOne({ where: { referral_code: referralCode }, relations: ["user_id"] });
-        if (!code || code.user_id.id === user.id || !code.isActive || code.isDeleted) return errorWithoutData("Invalid referral code");
+    //     const code = await this.userReferralCodeRepository.findOne({ where: { referral_code: referralCode }, relations: ["user_id"] });
+    //     if (!code || code.user_id.id === user.id || !code.isActive || code.isDeleted) return errorWithoutData("Invalid referral code");
 
-        const userHistory = await this.userRepository.findOne({ where: { id: user.id, isJoiningRewardClaimed: true } });
+    //     const userHistory = await this.userRepository.findOne({ where: { id: user.id, isJoiningRewardClaimed: true } });
 
-        if (userHistory) return successWithoutData("This user has already claimed the referral reward for joining.");
+    //     if (userHistory) return successWithoutData("This user has already claimed the referral reward for joining.");
 
-        const rewardCoins = code.default_reward_coins;
-        await this.rewardHistoryRepository.save(this.rewardHistoryRepository.create({
-            user_id: user, referred_user_id: code.user_id, transaction_type: "Earned",
-            amount: rewardCoins, reward_type: "referral", description: "Referral Coins added"
-        }));
+    //     const rewardCoins = code.default_reward_coins;
+    //     await this.rewardHistoryRepository.save(this.rewardHistoryRepository.create({
+    //         user_id: user, referred_user_id: code.user_id, transaction_type: "Earned",
+    //         amount: rewardCoins, reward_type: "referral", description: "Referral Coins added"
+    //     }));
 
-        user.coins += rewardCoins;
-        user.isJoiningRewardClaimed = true;
-        await this.userRepository.save(user);
-        await this.sendRewardNotification(user, rewardCoins, "You've earned coins for using a referral code!", verifyUser);
-        await notificationService.sendGeneralNotification(
-            user.id,
-            `🎉 You've earned ${rewardCoins} coins for using a referral code!`
-        );
-        const referrer = await this.userRepository.findOneBy({ id: code.user_id.id });
-        if (!referrer) return errorWithoutData("Referred user not found");
+    //     user.coins += rewardCoins;
+    //     user.isJoiningRewardClaimed = true;
+    //     await this.userRepository.save(user);
+    //     await this.sendRewardNotification(user, rewardCoins, "You've earned coins for using a referral code!", verifyUser);
+    //     await notificationService.sendGeneralNotification(
+    //         user.id,
+    //         `🎉 You've earned ${rewardCoins} coins for using a referral code!`
+    //     );
+    //     const referrer = await this.userRepository.findOneBy({ id: code.user_id.id });
+    //     if (!referrer) return errorWithoutData("Referred user not found");
 
-        referrer.coins += rewardCoins;
-        await this.userRepository.save(referrer);
-        await this.rewardHistoryRepository.save(this.rewardHistoryRepository.create({
-            user_id: referrer, referrer_id: user, transaction_type: "Earned",
-            amount: rewardCoins, reward_type: "referral", description: "Referral coins for referring a user"
-        }));
-        await this.sendRewardNotification(referrer, rewardCoins, `New user joined using your referral link!`, verifyUser);
-        await notificationService.sendGeneralNotification(
-            referrer.id,
+    //     referrer.coins += rewardCoins;
+    //     await this.userRepository.save(referrer);
+    //     await this.rewardHistoryRepository.save(this.rewardHistoryRepository.create({
+    //         user_id: referrer, referrer_id: user, transaction_type: "Earned",
+    //         amount: rewardCoins, reward_type: "referral", description: "Referral coins for referring a user"
+    //     }));
+    //     await this.sendRewardNotification(referrer, rewardCoins, `New user joined using your referral link!`, verifyUser);
+    //     await notificationService.sendGeneralNotification(
+    //         referrer.id,
 
-            `🎉 You've earned ${code.default_reward_coins} coins for referring a new user!`
-        );
-        return successWithData("Referral code is valid", { referralCode: code.referral_code, reward: rewardCoins });
-    }
+    //         `🎉 You've earned ${code.default_reward_coins} coins for referring a new user!`
+    //     );
+    //     return successWithData("Referral code is valid", { referralCode: code.referral_code, reward: rewardCoins });
+    // }
 
-    private async sendRewardNotification(user: any, rewardCoins: number, message: string, verifyUser: any) {
-        const deviceToken = await deviceTokenService.findByUserId(user.id, verifyUser);
-        console.log('dgrdtrter')
-        if (!deviceToken || !deviceToken.data || typeof deviceToken.data !== "object") return;
+    // private async sendRewardNotification(user: any, rewardCoins: number, message: string, verifyUser: any) {
+    //     const deviceToken = await deviceTokenService.findByUserId(user.id, verifyUser);
+    //     console.log('dgrdtrter')
+    //     if (!deviceToken || !deviceToken.data || typeof deviceToken.data !== "object") return;
 
-        const token = (deviceToken.data as { token?: string }).token;
-        if (!token) return;
+    //     const token = (deviceToken.data as { token?: string }).token;
+    //     if (!token) return;
 
-        const payload = {
-            notificationType: "reward_earned",
-            notificationTitle: "New Reward Earned",
-            notificationMessage: `🎉 ${message} You've earned ${rewardCoins} coins!`,
-            rewardAmount: String(rewardCoins)
-        };
-        console.log('payload', payload)
-        await pushNotificationService.create({
-            title: "New Reward Earned",
-            message: payload.notificationMessage,
-            payload,
-            tokens: [token],
-            scheduledTime: new Date().toISOString().split('T')[0]
-        });
+    //     const payload = {
+    //         notificationType: "reward_earned",
+    //         notificationTitle: "New Reward Earned",
+    //         notificationMessage: `🎉 ${message} You've earned ${rewardCoins} coins!`,
+    //         rewardAmount: String(rewardCoins)
+    //     };
+    //     console.log('payload', payload)
+    //     await pushNotificationService.create({
+    //         title: "New Reward Earned",
+    //         message: payload.notificationMessage,
+    //         payload,
+    //         tokens: [token],
+    //         scheduledTime: new Date().toISOString().split('T')[0]
+    //     });
 
-        const tokens = [token];
+    //     const tokens = [token];
 
-        await createBatchNotificationJob("New Reward Earned", payload.notificationMessage, payload, tokens, 0);
+    //     await createBatchNotificationJob("New Reward Earned", payload.notificationMessage, payload, tokens, 0);
 
-        // await notificationService.sendGeneralNotification(user.id, payload.notificationMessage);
-    }
+    //     // await notificationService.sendGeneralNotification(user.id, payload.notificationMessage);
+    // }
 
     public async createReferralCode(id: string, verifyUser: any): Promise<any> {
 
