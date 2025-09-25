@@ -183,6 +183,32 @@ public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) 
             }
         }
 
+        // if (tasks.length > 0) {
+        //     const payload = {
+        //         from_number: "+18326624593",
+        //         tasks: tasks,
+        //         llm_id: "default",
+        //         voice_id: "voice-1",
+        //         retell_llm_dynamic_variables: {
+        //             greeting: "Hello, this is a test call from Retell!"
+        //         }
+        //     };
+
+        //     const response = await axios.post(
+        //         "https://api.retellai.com/create-batch-call",
+        //         payload,
+        //         {
+        //             headers: {
+        //                 Authorization: "Bearer key_356dc6fbbd933c9b159e0411e4fa",
+        //                 "Content-Type": "application/json"
+        //             }
+        //         }
+        //     );
+
+        //     retellResponse = response.data;
+        //     console.log("RetellAI response:", response.data);
+        // }
+
         if (tasks.length > 0) {
             const payload = {
                 from_number: "+18326624593",
@@ -194,20 +220,36 @@ public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) 
                 }
             };
 
-            const response = await axios.post(
-                "https://api.retellai.com/create-batch-call",
-                payload,
-                {
-                    headers: {
-                        Authorization: "Bearer key_356dc6fbbd933c9b159e0411e4fa",
-                        "Content-Type": "application/json"
+            try {
+                const response = await axios.post(
+                    "https://api.retellai.com/create-batch-call",
+                    payload,
+                    {
+                        headers: {
+                            Authorization: "Bearer key_356dc6fbbd933c9b159e0411e4fa",
+                            "Content-Type": "application/json"
+                        }
                     }
-                }
-            );
+                );
 
-            retellResponse = response.data;
-            console.log("RetellAI response:", response.data);
+                retellResponse = response.data;
+                console.log("✅ RetellAI response:", response.data);
+
+            } catch (error: any) {
+                if (error.response) {
+                    console.error("❌ RetellAI API Error:", {
+                        status: error.response.status,
+                        data: error.response.data
+                    });
+                } else if (error.request) {
+                    console.error("❌ No response received from RetellAI:", error.request);
+                } else {
+                    console.error("❌ Error creating batch call:", error.message);
+                }
+            }
         }
+
+
     } catch (error: any) {
         console.error("RetellAI API error:", error?.response?.data || error.message);
     }

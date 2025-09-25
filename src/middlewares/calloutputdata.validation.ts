@@ -9,11 +9,7 @@ export const validateCallOutputData = [
     .notEmpty().withMessage("CRM Data ID is required.")
     .isUUID().withMessage("CRM Data ID must be a valid UUID"),
 
-//   body("sentiment_analysis")
-//     .notEmpty().withMessage("Sentiment analysis is required.")
-//     .isString().withMessage("Sentiment analysis must be a string")
-//     .trim()
-//     .escape(),
+
 
 //   body("end_reason")
 //     .notEmpty().withMessage("End reason is required.")

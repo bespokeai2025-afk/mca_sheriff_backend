@@ -71,30 +71,53 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
  * @param res - Express response object
  * @returns JSON response with the created faq or error
  */
-export const createCallOutputData = async (req: Request, res: Response): Promise<any> => {
+// export const createCallOutputData = async (req: Request, res: Response): Promise<any> => {
 
-    try {
-    //     //if (!req.user) {
-    //         const response = errorWithoutData("Authentication failed");
-    //         return res.status(response.result ? 200 : 400).json(response);
-    //    // }
-    //     const user = await adminRepository.findOneBy({ id: req.user.id })
+//     try {
+//     //     //if (!req.user) {
+//     //         const response = errorWithoutData("Authentication failed");
+//     //         return res.status(response.result ? 200 : 400).json(response);
+//     //    // }
+//     //     const user = await adminRepository.findOneBy({ id: req.user.id })
 
-    //     if (!user) {
-    //         const response = errorWithoutData('only admin can create a faq');
-    //         return res.status(response.result ? 200 : 400).json(response);
-    //     }
+//     //     if (!user) {
+//     //         const response = errorWithoutData('only admin can create a faq');
+//     //         return res.status(response.result ? 200 : 400).json(response);
+//     //     }
 
         
 
-        const data = { ...req.body};
+//         const data = { ...req.body};
 
-        const response = await calloutputdataservice.createCallOutputData(data);
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData("something went wrong", { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
+//         const response = await calloutputdataservice.createCallOutputData(data);
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData("something went wrong", { error: error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
+export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // 🔍 Log the full request body
+    console.log("👉 Incoming Request Body:", req.body, null, 2);
+
+    // 🔍 If you only care about raw_data
+    if (req.body.raw_data) {
+      console.log("👉 Raw Data Payload:", req.body.raw_data);
     }
+
+    const response = await calloutputdataservice.createCallOutputData(req.body);
+
+    // 🔍 Log service response before sending
+    console.log("✅ Service Response:", response);
+
+    res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    console.error("❌ Error creating call output data:", error);
+
+    const response = errorWithData("Something went wrong", { error });
+    res.status(400).json(response);
+  }
 };
 
 /**

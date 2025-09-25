@@ -29,10 +29,6 @@ export class CallOutputHistoryData extends Common {
     
     // Description of the main category
     @Column({ type: 'text', nullable: false })
-    sentiment_analysis: string;
-
-    // Description of the main category
-    @Column({ type: 'text', nullable: false })
     end_reason: string;
 
    @Column({

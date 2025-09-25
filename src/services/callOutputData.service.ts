@@ -2,7 +2,7 @@
  * Service for handling faq business logic
  * Handles database operations and business rules for main categories
  */
-
+import { DeepPartial } from "typeorm";
 import { errorWithData, errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
 import { AppDataSource } from "../config/database";
 import path from "path";
@@ -13,7 +13,7 @@ import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CallOutputData } from "../entities/CallOutputData";
 import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
-
+import { mapCallOutputData } from "../utils/mapper";
 
 export class callOutputDataService {
     // Repository for faq database operations
@@ -101,21 +101,105 @@ export class callOutputDataService {
     //     return successWithData("call output data created successfully", faq);
 
     // }
-public async createCallOutputData(Data: object) {
-    // Create a new entity instance
-    const newfaq = await this.faqRepository.create(Data);
+// public async createCallOutputData(Data: object) {
+//     const newfaq = await this.faqRepository.create(Data);
+//     console.log("call dataaaaaaaaaaaaaa", newfaq);
+//     // Save to DB
+//     const faq = await this.faqRepository.save(newfaq);
 
-   
-    console.log("call dataaaaaaaaaaaaaa", newfaq);
+//     if (!faq) {
+//         return errorWithoutData("faq not created");
+//     }
 
-    // Save to DB
-    const faq = await this.faqRepository.save(newfaq);
+//     return successWithData("call output data created successfully", faq);
+// }
 
-    if (!faq) {
-        return errorWithoutData("faq not created");
+//  public async createCallOutputData(reqBody: any) {
+//     try {
+//       let raw = reqBody.raw_data;
+
+//       // 1️⃣ Parse JSON string if raw_data is a string
+//       if (typeof raw === "string") {
+//         try {
+//           raw = JSON.parse(raw);
+//         } catch (parseErr) {
+//           return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
+//         }
+//       }
+
+//       // 2️⃣ Handle array (if data comes wrapped in an array, pick first)
+//       if (Array.isArray(raw)) {
+//         raw = raw[0];
+//       }
+
+//       // 3️⃣ Validate existence of body
+//     //   if (!raw?.body) {
+//     //     return errorWithoutData("Invalid request: missing body inside raw_data");
+//     //   }
+
+//       // 4️⃣ Map request body to DB entity structure
+//       const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw.body);
+//       console.log("📥 Final Mapped Data for DB:", mappedData);
+
+//       // 5️⃣ Create entity instance
+//       const newCallData = this.faqRepository.create(mappedData);
+
+//       // 6️⃣ Save to DB
+//       const saved = await this.faqRepository.save(newCallData);
+
+//       if (!saved) {
+//         return errorWithoutData("Call output data not created");
+//       }
+
+//       return successWithData("Call output data created successfully", saved);
+//     } catch (error) {
+//       console.error("❌ Error creating call output data:", error);
+//       return errorWithData("Failed to create call output data", { error: (error as Error).message });
+//     }
+//   }
+
+public async createCallOutputData(reqBody: any) {
+  try {
+    let raw = reqBody.raw_data;
+
+    // 1️⃣ Parse JSON string if raw_data is a string
+    if (typeof raw === "string") {
+      try {
+        raw = JSON.parse(raw);
+      } catch (parseErr) {
+        return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
+      }
     }
 
-    return successWithData("call output data created successfully", faq);
+    // 2️⃣ Handle array (if data comes wrapped in an array, pick first)
+    if (Array.isArray(raw)) {
+      raw = raw[0];
+    }
+
+    // 3️⃣ Ensure raw is an object
+    if (!raw || typeof raw !== "object") {
+      return errorWithoutData("Invalid request: raw_data is missing or malformed");
+    }
+
+    // 4️⃣ Pass raw directly (not raw.body!)
+    const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+    console.log("📥 Final Mapped Data for DB:", mappedData);
+
+    // 5️⃣ Create entity instance
+    const newCallData = this.faqRepository.create(mappedData);
+
+    // 6️⃣ Save to DB
+    const saved = await this.faqRepository.save(newCallData);
+
+    if (!saved) {
+      return errorWithoutData("Call output data not created");
+    }
+
+    return successWithData("Call output data created successfully", saved);
+  } catch (error) {
+    console.error("❌ Error creating call output data:", error);
+    return errorWithData("Failed to create call output data", { error: (error as Error).message });
+  }
 }
 
     /**
@@ -165,34 +249,33 @@ public async createCallOutputData(Data: object) {
         // Insert into history table
         const historyRecord = this.historyRepository.create({
             call_output_data_id: id,
-            crm_data_id: updatedData.crm_data_id ?? faq.crm_data_id,
-            vendor_id: updatedData.vendor_id ?? faq.vendor_id,
-            sentiment_analysis: updatedData.sentiment_analysis ?? faq.sentiment_analysis,
-            end_reason: updatedData.end_reason ?? faq.end_reason,
-            call_status: updatedData.call_status ?? faq.call_status,
-            agent_name: updatedData.agent_name ?? faq.agent_name,
-            customer_name: updatedData.customer_name ?? faq.customer_name,
-            from_number: updatedData.from_number ?? faq.from_number,
-            to_number: updatedData.to_number ?? faq.to_number,
-            start_timestamp: updatedData.start_timestamp ?? faq.start_timestamp,
-            end_timestamp: updatedData.end_timestamp ?? faq.end_timestamp,
-            duration_ms: updatedData.duration_ms ?? faq.duration_ms,
-            direction: updatedData.direction ?? faq.direction,
-            transcript: updatedData.transcript ?? faq.transcript,
-            call_summary: updatedData.call_summary ?? faq.call_summary,
-            recording_url: updatedData.recording_url ?? faq.recording_url,
-            user_sentiment: updatedData.user_sentiment ?? faq.user_sentiment,
-            call_successful: updatedData.call_successful ?? faq.call_successful,
-            customer_was_satisfied: updatedData.customer_was_satisfied ?? faq.customer_was_satisfied,
-            reason_for_call: updatedData.reason_for_call ?? faq.reason_for_call,
-            call_cost_combined_cost: updatedData.call_cost_combined_cost ?? faq.call_cost_combined_cost,
-            latency_e2e_p50: updatedData.latency_e2e_p50 ?? faq.latency_e2e_p50,
-            disconnection_reason: updatedData.disconnection_reason ?? faq.disconnection_reason,
-            llm_token_usage_average: updatedData.llm_token_usage_average ?? faq.llm_token_usage_average,
-            telephony_identifier_twilio_call_sid: updatedData.telephony_identifier_twilio_call_sid ?? faq.telephony_identifier_twilio_call_sid,
-            event: updatedData.event ?? faq.event,
-            call_type: updatedData.call_type ?? faq.call_type,
-            agent_version: updatedData.agent_version ?? faq.agent_version,
+            // crm_data_id: updatedData.crm_data_id ?? faq.crm_data_id,
+            // vendor_id: updatedData.vendor_id ?? faq.vendor_id,
+            // end_reason: updatedData.end_reason ?? faq.end_reason,
+            // call_status: updatedData.call_status ?? faq.call_status,
+            // agent_name: updatedData.agent_name ?? faq.agent_name,
+            // customer_name: updatedData.customer_name ?? faq.customer_name,
+            // from_number: updatedData.from_number ?? faq.from_number,
+            // to_number: updatedData.to_number ?? faq.to_number,
+            // start_timestamp: updatedData.start_timestamp ?? faq.start_timestamp,
+            // end_timestamp: updatedData.end_timestamp ?? faq.end_timestamp,
+            // duration_ms: updatedData.duration_ms ?? faq.duration_ms,
+            // direction: updatedData.direction ?? faq.direction,
+            // transcript: updatedData.transcript ?? faq.transcript,
+            // call_summary: updatedData.call_summary ?? faq.call_summary,
+            // recording_url: updatedData.recording_url ?? faq.recording_url,
+            // user_sentiment: updatedData.user_sentiment ?? faq.user_sentiment,
+            // call_successful: updatedData.call_successful ?? faq.call_successful,
+            // customer_was_satisfied: updatedData.customer_was_satisfied ?? faq.customer_was_satisfied,
+            // reason_for_call: updatedData.reason_for_call ?? faq.reason_for_call,
+            // call_cost_combined_cost: updatedData.call_cost_combined_cost ?? faq.call_cost_combined_cost,
+            // latency_e2e_p50: updatedData.latency_e2e_p50 ?? faq.latency_e2e_p50,
+            // disconnection_reason: updatedData.disconnection_reason ?? faq.disconnection_reason,
+            // llm_token_usage_average: updatedData.llm_token_usage_average ?? faq.llm_token_usage_average,
+            // telephony_identifier_twilio_call_sid: updatedData.telephony_identifier_twilio_call_sid ?? faq.telephony_identifier_twilio_call_sid,
+            // event: updatedData.event ?? faq.event,
+            // call_type: updatedData.call_type ?? faq.call_type,
+            // agent_version: updatedData.agent_version ?? faq.agent_version,
         });
 
         await this.historyRepository.save(historyRecord);
