@@ -1,29 +1,14 @@
-/**
- * Controller for handling faq related operations
- * Handles CRUD operations for main faq
- */
-
 import { Request, Response } from "express";
 import { Multer } from "multer";
-
 // Import utilities and services
 import { errorWithData, errorWithoutData, successWithData } from "../config/ApiResponse";
 import { callOutputDataService } from "../services/callOutputData.service";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
-
-
 // Initialize services and repositories
 const calloutputdataservice = new callOutputDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
 
-
-/**
- * Get all main faq
- * @param req - Express request object
- * @param res - Express response object
- * @returns JSON response with all main faq or error
- */
 export const getUsercallingData = async (req: Request, res: Response): Promise<any> => {
 
     try {
@@ -41,13 +26,6 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
-
-/**
- * Get a faq by ID
- * @param req - Express request object with faq ID in params
- * @param res - Express response object
- * @returns JSON response with the faq or error
- */
 export const getfaqById = async (req: Request, res: Response): Promise<any> => {
 
     try {
@@ -64,38 +42,6 @@ export const getfaqById = async (req: Request, res: Response): Promise<any> => {
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
-
-/**
- * Create a new faq
- * @param req - Express request object with faq data in body
- * @param res - Express response object
- * @returns JSON response with the created faq or error
- */
-// export const createCallOutputData = async (req: Request, res: Response): Promise<any> => {
-
-//     try {
-//     //     //if (!req.user) {
-//     //         const response = errorWithoutData("Authentication failed");
-//     //         return res.status(response.result ? 200 : 400).json(response);
-//     //    // }
-//     //     const user = await adminRepository.findOneBy({ id: req.user.id })
-
-//     //     if (!user) {
-//     //         const response = errorWithoutData('only admin can create a faq');
-//     //         return res.status(response.result ? 200 : 400).json(response);
-//     //     }
-
-        
-
-//         const data = { ...req.body};
-
-//         const response = await calloutputdataservice.createCallOutputData(data);
-//         return res.status(response.result ? 200 : 400).json(response);
-//     } catch (error) {
-//         const response = errorWithData("something went wrong", { error: error });
-//         return res.status(response.result ? 200 : 400).json(response);
-//     }
-// };
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
@@ -119,13 +65,6 @@ export const createCallOutputData = async (req: Request, res: Response): Promise
     res.status(400).json(response);
   }
 };
-
-/**
- * Update an existing faq
- * @param req - Express request object with faq ID in params and updated data in body
- * @param res - Express response object
- * @returns JSON response with success message or error
- */
 export const updateCallOutputData = async (req: Request, res: Response): Promise<any> => {
 
     try {
@@ -155,13 +94,6 @@ export const updateCallOutputData = async (req: Request, res: Response): Promise
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
-
-/**
- * Delete a faq (soft delete)
- * @param req - Express request object with faq ID in params
- * @param res - Express response object
- * @returns JSON response with success message or error
- */
 export const deletefaq = async (req: Request, res: Response): Promise<any> => {
 
     try {

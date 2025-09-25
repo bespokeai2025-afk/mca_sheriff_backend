@@ -1,10 +1,5 @@
-/**
- * Routes for main category operations
- * Defines API endpoints for CRUD operations on main categories
- */
 
 import express from "express";
-
 // Import middleware for validation and authentication
 import { validateRequest } from "../middlewares/otp.validation";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
