@@ -5,7 +5,7 @@ import { validateRequest } from "../middlewares/otp.validation";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 
 // Import controller methods
-import { activefaq, createCallOutputData, deletefaq, getUsercallingData, getfaqById, updateCallOutputData } from "../controllers/callOutputData.controller";
+import { createCallOutputData, deletefaq, getUsercallingData, updateCallOutputData } from "../controllers/callOutputData.controller";
 
 // Import validation middleware
 import { validateCallOutputData, validateUserID } from "../middlewares/calloutputdata.validation";
@@ -24,10 +24,6 @@ router.get("/get-all-calldata", verifyAccessToken, getUsercallingData);
 // ftrgvrtgrttbtb5ty
 
 
-// Get a specific main category by ID
-//router.get("/", verifyAccessToken, getfaqById);
-
-
 // Create a new main category
 // 
 // router.post("/create", verifyAccessToken,  validateCallOutputData, validateRequest, createCallOutputData);
@@ -39,8 +35,6 @@ router.put("/update/:id", updateCallOutputData)
 
 // Delete a main category
 router.put("/delete/:id", verifyAccessToken, validateUserID, validateRequest, deletefaq);
-
-router.put("/active/:id", verifyAccessToken, validateUserID, validateRequest, activefaq);
 
 
 export default router;
