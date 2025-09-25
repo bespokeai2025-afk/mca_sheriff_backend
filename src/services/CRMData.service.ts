@@ -20,7 +20,7 @@ export class CRMDataService {
         }
 
         const [mainCategories, totalItems] = await this.CRMDataRepository.findAndCount({
-            where: whereCondition, // ✅ used dynamic condition
+            where: whereCondition, //  used dynamic condition
             order: { createdAt: 'DESC' },
             skip: (currentPage - 1) * pageSize,
             take: pageSize
@@ -34,7 +34,7 @@ export class CRMDataService {
 
         let retellResponse: any = null;
 
-        // ✅ RetellAI API Integration (using tasks array)
+        //  RetellAI API Integration (using tasks array)
         try {
             const tasks: { to_number: string }[] = [];
 
@@ -94,18 +94,18 @@ export class CRMDataService {
                     );
 
                     retellResponse = response.data;
-                    console.log("✅ RetellAI response:", response.data);
+                    console.log(" RetellAI response:", response.data);
 
                 } catch (error: any) {
                     if (error.response) {
-                        console.error("❌ RetellAI API Error:", {
+                        console.error(" RetellAI API Error:", {
                             status: error.response.status,
                             data: error.response.data
                         });
                     } else if (error.request) {
-                        console.error("❌ No response received from RetellAI:", error.request);
+                        console.error(" No response received from RetellAI:", error.request);
                     } else {
-                        console.error("❌ Error creating batch call:", error.message);
+                        console.error(" Error creating batch call:", error.message);
                     }
                 }
             }
@@ -115,7 +115,7 @@ export class CRMDataService {
             console.error("RetellAI API error:", error?.response?.data || error.message);
         }
 
-        // ✅ Attach retellResponse into each CRM record (optional, if you want per record)
+        //  Attach retellResponse into each CRM record (optional, if you want per record)
         const enrichedCategories = mainCategories.map((crm: any) => ({
             ...crm,
             retellResponse
@@ -128,6 +128,42 @@ export class CRMDataService {
             pageSize,
         });
     }
+
+      public async getUsercrmData(verifyUser: any, pageSize: number, currentPage: number) {
+     
+     
+             let whereCondition = {};
+             if (verifyUser.user_exist) {
+                 whereCondition = { isActive: true, isDeleted: false };
+             }
+             if (verifyUser.admin_exist) {
+     
+                 whereCondition = { isDeleted: false };
+     
+             }
+     
+             const [mainCategories, totalItems] = await this.CRMDataRepository .findAndCount({
+                 where: { isActive: true, isDeleted: false },
+                 order: { createdAt: 'DESC' },
+                 skip: (currentPage - 1) * pageSize,
+                 take: pageSize
+             });
+     
+     
+             const totalPages = Math.ceil(totalItems / pageSize);
+     
+             if (totalItems >= 1 && totalPages < currentPage) {
+                 return errorWithoutData("Page limit exceeded")
+             }
+             return successWithData("User CRM data get successfully !", mainCategories, {
+                 totalItems,
+                 totalPages,
+                 currentPage,
+                 pageSize
+             });
+     
+         } 
+
     public async createCRMData(Data: object, verifyUser: any) {
 
         if (verifyUser.user_exist) {

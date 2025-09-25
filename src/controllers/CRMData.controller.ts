@@ -25,6 +25,25 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+
+export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+        if (!req.user) {
+            const response = errorWithoutData("Authentication failed");
+            return res.status(response.result ? 200 : 400).json(response);
+        }
+        const { pageSize, currentPage } = req.query;
+
+
+        const response = await crmdataservice.getUsercrmData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData('something went wrong', { error: error });
+        return res.status(response.result ? 200 : 400).json(response);
+    }
+};
+
 export const createCRMData = async (req: Request, res: Response): Promise<any> => {
 
     try {
