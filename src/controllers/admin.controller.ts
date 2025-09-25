@@ -20,7 +20,7 @@ export const getAdmin = async (req: Request, res: Response): Promise<any> => {
 
     try {
         if (!req.user || !req.verifyUser) {
-            const response = errorWithoutData("Authentication failed");
+            const response = errorWithoutData("Authentication failed1");
             return res.status(response.result ? 200 : 400).json(response);
         }
         const response = await adminService.findAdmin(req.verifyUser);
@@ -58,17 +58,7 @@ export const getAdminById = async (req: Request, res: Response): Promise<any> =>
  * @param res - Express response object
  * @returns JSON response with the created admin user or error
  */
-export const createAdmin = async (req: Request, res: Response): Promise<any> => {
 
-    try {
-        
-        const response: any = await adminService.createAdmin(req.body);
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData("something went wrong", { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
-    }
-};
 
 /**
  * Update an existing admin user
@@ -128,10 +118,34 @@ export const logoutAdmin = async (req: Request, res: Response): Promise<any> => 
     }
 };
 
-export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
-      try {
+// export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
+//       try {
         
+//         const response: any = await adminService.loginAdminWithEmailPassword(req.body);
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData("something went wrong", { error: error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
+
+export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
+    try {
+        // ❌ Do not check req.user or req.verifyUser here
         const response: any = await adminService.loginAdminWithEmailPassword(req.body);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData("something went wrong", { error: error });
+        return res.status(response.result ? 200 : 400).json(response);
+    }
+};
+
+
+export const createAdmin = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+        
+        const response: any = await adminService.createAdmin(req.body);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
