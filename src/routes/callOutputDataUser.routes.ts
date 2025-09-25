@@ -24,7 +24,7 @@ const router = express.Router();
 
 
 // Get all main categories
-router.get("/all", verifyAccessToken, getUsercallingData);
+router.get("/get-all-calldata", verifyAccessToken, getUsercallingData);
 
 
 // Get a specific main category by ID
