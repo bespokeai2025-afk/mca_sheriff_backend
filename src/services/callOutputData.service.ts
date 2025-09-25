@@ -49,64 +49,58 @@ export class callOutputDataService {
 
     } 
 
-     public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
-        try {
-            let whereCondition: any = {};
-            if (verifyUser.user_exist) {
-                whereCondition = { isActive: true, isDeleted: false };
-            }
-            if (verifyUser.admin_exist) {
-                whereCondition = { isDeleted: false };
-            }
-
-            // Fetch paginated results
-            const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
-                where: whereCondition,
-                order: { createdAt: 'DESC' },
-                skip: (currentPage - 1) * pageSize,
-                take: pageSize
-            });
-
-            const totalPages = Math.ceil(totalItems / pageSize);
-
-            if (totalItems >= 1 && totalPages < currentPage) {
-                return errorWithoutData("Page limit exceeded");
-            }
-
-            // 🔹 Count only positive & neutral sentimentAnalysis
-            const sentimentCounts = await this.callOutputRepository
-                .createQueryBuilder("call")
-                .select("call.sentimentAnalysis", "sentimentAnalysis")
-                .addSelect("COUNT(*)", "count")
-                .where(whereCondition)
-                .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["positive", "neutral"] })
-                .groupBy("call.sentimentAnalysis")
-                .getRawMany();
-
-            // 🔹 Count callStatus distribution
-            const statusCounts = await this.callOutputRepository
-                .createQueryBuilder("call")
-                .select("call.callStatus", "callStatus")
-                .addSelect("COUNT(*)", "count")
-                .where(whereCondition)
-                .groupBy("call.callStatus")
-                .getRawMany();
-
-            return successWithData("User call detail Count", mainCategories, {
-                totalItems,
-                totalPages,
-                currentPage,
-                pageSize,
-                sentimentCounts,
-                statusCounts
-            } as any); // quick fix
-
-
-        } catch (error) {
-            console.error("Error in getUserCallData:", error);
-            return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
+    public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
+    try {
+        let whereCondition: any = {};
+        if (verifyUser.user_exist) {
+            whereCondition = { isActive: true, isDeleted: false };
         }
+        if (verifyUser.admin_exist) {
+            whereCondition = { isDeleted: false };
+        }
+
+        // 🔹 Count total items
+        const totalItems = await this.callOutputRepository.count({ where: whereCondition });
+        const totalPages = Math.ceil(totalItems / pageSize);
+
+        if (totalItems >= 1 && totalPages < currentPage) {
+            return errorWithoutData("Page limit exceeded");
+        }
+
+        // 🔹 Count only positive & neutral sentimentAnalysis
+        const sentimentCounts = await this.callOutputRepository
+            .createQueryBuilder("call")
+            .select("call.sentimentAnalysis", "sentimentAnalysis")
+            .addSelect("COUNT(*)", "count")
+            .where(whereCondition)
+            .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Positive", "Neutral"] })
+            .groupBy("call.sentimentAnalysis")
+            .getRawMany();
+
+        // 🔹 Count callStatus distribution
+        const statusCounts = await this.callOutputRepository
+            .createQueryBuilder("call")
+            .select("call.callStatus", "callStatus")
+            .addSelect("COUNT(*)", "count")
+            .where(whereCondition)
+            .groupBy("call.callStatus")
+            .getRawMany();
+
+        // 🔹 Return only counts
+        return successWithData("User call detail Count", {
+            totalItems,
+            totalPages,
+            currentPage,
+            pageSize,
+            sentimentCounts,
+            statusCounts
+        } as any);
+
+    } catch (error) {
+        console.error("Error in getUserCallDataCount:", error);
+        return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
     }
+}
 
     public async createCallOutputData(reqBody: any) {
   try {
