@@ -70,6 +70,8 @@ app.use('/api/user', otpRoutes) // OTP verification routes
 app.use('/admin', adminRoutes) // Admin routes
 
 app.use('/call-output-data', callOutputDataRoutes)
+app.use('/crm-data', CRMDataRoutes)
+
 app.use('/dashboard', DashboardRoutes)
 
 app.use(multerErrorHandler);
