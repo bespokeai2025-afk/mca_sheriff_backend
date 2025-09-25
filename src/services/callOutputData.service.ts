@@ -203,7 +203,7 @@ public async createCallOutputData(reqBody: any) {
     return successWithData("Call output data saved successfully", savedCall);
 
   } catch (error) {
-    console.error("❌ Error creating call output data:", error);
+    console.error("Error creating call output data:", error);
     return errorWithData("Failed to create call output data", {
       error: (error as Error).message
     });
