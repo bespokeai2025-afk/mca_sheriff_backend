@@ -20,5 +20,6 @@ export const mapCallOutputData = async (reqBody: any) => {
     disconnectionReason: call?.disconnection_reason || "",
     sentimentAnalysis: call?.call_analysis?.user_sentiment || "",
     endReason: call?.disconnection_reason || "",
+    crm_data_id: null as string | null,   // ✅ fix here
   };
 };

@@ -20,104 +20,64 @@ export class CallOutputHistoryData extends Common {
     @Column({ type: 'text' })
     call_output_data_id: string;
 
-      // Description of the main category
-    @Column({ type: 'text' })
-    crm_data_id: string;
+      @Column({ type: 'text', nullable: true, default: null })
+  crm_data_id: string | null;
 
-     @Column({ type: 'text' })
-    vendor_id: string;
-    
-    // Description of the main category
-    @Column({ type: 'text', nullable: false })
-    end_reason: string;
+  
+  @Column({ name: "event", type: "varchar", nullable: true })
+  event: string;
 
-   @Column({
-    type: 'enum',
-    enum: CallStatus,
-    nullable: true,      // allow null values
-    default: null,       // explicitly default to null
-  })
-  call_status: CallStatus | null;
+  @Column({ name: "call_id", type: "varchar", nullable: true })
+  callId: string;
 
+  @Column({ name: "call_type", type: "varchar", nullable: true })
+  callType: string;
 
-    // Contact Information
-  @Column({ type: 'text', nullable: false })
-  agent_name: string;
+  @Column({ name: "agent_id", type: "varchar", nullable: true })
+  agentId: string;
 
-  @Column({ type: 'text', nullable: false })
-  customer_name: string;
+  @Column({ name: "agent_version", type: "varchar", nullable: true })
+  agentVersion: string;
 
-  @Column({ type: 'text', nullable: false })
-  from_number: string;
+  @Column({ name: "agent_name", type: "varchar", nullable: true })
+  agentName: string;
 
-  @Column({ type: 'text', nullable: false })
-  to_number: string;
+  @Column({ name: "customer_name", type: "varchar", nullable: true })
+  customerName: string;
 
-  // Call Metadata
-  @Column({ type: 'bigint', nullable: false })
-  start_timestamp: number;
+  @Column({ name: "call_status", type: "varchar", nullable: true })
+  callStatus: string;
 
-  @Column({ type: 'bigint', nullable: false })
-  end_timestamp: number;
+  @Column({ name: "start_timestamp", type: "bigint", nullable: true })
+  startTimestamp: number;
 
-  @Column({ type: 'bigint', nullable: false })
-  duration_ms: number;
+  @Column({ name: "end_timestamp", type: "bigint", nullable: true })
+  endTimestamp: number;
 
-  @Column({ type: 'text', nullable: false })
-  direction: string;
+  @Column({ name: "duration_ms", type: "bigint", nullable: true })
+  durationMs: number;
 
-  // Call Content
-  @Column({ type: 'text', nullable: false })
+  @Column({ name: "transcript", type: "text", nullable: true })
   transcript: string;
 
-  @Column({ type: 'text', nullable: false })
-  call_summary: string;
+  @Column({ name: "from_number", type: "varchar", nullable: true })
+  fromNumber: string;
 
-  @Column({ type: 'text', nullable: false })
-  recording_url: string;
+  @Column({ name: "to_number", type: "varchar", nullable: true })
+  toNumber: string;
 
-  // Business Data
-  @Column({ type: 'text', nullable: false })
-  user_sentiment: string;
+  @Column({ name: "recording_url", type: "varchar", nullable: true })
+  recordingUrl: string;
 
-  @Column({ type: 'boolean', nullable: false })
-  call_successful: boolean;
+  @Column({ name: "disconnection_reason", type: "varchar", nullable: true })
+  disconnectionReason: string;
 
-  @Column({ type: 'boolean', nullable: false })
-  customer_was_satisfied: boolean;
+  @Column({ name: "sentiment_analysis", type: "varchar", nullable: true })
+  sentimentAnalysis: string;
 
-  @Column({ type: 'text', nullable: false })
-  reason_for_call: string;
-
-  // Performance Metrics
-  @Column({ type: 'float', nullable: false })
-  call_cost_combined_cost: number;
-
-  @Column({ type: 'bigint', nullable: false })
-  latency_e2e_p50: number;
-
-  @Column({ type: 'text', nullable: false })
-  disconnection_reason: string;
-
-  // Optional Technical Data
-  @Column({ type: 'float', nullable: false })
-  llm_token_usage_average: number;
-
-  @Column({ type: 'text', nullable: false })
-    telephony_identifier_twilio_call_sid: string;
-   
-
-    
-  @Column({ type: 'text', nullable: false })
-event: string;
-
-  @Column({ type: 'text', nullable: false })
-   call_type: string;
-
- @Column({ type: 'text', nullable: false })
-    agent_version: string;
-
- 
+  @Column({ name: "end_reason", type: "varchar", nullable: true })
+  endReason: string;
 }
+
 
    
