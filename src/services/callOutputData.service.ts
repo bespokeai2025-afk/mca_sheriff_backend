@@ -11,6 +11,7 @@ import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
 import { mapCallOutputData } from "../utils/mapper";
 
 export class callOutputDataService {
+        private CRMDataRepository = AppDataSource.getRepository(CRMData);
     private callOutputRepository = AppDataSource.getRepository(CallOutputData);
     private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
    
@@ -62,7 +63,7 @@ export class callOutputDataService {
       }
     }
 
-    // 2️⃣ Handle array input
+    // 2️⃣ Handle array
     if (Array.isArray(raw)) {
       raw = raw[0];
     }
@@ -72,46 +73,53 @@ export class callOutputDataService {
       return errorWithoutData("Invalid request: raw_data is missing or malformed");
     }
 
-    // 4️⃣ Map into CallOutputData fields
+    // 4️⃣ Map fields
     const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
     console.log("📥 Final Mapped Data for DB:", mappedData);
 
-    const { toNumber } = mappedData;
-    if (!toNumber) {
-      return errorWithoutData("to_number is required for call output");
-    }
-
-    // 5️⃣ Check if CallOutputData already exists for this toNumber
-    const existing = await this.callOutputRepository.findOne({
-      where: { toNumber },
+    // 5️⃣ Check CRMData for number (using toNumber here, adjust if you want fromNumber instead)
+    const crmRecord = await this.CRMDataRepository.findOne({
+      where: { mobile_number: mappedData.toNumber, isDeleted: false }
     });
 
-    let saved: CallOutputData;
-
-    if (existing) {
-      console.log("🔄 Updating existing CallOutputData:", existing.id);
-
-      // Merge new values into existing record
-      const updated = this.callOutputRepository.merge(existing, mappedData);
-      saved = await this.callOutputRepository.save(updated);
-
-      return successWithData("Call output data updated successfully", saved);
+    if (crmRecord) {
+      // 🔄 If number exists → set crm_data_id
+      mappedData.crm_data_id = crmRecord.id;
     } else {
-      console.log("➕ Creating new CallOutputData");
-
-      const newCallData = this.callOutputRepository.create(mappedData);
-      saved = await this.callOutputRepository.save(newCallData);
-
-      return successWithData("Call output data created successfully", saved);
+      mappedData.crm_data_id = null; // default
     }
+
+    // 6️⃣ Check if callId already exists → update
+    const existingCall = await this.callOutputRepository.findOne({
+      where: { callId: mappedData.callId }
+    });
+
+    if (existingCall) {
+      // update
+      const updated = await this.callOutputRepository.save({
+        ...existingCall,
+        ...mappedData
+      });
+      return successWithData("Call output data updated successfully", updated);
+    }
+
+    // 7️⃣ Insert new record
+    const newCallData = this.callOutputRepository.create(mappedData);
+    const saved = await this.callOutputRepository.save(newCallData);
+
+    if (!saved) {
+      return errorWithoutData("Call output data not created");
+    }
+
+    return successWithData("Call output data created successfully", saved);
   } catch (error) {
     console.error("❌ Error creating call output data:", error);
     return errorWithData("Failed to create call output data", {
-      error: (error as Error).message,
+      error: (error as Error).message
     });
   }
 }
- 
+
     // public async createCallOutputData(reqBody: any) {
     // try {
     //     let raw = reqBody.raw_data;
