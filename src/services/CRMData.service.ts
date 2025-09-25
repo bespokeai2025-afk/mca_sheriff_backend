@@ -7,8 +7,8 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import axios from "axios";
 export class CRMDataService {
-    // Repository for faq database operations
-    private faqRepository = AppDataSource.getRepository(CRMData);
+    // Repository for CMR Data database operations
+    private CRMDataRepository = AppDataSource.getRepository(CRMData);
 
     public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
         let whereCondition = {};
@@ -19,7 +19,7 @@ export class CRMDataService {
             whereCondition = { isDeleted: false };
         }
 
-        const [mainCategories, totalItems] = await this.faqRepository.findAndCount({
+        const [mainCategories, totalItems] = await this.CRMDataRepository.findAndCount({
             where: whereCondition, // ✅ used dynamic condition
             order: { createdAt: 'DESC' },
             skip: (currentPage - 1) * pageSize,
@@ -131,53 +131,17 @@ export class CRMDataService {
     public async createCRMData(Data: object, verifyUser: any) {
 
         if (verifyUser.user_exist) {
-            return errorWithoutData('Only admin can create faq')
+            return errorWithoutData('Only admin can create CMR Data')
         }
 
-        const newfaq = await this.faqRepository.create(Data)
+        const newCMRData = await this.CRMDataRepository.create(Data)
 
-        const faq = await this.faqRepository.save(newfaq)
+        const crmdataoutput = await this.CRMDataRepository.save(newCMRData)
 
-        if (!faq) {
-            return errorWithoutData('faq not created')
+        if (!crmdataoutput) {
+            return errorWithoutData('CMR Data not created')
         }
-        return successWithData("crm data created successfully", faq);
+        return successWithData("crm data created successfully", crmdataoutput);
 
     }   
-    public async updatefaq(id: string, Data: { [key: string]: any }, verifyUser: any) {
-
-        if (verifyUser.user_exist) {
-            return errorWithoutData('Only admin can update faq')
-        }
-
-        const faq = await this.faqRepository.findOneBy({ id, isActive: true, isDeleted: false });
-        if (!faq) {
-            return errorWithoutData('faq not found')
-        }
-
-        // if (faq.image && Data.image) {
-        //     const oldKey = faq.image.split(".com/")[1];
-        //     await s3.send(new DeleteObjectCommand({ Bucket: process.env.AWS_BUCKET_NAME!, Key: oldKey }));
-        // }
-
-        const updatedData = JSON.parse(JSON.stringify(Data));
-        await this.faqRepository.update(id.toString(), updatedData);
-        return successWithoutData('faq updated successfully');
-
-    }    
-    public async deletefaq(id: string, verifyUser: any) {
-        if (verifyUser.user_exist) {
-            return errorWithoutData("user cann't update attendance")
-        }
-        const faq = await this.faqRepository.findOneBy({ id });
-
-        if (!faq) {
-            return errorWithoutData(" faq not found");
-        }
-
-        faq.isDeleted = true; // Mark as soft deleted
-        await this.faqRepository.save(faq);
-
-        return successWithoutData(" faq soft deleted successfully");
-    }
 }

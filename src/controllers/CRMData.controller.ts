@@ -1,6 +1,4 @@
 import { Request, Response } from "express";
-import { Multer } from "multer";
-
 // Import utilities and services
 import { errorWithData, errorWithoutData } from "../config/ApiResponse";
 import { CRMDataService } from "../services/CRMData.service";
