@@ -41,7 +41,7 @@ export class callOutputDataService {
         if (totalItems >= 1 && totalPages < currentPage) {
             return errorWithoutData("Page limit exceeded")
         }
-        return successWithData("User calling data ", mainCategories, {
+        return successWithData("User calling output data get successfully !", mainCategories, {
             totalItems,
             totalPages,
             currentPage,
@@ -89,11 +89,12 @@ export class callOutputDataService {
             .select("call.callStatus", "callStatus")
             .addSelect("COUNT(*)", "count")
             .where(whereCondition)
+            .andWhere("call.callStatus IN (:...allowed)", { allowed: ["not_connected"] })
             .groupBy("call.callStatus")
             .getRawMany();
 
         // 🔹 Return only counts
-        return successWithData("User call detail Count", {
+        return successWithData("User call detail Count get successfully", {
             totalCall,
             successCounts,
             failureCounts,
