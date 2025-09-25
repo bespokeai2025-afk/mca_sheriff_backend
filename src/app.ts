@@ -74,16 +74,6 @@ app.use("/auth/email", emailVerificationRoutes); // Keeping email routes separat
 app.use('/api/user', otpRoutes) // OTP verification routes
 app.use('/admin', adminRoutes) // Admin routes
 
-
-
-
-
-
-
-
-
-
-
 app.use('/call-output-data', callOutputDataRoutes)
 app.use('/crm-data', CRMDataRoutes)
 
@@ -93,10 +83,7 @@ app.use('/', viewsRoutes)
 const fromDate = "2025-04-30";
 const fromTime = "12:00:00"
 const istDateTimeString = new Date(`${fromDate}T${fromTime}+05:30`);
-
 console.log("UTC time:", istDateTimeString.toISOString()); // shows UTC
-
- 
 // Initialize database connection and start server
 AppDataSource.initialize()
     .then(() => {

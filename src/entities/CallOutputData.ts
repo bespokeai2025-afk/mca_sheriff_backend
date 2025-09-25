@@ -11,108 +11,13 @@ export enum CallStatus {
 @Entity({ name: 'call_output_data' })
 export class CallOutputData extends Common {
 
-   // Name of the main category
-    // @Column({ type: 'text', nullable: false })
-    // vendor_id: string;
+    @Column({ type: 'text', nullable: true, default: null })
+  vendor_id: string | null;
 
-    // Description of the main category
-    // @Column({ type: 'text', nullable: false })
-    // crm_data_id: string;
+  @Column({ type: 'text', nullable: true, default: null })
+  crm_data_id: string | null;
 
-
-  //   // Description of the main category
-  //   @Column({ type: 'text', nullable: false })
-  //   end_reason: string;
-
-  // // Identifiers
-  // @Column({ type: 'text', nullable: false })
-  // call_id: string;
-
-  // @Column({ type: 'text', nullable: false })
-  // agent_id: string;
-
-  // // Agent / Customer Info
-  // @Column({ type: 'text', nullable: false })
-  // agent_name: string;
-
-  // @Column({ type: 'text', nullable: true })
-  // customer_name: string;
-
-  // @Column({ type: 'text', nullable: false })
-  // from_number: string;
-
-  // @Column({ type: 'text', nullable: false })
-  // to_number: string;
-
-  // // Call Metadata
-  // @Column({ type: 'bigint', nullable: false })
-  // start_timestamp: number;
-
-  // @Column({ type: 'bigint', nullable: false })
-  // end_timestamp: number;
-
-  // @Column({ type: 'bigint', nullable: false })
-  // duration_ms: number;
-
-  // @Column({ type: 'text', nullable: false })
-  // direction: string;
-
-  // @Column({ type: 'enum', enum: CallStatus, default: CallStatus.DISCONNECTED })
-  // call_status: CallStatus;
-
-  // // Call Content
-  // @Column({ type: 'text', nullable: true })
-  // transcript: string;
-
-  // @Column({ type: 'text', nullable: true })
-  // call_summary: string;
-
-  // @Column({ type: 'text', nullable: true })
-  // recording_url: string;
-
-  // // Business Data
-  // @Column({ type: 'text', nullable: true })
-  // user_sentiment: string;
-
-  // @Column({ type: 'boolean', default: false })
-  // call_successful: boolean;
-
-  // @Column({ type: 'boolean', default: false })
-  // customer_was_satisfied: boolean;
-
-  // @Column({ type: 'text', nullable: true })
-  // reason_for_call: string;
-
-  // // Performance Metrics
-  // @Column({ type: 'float', nullable: true })
-  // call_cost_combined_cost: number;
-
-  // @Column({ type: 'float', nullable: true })
-  // latency_e2e_p50: number;
-
-  // @Column({ type: 'text', nullable: true })
-  // disconnection_reason: string;
-
-  // // Optional Technical Data
-  // @Column({ type: 'float', nullable: true })
-  // llm_token_usage_average: number;
-
-  // @Column({ type: 'text', nullable: true })
-  // telephony_identifier_twilio_call_sid: string;
-
-  // @Column({ type: 'text', nullable: false })
-  // event: string;
-
-  // @Column({ type: 'text', nullable: false })
-  // call_type: string;
-
-  // @Column({ type: 'int', nullable: false })
-  // agent_version: number;
-
-//   @Column({ type: 'text', nullable: false })
-//   raw_data: string;
-// }
-
+  
   @Column({ name: "event", type: "varchar", nullable: true })
   event: string;
 
