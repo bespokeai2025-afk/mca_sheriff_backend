@@ -9,25 +9,24 @@ export class DashboardService {
     const monthList = [];
     for (let i = months - 1; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthName = date.toLocaleString("default", { month: "short" });
-      monthList.push({ month: monthName, year: date.getFullYear() });
+      const monthNumber = date.getMonth() + 1; // 1–12
+      const monthName = date.toLocaleString("en-US", { month: "short" }); // force en-US → "Sep"
+      monthList.push({ month: monthName, month_number: monthNumber, year: date.getFullYear() });
     }
     return monthList;
   }
 
   // ✅ Total Call Minutes month-wise
   static async getTotalCallMinutes(months: number = 6) {
-    const rawResult: { month: string; year: number; totalMinutes: number }[] =
+    const rawResult: { month_number: number; year: number; totalMinutes: number }[] =
       await AppDataSource.query(`
       SELECT 
-        EXTRACT(MONTH FROM "createdAt") AS month_number,
-        EXTRACT(YEAR FROM "createdAt") AS year,
-        TO_CHAR("createdAt", 'Mon') AS month,
-        -- Convert ms -> minutes
+        EXTRACT(MONTH FROM "createdAt")::int AS month_number,
+        EXTRACT(YEAR FROM "createdAt")::int AS year,
         COALESCE(SUM("duration_ms") / 1000 / 60, 0) AS "totalMinutes"
       FROM "call_output_data"
       WHERE "createdAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
-      GROUP BY month_number, year, month
+      GROUP BY month_number, year
       ORDER BY year, month_number
     `);
 
@@ -36,11 +35,12 @@ export class DashboardService {
 
     const chartData = monthList.map((m) => {
       const found = rawResult.find(
-        (r) => r.month === m.month && r.year === m.year
+        (r) => r.month_number === m.month_number && r.year === m.year
       );
+
       return {
         month: m.month,
-        totalMinutes: found ? Number(found.totalMinutes) : 0,
+        totalMinutes: found ? Number(Number(found.totalMinutes).toFixed(2)) : 0,
       };
     });
 
@@ -48,7 +48,7 @@ export class DashboardService {
 
     return {
       total,
-      months: chartData
+      months: chartData,
     };
   }
 

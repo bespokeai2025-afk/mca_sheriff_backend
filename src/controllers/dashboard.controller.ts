@@ -1,50 +1,61 @@
 import { Request, Response } from "express";
 import { DashboardService } from "../services/dashboard.service";
+import { successWithData, errorWithData } from "../config/ApiResponse"; // adjust path
 
 export class DashboardController {
 
-static async totalCallMinutes(req: Request, res: Response) {
-  try {
-    const months = Number(req.body.months) || 6; // ✅ read from body instead of query
-    const data = await DashboardService.getTotalCallMinutes(months);
-    res.json({ success: true, data });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch total call minutes",
-      error,
-    });
+  // Helper methods to standardize success responses
+  private static sendSuccess<T>(res: Response, message: string, data: T, statusCode = 200) {
+    res.status(statusCode).json(successWithData(message, data, undefined, statusCode));
   }
-}
 
+  // Helper methods to standardize error responses
+  private static sendError(res: Response, message: string, error: any = null, statusCode = 500) {
+    res.status(statusCode).json(errorWithData(message, error, statusCode));
+  }
+
+  // Total call minutes
+  static async totalCallMinutes(req: Request, res: Response) {
+    try {
+      const months = Number(req.body.months) || 6;
+      const data = await DashboardService.getTotalCallMinutes(months);
+      DashboardController.sendSuccess(res, "Total call minutes fetched successfully", data, 200);
+    } catch (error) {
+      console.error(error);
+      DashboardController.sendError(res, "Failed to fetch total call minutes", error, 500);
+    }
+  }
+
+  // Number of calls
   static async numberOfCalls(req: Request, res: Response) {
     try {
       const months = Number(req.query.months) || 6;
-      const totalCalls = await DashboardService.getNumberOfCalls(months);
-      res.json({ success: true, data: totalCalls });
+      const data = await DashboardService.getNumberOfCalls(months);
+      DashboardController.sendSuccess(res, "Number of calls fetched successfully", data, 200);
     } catch (error) {
-      res.status(500).json({ success: false, message: "Failed to fetch number of calls", error });
+      DashboardController.sendError(res, "Failed to fetch number of calls", error, 500);
     }
   }
 
+  // Leads
   static async leads(req: Request, res: Response) {
     try {
       const months = Number(req.query.months) || 6;
-      const leads = await DashboardService.getLeads(months);
-      res.json({ success: true, data: leads });
+      const data = await DashboardService.getLeads(months);
+      DashboardController.sendSuccess(res, "Leads fetched successfully", data, 200);
     } catch (error) {
-      res.status(500).json({ success: false, message: "Failed to fetch leads", error });
+      DashboardController.sendError(res, "Failed to fetch leads", error, 500);
     }
   }
 
+  // Call performance
   static async callPerformance(req: Request, res: Response) {
     try {
       const months = Number(req.query.months) || 6;
-      const performance = await DashboardService.getCallPerformance(months);
-      res.json({ success: true, data: performance });
+      const data = await DashboardService.getCallPerformance(months);
+      DashboardController.sendSuccess(res, "Call performance fetched successfully", data, 200);
     } catch (error) {
-      res.status(500).json({ success: false, message: "Failed to fetch call performance", error });
+      DashboardController.sendError(res, "Failed to fetch call performance", error, 500);
     }
   }
 }
