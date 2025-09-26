@@ -29,7 +29,7 @@ export class DashboardController {
   // Number of calls
   static async numberOfCalls(req: Request, res: Response) {
     try {
-      const months = Number(req.query.months) || 6;
+      const months = Number(req.body.months) || 6;
       const data = await DashboardService.getNumberOfCalls(months);
       DashboardController.sendSuccess(res, "Number of calls fetched successfully", data, 200);
     } catch (error) {

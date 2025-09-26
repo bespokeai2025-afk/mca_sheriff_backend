@@ -52,13 +52,32 @@ export class DashboardService {
     };
   }
 
-  // Number of Calls
-  static async getNumberOfCalls(months: number): Promise<number> {
-    const startDate = this.getLastMonths(months);
-    return AppDataSource.getRepository(CallOutputData)
+ // Number of Calls month-wise
+  static async getNumberOfCalls(months: number): Promise<{ month: string; totalCalls: number }[]> {
+    const today = new Date();
+    const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+
+    // Query database grouped by month number
+    const rawResult: { month_number: number; totalCalls: number }[] = await AppDataSource.getRepository(CallOutputData)
       .createQueryBuilder("call")
-      .where("call.\"createdAt\" >= :startDate", { startDate })  // <-- fix here
-      .getCount();
+      .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
+      .addSelect('COUNT(1)::int', 'totalCalls')
+      .where('call."createdAt" >= :startDate', { startDate })
+      .groupBy('month_number')
+      .orderBy('month_number')
+      .getRawMany();
+
+    // Map to month names only
+    const monthList = this.getLastMonths(months);
+    const result = monthList.map(m => {
+      const found = rawResult.find(r => r.month_number === m.month_number);
+      return {
+        month: m.month,       // only month name string
+        totalCalls: found ? found.totalCalls : 0
+      };
+    });
+
+    return result;
   }
 
   // Leads (positive sentiment only)
