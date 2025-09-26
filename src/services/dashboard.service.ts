@@ -89,14 +89,14 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
 // Leads (positive sentiment only) month-wise with total count
 static async getLeads(months: number): Promise<{ total: number; months: { month: string; totalLeads: number }[] }> {
   const today = new Date();
-  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1); // ✅ single Date
 
   // Query database grouped by month number, counting only positive sentiment
   const rawResult: { month_number: number; totalLeads: number }[] = await AppDataSource.getRepository(CallOutputData)
     .createQueryBuilder("call")
     .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
     .addSelect('COUNT(1)::int', 'totalLeads')
-    .where('call."createdAt" >= :startDate', { startDate })
+    .where('call."createdAt" >= :startDate', { startDate }) // ✅ single Date filter
     .andWhere('call.sentiment_analysis = :sentiment', { sentiment: "Positive" }) // only positive sentiment
     .groupBy('month_number')
     .orderBy('month_number')
@@ -120,6 +120,7 @@ static async getLeads(months: number): Promise<{ total: number; months: { month:
     months: monthsData
   };
 }
+
 
 // Call Performance month-wise (Positive, Neutral, Negative only)
 static async getCallPerformance(months: number): Promise<
