@@ -78,6 +78,18 @@ export class CallOutputHistoryData {
 
   @Column({ name: "end_reason", type: "varchar", nullable: true })
   endReason: string;
+
+  @Column({ name: "email", type: "varchar", nullable: true })
+  email: string;
+  
+  @Column({ name: "appointment_date", type: "varchar", nullable: true })
+  appointment_date: string;
+
+  @Column({ name: "appointment_end_date", type: "varchar", nullable: true })
+  appointment_end_date: string;
+
+  @Column({ name: "calendly_booking_url", type: "varchar", nullable: true })
+  calendly_booking_url: string;
     
   @Column({ type: "boolean", default: true })
   isActive: boolean
