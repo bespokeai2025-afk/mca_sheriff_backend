@@ -21,11 +21,11 @@ export class DashboardService {
     const rawResult: { month_number: number; year: number; totalMinutes: number }[] =
       await AppDataSource.query(`
       SELECT 
-        EXTRACT(MONTH FROM "createdAt")::int AS month_number,
-        EXTRACT(YEAR FROM "createdAt")::int AS year,
+        EXTRACT(MONTH FROM "updatedAt")::int AS month_number,
+        EXTRACT(YEAR FROM "updatedAt")::int AS year,
         COALESCE(SUM("duration_ms") / 1000 / 60, 0) AS "totalMinutes"
       FROM "call_output_data"
-      WHERE "createdAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
+      WHERE "updatedAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
       GROUP BY month_number, year
       ORDER BY year, month_number
     `);
@@ -60,9 +60,9 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
   // Query database grouped by month number
   const rawResult: { month_number: number; totalCalls: number }[] = await AppDataSource.getRepository(CallOutputData)
     .createQueryBuilder("call")
-    .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
+    .select('EXTRACT(MONTH FROM call."updatedAt")::int', 'month_number')
     .addSelect('COUNT(1)::int', 'totalCalls')
-    .where('call."createdAt" >= :startDate', { startDate })
+    .where('call."updatedAt" >= :startDate', { startDate })
     .groupBy('month_number')
     .orderBy('month_number')
     .getRawMany();
@@ -87,32 +87,42 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
 }
 
 // Leads (positive sentiment only) month-wise with total count
-static async getLeads(months: number): Promise<{ total: number; months: { month: string; totalLeads: number }[] }> {
+// Leads (positive sentiment only) month-wise with total count
+static async getLeads(months: number): Promise<{
+  total: number;
+  months: { month: string; totalLeads: number }[];
+}> {
   const today = new Date();
-  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1); // ✅ single Date
+
+  // Compute start date for the first day of N months ago
+  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+  // End date = end of current month
+  const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
 
   // Query database grouped by month number, counting only positive sentiment
   const rawResult: { month_number: number; totalLeads: number }[] = await AppDataSource.getRepository(CallOutputData)
     .createQueryBuilder("call")
-    .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
+    .select('EXTRACT(MONTH FROM call."updatedAt")::int', 'month_number')
     .addSelect('COUNT(1)::int', 'totalLeads')
-    .where('call."createdAt" >= :startDate', { startDate }) // ✅ single Date filter
-    .andWhere('call.sentiment_analysis = :sentiment', { sentiment: "Positive" }) // only positive sentiment
+    .where('call."updatedAt" >= :startDate AND call."updatedAt" <= :endDate', { startDate, endDate })
+    .andWhere('call.sentiment_analysis = :sentiment', { sentiment: "Positive" })
     .groupBy('month_number')
     .orderBy('month_number')
     .getRawMany();
 
-  // Map last N months to month names
-  const monthList = this.getLastMonths(months); // returns { month: string; month_number: number; year: number }[]
+  // Build last N months list
+  const monthList = this.getLastMonths(months); // [{month, month_number, year}, ...]
+
+  // Map results to month names, default 0 if no data
   const monthsData = monthList.map(m => {
     const found = rawResult.find(r => r.month_number === m.month_number);
     return {
-      month: m.month,                   // month name string only
-      totalLeads: found ? found.totalLeads : 0
+      month: m.month, // month name string
+      totalLeads: found ? Number(found.totalLeads) : 0
     };
   });
 
-  // Calculate total leads
+  // Total positive leads
   const total = monthsData.reduce((sum, m) => sum + m.totalLeads, 0);
 
   return {
@@ -120,6 +130,8 @@ static async getLeads(months: number): Promise<{ total: number; months: { month:
     months: monthsData
   };
 }
+
+
 
 
 // Call Performance month-wise (Positive, Neutral, Negative only)
@@ -134,11 +146,11 @@ static async getCallPerformance(months: number): Promise<
   const rawResult: { month_number: number; positive: number; neutral: number; negative: number }[] =
     await AppDataSource.getRepository(CallOutputData)
       .createQueryBuilder("call")
-      .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
+      .select('EXTRACT(MONTH FROM call."updatedAt")::int', 'month_number')
       .addSelect(`SUM(CASE WHEN call.sentiment_analysis = 'Positive' THEN 1 ELSE 0 END)`, 'positive')
       .addSelect(`SUM(CASE WHEN call.sentiment_analysis = 'Neutral' THEN 1 ELSE 0 END)`, 'neutral')
       .addSelect(`SUM(CASE WHEN call.sentiment_analysis = 'Negative' THEN 1 ELSE 0 END)`, 'negative')
-      .where('call."createdAt" >= :startDate', { startDate })
+      .where('call."updatedAt" >= :startDate', { startDate })
       .groupBy('month_number')
       .orderBy('month_number')
       .getRawMany();
