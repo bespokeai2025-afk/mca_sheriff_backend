@@ -1,28 +1,37 @@
 import { Request, Response } from "express";
 import { CenterStagedCallService } from "../services/centerStagedCall.service";
-import { successWithData, errorWithData } from "../config/ApiResponse"; // adjust path
+import { successWithData, errorWithData } from "../config/ApiResponse";
 
 export class CenterStagedCallController {
 
-  // Helper methods to standardize success responses
-  private static sendSuccess<T>(res: Response, message: string, data: T, statusCode = 200) {
-    res.status(statusCode).json(successWithData(message, data, undefined, statusCode));
-  }
+  // Fetch filtered call data
+ static async callFilterCenterStage(req: Request, res: Response): Promise<void> {
+  try {
+    const { from_date, to_date, from_time, to_time } = req.body;
 
-  // Helper methods to standardize error responses
-  private static sendError(res: Response, message: string, error: any = null, statusCode = 500) {
-    res.status(statusCode).json(errorWithData(message, error, statusCode));
-  }
-
-  // Total call minutes
-  static async callFilterCenterStage(req: Request, res: Response) {
-    try {
-      const months = Number(req.body.months) || 6;
-      const data = await CenterStagedCallService.callFilterCenterStage(months);
-      CenterStagedCallController.sendSuccess(res, "Total call minutes fetched successfully", data, 200);
-    } catch (error) {
-      console.error(error);
-      CenterStagedCallController.sendError(res, "Failed to fetch total call minutes", error, 500);
+    if (!from_date || !to_date) {
+      res.status(400).json(
+        errorWithData("from_date and to_date are required", null, 400)
+      );
+      return;
     }
-  } 
+
+    const data = await CenterStagedCallService.callFilterCenterStage(
+      from_date,
+      to_date,
+      from_time,
+      to_time
+    );
+
+    res.status(200).json(
+      successWithData("Filtered call data fetched successfully", data, undefined, 200)
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(errorWithData("Failed to fetch call data", error, 500));
+  }
+}
+
+
+
 }
