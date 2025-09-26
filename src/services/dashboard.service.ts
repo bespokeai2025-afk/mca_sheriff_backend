@@ -3,40 +3,53 @@ import { CallOutputData } from "../entities/CallOutputData";
 
 export class DashboardService {
 
-  // Helper: Get last N months array like [{ month: 'Apr', year: 2025 }, ...]
+  // Helper: Get last N months
   private static getLastMonths(months: number) {
     const today = new Date();
     const monthList = [];
     for (let i = months - 1; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthName = date.toLocaleString('default', { month: 'short' });
+      const monthName = date.toLocaleString("default", { month: "short" });
       monthList.push({ month: monthName, year: date.getFullYear() });
     }
     return monthList;
   }
 
-  // Total Call Minutes month-wise
-  static async getTotalCallMinutes(months: number) {
-    const rawResult: { month: string; year: number; totalMinutes: number }[] = await AppDataSource.query(`
+  // ✅ Total Call Minutes month-wise
+  static async getTotalCallMinutes(months: number = 6) {
+    const rawResult: { month: string; year: number; totalMinutes: number }[] =
+      await AppDataSource.query(`
       SELECT 
         EXTRACT(MONTH FROM "createdAt") AS month_number,
         EXTRACT(YEAR FROM "createdAt") AS year,
         TO_CHAR("createdAt", 'Mon') AS month,
-        COALESCE(SUM("duration_ms") / 60000, 0) AS "totalMinutes"
+        -- Convert ms -> minutes
+        COALESCE(SUM("duration_ms") / 1000 / 60, 0) AS "totalMinutes"
       FROM "call_output_data"
-      WHERE "createdAt" >= NOW() - INTERVAL '${months} MONTH'
+      WHERE "createdAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
       GROUP BY month_number, year, month
       ORDER BY year, month_number
     `);
 
-    // Fill missing months with 0
+    // Always build last N months list
     const monthList = this.getLastMonths(months);
-    const result = monthList.map(m => {
-      const found = rawResult.find(r => r.month === m.month && r.year === m.year);
-      return { month: m.month, totalMinutes: found ? Number(found.totalMinutes) : 0 };
+
+    const chartData = monthList.map((m) => {
+      const found = rawResult.find(
+        (r) => r.month === m.month && r.year === m.year
+      );
+      return {
+        month: m.month,
+        totalMinutes: found ? Number(found.totalMinutes) : 0,
+      };
     });
 
-    return result;
+    const total = chartData.reduce((sum, m) => sum + m.totalMinutes, 0);
+
+    return {
+      total,
+      months: chartData
+    };
   }
 
   // Number of Calls
