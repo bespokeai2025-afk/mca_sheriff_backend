@@ -3,7 +3,7 @@
  * Defines the structure and relationships for main categories
  */
 
-import { Entity, Column, Check, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, Check, OneToMany, JoinColumn, BeforeUpdate, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Common } from './Common';
 
 export enum CallStatus {
@@ -14,8 +14,9 @@ export enum CallStatus {
 // MainCategory entity representing main categories
 @Entity({ name: 'call_output_history_data' })
 // @Check('priority >= 0') // Ensure priority is non-negative
-export class CallOutputHistoryData extends Common {
-
+export class CallOutputHistoryData {
+       @PrimaryGeneratedColumn("uuid")
+    id: string
     // Name of the main category
     @Column({ type: 'text' })
     call_output_data_id: string;
@@ -43,7 +44,7 @@ export class CallOutputHistoryData extends Common {
   agentName: string;
 
   @Column({ name: "customer_name", type: "varchar", nullable: true })
-  customerName: string;
+  name: string;
 
   @Column({ name: "call_status", type: "varchar", nullable: true })
   callStatus: string;
@@ -77,6 +78,25 @@ export class CallOutputHistoryData extends Common {
 
   @Column({ name: "end_reason", type: "varchar", nullable: true })
   endReason: string;
+    
+  @Column({ type: "boolean", default: true })
+  isActive: boolean
+  
+  @Column({ type: "boolean", default: false })
+  isDeleted: boolean
+  
+  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date
+
+  // Timestamp for when the entity was last updated
+  @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
+  updatedAt: Date
+
+  // Update the updatedAt timestamp before the entity is updated
+  @BeforeUpdate()
+  updateTimestamp() {
+      this.updatedAt = new Date();
+  }
 }
 
 

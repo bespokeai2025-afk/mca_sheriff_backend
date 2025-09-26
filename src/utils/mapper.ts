@@ -8,7 +8,7 @@ export const mapCallOutputData = async (reqBody: any) => {
     agentId: call?.agent_id || "",
     agentVersion: call?.agent_version?.toString() || "",
     agentName: call?.agent_name || "",
-    customerName: call?.retell_llm_dynamic_variables?.name || "",
+    name: call?.retell_llm_dynamic_variables?.name || "",
     callStatus: call?.call_status || "",
     startTimestamp: call?.start_timestamp || null,
     endTimestamp: call?.end_timestamp || null,
@@ -20,6 +20,10 @@ export const mapCallOutputData = async (reqBody: any) => {
     disconnectionReason: call?.disconnection_reason || "",
     sentimentAnalysis: call?.call_analysis?.user_sentiment || "",
     endReason: call?.disconnection_reason || "",
+    email: call?.email || "",
+    appointment_date: call?.appointment_date || "",
+    appointment_end_date: call?.appointment_end_date || "",
+    calendly_booking_url: call?.calendly_booking_url || "",
     crm_data_id: null as string | null,   // ✅ fix here
   };
 };

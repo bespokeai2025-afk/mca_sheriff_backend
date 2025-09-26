@@ -58,4 +58,15 @@ export class DashboardController {
       DashboardController.sendError(res, "Failed to fetch call performance", error, 500);
     }
   }
+// Call Drops 
+static async callDrops(req: Request, res: Response) {
+  try {
+    const months = Number(req.body.months) || 6; // default: last 6 months
+    const data = await DashboardService.callDrops(months);
+    DashboardController.sendSuccess(res, "Call drop stats fetched successfully", data, 200);
+  } catch (error) {
+    DashboardController.sendError(res, "Failed to fetch call drop stats", error, 500);
+  }
+}
+
 }

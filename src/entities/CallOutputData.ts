@@ -1,4 +1,4 @@
-import { Entity, Column, Check, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, Check, OneToMany, JoinColumn, BeforeUpdate, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Common } from './Common';
 
 export enum CallStatus {
@@ -9,14 +9,15 @@ export enum CallStatus {
 }
 
 @Entity({ name: 'call_output_data' })
-export class CallOutputData extends Common {
+export class CallOutputData {
+      @PrimaryGeneratedColumn("uuid")
+    id: string
 
     @Column({ type: 'text', nullable: true, default: null })
   vendor_id: string | null;
 
   @Column({ type: 'text', nullable: true, default: null })
   crm_data_id: string | null;
-
   
   @Column({ name: "event", type: "varchar", nullable: true })
   event: string;
@@ -37,7 +38,7 @@ export class CallOutputData extends Common {
   agentName: string;
 
   @Column({ name: "customer_name", type: "varchar", nullable: true })
-  customerName: string;
+  name: string;
 
   @Column({ name: "call_status", type: "varchar", nullable: true })
   callStatus: string;
@@ -71,5 +72,36 @@ export class CallOutputData extends Common {
 
   @Column({ name: "end_reason", type: "varchar", nullable: true })
   endReason: string;
+
+  @Column({ name: "to_number", type: "varchar", nullable: true })
+  email: string;
+  
+  @Column({ name: "to_number", type: "varchar", nullable: true })
+  appointment_date: string;
+
+  @Column({ name: "to_number", type: "varchar", nullable: true })
+  appointment_end_date: string;
+
+  @Column({ name: "to_number", type: "varchar", nullable: true })
+  calendly_booking_url: string;
+    
+    @Column({ type: "boolean", default: true })
+    isActive: boolean
+    
+    @Column({ type: "boolean", default: false })
+    isDeleted: boolean
+    
+    @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+    createdAt: Date
+
+    // Timestamp for when the entity was last updated
+    @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
+    updatedAt: Date
+
+    // Update the updatedAt timestamp before the entity is updated
+    @BeforeUpdate()
+    updateTimestamp() {
+        this.updatedAt = new Date();
+    }
 }
 

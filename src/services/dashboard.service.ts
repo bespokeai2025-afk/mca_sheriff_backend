@@ -3,7 +3,6 @@ import { CallOutputData } from "../entities/CallOutputData";
 
 export class DashboardService {
 
-  // Helper: Get last N months
   private static getLastMonths(months: number) {
     const today = new Date();
     const monthList = [];
@@ -15,46 +14,8 @@ export class DashboardService {
     }
     return monthList;
   }
-
-  // Total Call Minutes month-wise
-//   static async getTotalCallMinutes(months: number = 6) {
-//     const rawResult: { month_number: number; year: number; totalMinutes: number }[] =
-//       await AppDataSource.query(`
-//       SELECT 
-//         EXTRACT(MONTH FROM "updatedAt")::int AS month_number,
-//         EXTRACT(YEAR FROM "updatedAt")::int AS year,
-//         COALESCE(SUM("duration_ms") / 1000 / 60, 0) AS "totalMinutes"
-//       FROM "call_output_data"
-//       WHERE "updatedAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
-//       AND "isActive" = TRUE
-//       AND "isDeleted" = FALSE
-//       GROUP BY month_number, year
-//       ORDER BY year, month_number
-//     `);
-
-//     // Always build last N months list
-//     const monthList = this.getLastMonths(months);
-
-//     const chartData = monthList.map((m) => {
-//       const found = rawResult.find(
-//         (r) => r.month_number === m.month_number && r.year === m.year
-//       );
-
-//       return {
-//         month: m.month,
-//         totalMinutes: found ? Number(Number(found.totalMinutes).toFixed(2)) : 0,
-//       };
-//     });
-
-//     const total = chartData.reduce((sum, m) => sum + m.totalMinutes, 0);
-
-//     return {
-//       total,
-//       months: chartData,
-//     };
-//   }
-// Total Call Minutes month-wise
-static async getTotalCallMinutes(months: number = 6) {
+ // Total Call Minutes month-wise
+ static async getTotalCallMinutes(months: number = 6) {
   // Step 1: Query total duration in milliseconds per month
   const rawResult: { month_number: number; year: number; total_ms: number }[] =
     await AppDataSource.query(`
@@ -192,14 +153,9 @@ static async getLeads(months: number): Promise<{
     months: monthsData
   };
 }
-
-
-
-
-// Call Performance month-wise (Positive, Neutral, Negative only)
-static async getCallPerformance(months: number): Promise<
-  { month: string; positive: number; neutral: number; negative: number }[]
-> {
+static async getCallPerformance(months: number): Promise<{
+  month: string; positive: number; neutral: number; negative: number }[]>
+{
   // Compute start date for query
   const today = new Date();
   const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
@@ -230,6 +186,60 @@ static async getCallPerformance(months: number): Promise<
   });
 
   return result;
+  }
+static async callDrops(months: number): Promise<{
+  monthly: { month: string; user_hangup: number; agent_hangup: number; dial_no_answer: number }[];
+  total: number;
+}> {
+  const today = new Date();
+  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+
+  const rawResult: {
+    month_number: number;
+    year: number;
+    user_hangup: string;
+    agent_hangup: string;
+    dial_no_answer: string;
+  }[] = await AppDataSource.getRepository(CallOutputData)
+    .createQueryBuilder("call")
+    .select('EXTRACT(MONTH FROM call."updatedAt")::int', 'month_number')
+    .addSelect('EXTRACT(YEAR FROM call."updatedAt")::int', 'year')
+    .addSelect(
+      `SUM(CASE WHEN call.disconnection_reason = 'user_hangup' THEN 1 ELSE 0 END)`,
+      'user_hangup'
+    )
+    .addSelect(
+      `SUM(CASE WHEN call.disconnection_reason = 'agent_hangup' THEN 1 ELSE 0 END)`,
+      'agent_hangup'
+    )
+    .addSelect(
+      `SUM(CASE WHEN call.disconnection_reason = 'dial_no_answer' THEN 1 ELSE 0 END)`,
+      'dial_no_answer'
+    )
+    .where('call."updatedAt" >= :startDate', { startDate })
+    .andWhere('call."isActive" = TRUE')
+    .andWhere('call."isDeleted" = FALSE')
+    .groupBy('month_number, year')
+    .orderBy('year, month_number')
+    .getRawMany();
+
+  const monthList = this.getLastMonths(months);
+
+  const monthly = monthList.map(m => {
+    const found = rawResult.find(r => r.month_number === m.month_number && r.year === m.year);
+    return {
+      month: m.month,
+      user_hangup: found ? Number(found.user_hangup) : 0,
+      agent_hangup: found ? Number(found.agent_hangup) : 0,
+      dial_no_answer: found ? Number(found.dial_no_answer) : 0,
+    };
+  });
+
+  // ✅ Calculate sum (user_hangup + agent_hangup)
+  const total = monthly.reduce((sum, m) => sum + m.user_hangup + m.agent_hangup, 0);
+
+  return { total, monthly };
 }
+
 
 }
