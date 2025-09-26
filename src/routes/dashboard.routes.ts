@@ -5,7 +5,7 @@ import { verifyAccessToken } from "../middlewares/auth.middleware";
 const router = express.Router();
 
 // Total Call Minutes
-router.get("/total-call-minutes", verifyAccessToken, DashboardController.totalCallMinutes);
+router.post("/total-call-minutes", verifyAccessToken, DashboardController.totalCallMinutes);
 
 // Number of Calls
 router.get("/number-of-calls", verifyAccessToken, DashboardController.numberOfCalls);
