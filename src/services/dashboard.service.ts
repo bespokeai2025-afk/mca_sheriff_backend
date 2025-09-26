@@ -52,61 +52,109 @@ export class DashboardService {
     };
   }
 
- // Number of Calls month-wise
-  static async getNumberOfCalls(months: number): Promise<{ month: string; totalCalls: number }[]> {
-    const today = new Date();
-    const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+// Number of Calls month-wise with total count
+static async getNumberOfCalls(months: number): Promise<{ total: number; months: { month: string; totalCalls: number }[] }> {
+  const today = new Date();
+  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
 
-    // Query database grouped by month number
-    const rawResult: { month_number: number; totalCalls: number }[] = await AppDataSource.getRepository(CallOutputData)
+  // Query database grouped by month number
+  const rawResult: { month_number: number; totalCalls: number }[] = await AppDataSource.getRepository(CallOutputData)
+    .createQueryBuilder("call")
+    .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
+    .addSelect('COUNT(1)::int', 'totalCalls')
+    .where('call."createdAt" >= :startDate', { startDate })
+    .groupBy('month_number')
+    .orderBy('month_number')
+    .getRawMany();
+
+  // Map last N months to month names
+  const monthList = this.getLastMonths(months);
+  const monthsData = monthList.map(m => {
+    const found = rawResult.find(r => r.month_number === m.month_number);
+    return {
+      month: m.month, // month name string only
+      totalCalls: found ? found.totalCalls : 0
+    };
+  });
+
+  // Calculate total calls
+  const totalCount = monthsData.reduce((sum, m) => sum + m.totalCalls, 0);
+
+  return {
+    total: totalCount,
+    months: monthsData
+  };
+}
+
+// Leads (positive sentiment only) month-wise with total count
+static async getLeads(months: number): Promise<{ total: number; months: { month: string; totalLeads: number }[] }> {
+  const today = new Date();
+  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+
+  // Query database grouped by month number, counting only positive sentiment
+  const rawResult: { month_number: number; totalLeads: number }[] = await AppDataSource.getRepository(CallOutputData)
+    .createQueryBuilder("call")
+    .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
+    .addSelect('COUNT(1)::int', 'totalLeads')
+    .where('call."createdAt" >= :startDate', { startDate })
+    .andWhere('call.sentiment_analysis = :sentiment', { sentiment: "Positive" }) // only positive sentiment
+    .groupBy('month_number')
+    .orderBy('month_number')
+    .getRawMany();
+
+  // Map last N months to month names
+  const monthList = this.getLastMonths(months); // returns { month: string; month_number: number; year: number }[]
+  const monthsData = monthList.map(m => {
+    const found = rawResult.find(r => r.month_number === m.month_number);
+    return {
+      month: m.month,                   // month name string only
+      totalLeads: found ? found.totalLeads : 0
+    };
+  });
+
+  // Calculate total leads
+  const total = monthsData.reduce((sum, m) => sum + m.totalLeads, 0);
+
+  return {
+    total,
+    months: monthsData
+  };
+}
+
+// Call Performance month-wise (Positive, Neutral, Negative only)
+static async getCallPerformance(months: number): Promise<
+  { month: string; positive: number; neutral: number; negative: number }[]
+> {
+  // Compute start date for query
+  const today = new Date();
+  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+
+  // Query DB grouped by month number
+  const rawResult: { month_number: number; positive: number; neutral: number; negative: number }[] =
+    await AppDataSource.getRepository(CallOutputData)
       .createQueryBuilder("call")
       .select('EXTRACT(MONTH FROM call."createdAt")::int', 'month_number')
-      .addSelect('COUNT(1)::int', 'totalCalls')
+      .addSelect(`SUM(CASE WHEN call.sentiment_analysis = 'Positive' THEN 1 ELSE 0 END)`, 'positive')
+      .addSelect(`SUM(CASE WHEN call.sentiment_analysis = 'Neutral' THEN 1 ELSE 0 END)`, 'neutral')
+      .addSelect(`SUM(CASE WHEN call.sentiment_analysis = 'Negative' THEN 1 ELSE 0 END)`, 'negative')
       .where('call."createdAt" >= :startDate', { startDate })
       .groupBy('month_number')
       .orderBy('month_number')
       .getRawMany();
 
-    // Map to month names only
-    const monthList = this.getLastMonths(months);
-    const result = monthList.map(m => {
-      const found = rawResult.find(r => r.month_number === m.month_number);
-      return {
-        month: m.month,       // only month name string
-        totalCalls: found ? found.totalCalls : 0
-      };
-    });
+  // Map last N months to month names
+  const monthList = this.getLastMonths(months);
+  const result = monthList.map(m => {
+    const found = rawResult.find(r => r.month_number === m.month_number);
+    return {
+      month: m.month, // only month name
+      positive: found ? Number(found.positive) : 0,
+      neutral: found ? Number(found.neutral) : 0,
+      negative: found ? Number(found.negative) : 0
+    };
+  });
 
-    return result;
-  }
+  return result;
+}
 
-  // Leads (positive sentiment only)
-  static async getLeads(months: number): Promise<number> {
-    const startDate = this.getLastMonths(months);
-    return AppDataSource.getRepository(CallOutputData)
-      .createQueryBuilder("call")
-      .where("call.\"createdAt\" >= :startDate", { startDate })  // <-- fix here
-      .andWhere("call.sentiment_analysis = :sentiment", { sentiment: "positive" })
-      .getCount();
-  }
-
-  // Call Performance
-  static async getCallPerformance(months: number): Promise<
-    { month: string; positive: number; neutral: number; negative: number }[]
-  > {
-    const startDate = this.getLastMonths(months);
-    const result = await AppDataSource.query(`
-      SELECT 
-        TO_CHAR("createdAt", 'Mon') AS month,
-        SUM(CASE WHEN sentiment_analysis = 'positive' THEN 1 ELSE 0 END) AS positive,
-        SUM(CASE WHEN sentiment_analysis = 'neutral' THEN 1 ELSE 0 END) AS neutral,
-        SUM(CASE WHEN sentiment_analysis = 'negative' THEN 1 ELSE 0 END) AS negative
-      FROM call_output_data
-      WHERE "createdAt" >= $1
-      GROUP BY TO_CHAR("createdAt", 'Mon'), DATE_PART('month', "createdAt")
-      ORDER BY DATE_PART('month', "createdAt")
-    `, [startDate]);
-
-    return result;
-  }
 }
