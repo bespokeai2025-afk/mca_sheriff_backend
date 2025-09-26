@@ -21,8 +21,8 @@ export const mapCallOutputData = async (reqBody: any) => {
     sentimentAnalysis: call?.call_analysis?.user_sentiment || "",
     endReason: call?.disconnection_reason || "",
     email: call?.email || "",
-    appointment_date: call?.appointment_date || "",
-    appointment_end_date: call?.appointment_end_date || "",
+    // appointment_date: call?.appointment_date || "",
+    // appointment_end_date: call?.appointment_end_date || "",
     calendly_booking_url: call?.calendly_booking_url || "",
     crm_data_id: null as string | null,   // ✅ fix here
   };

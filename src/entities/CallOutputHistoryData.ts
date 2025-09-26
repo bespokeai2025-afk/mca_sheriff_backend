@@ -82,11 +82,11 @@ export class CallOutputHistoryData {
   @Column({ name: "email", type: "varchar", nullable: true })
   email: string;
   
-  @Column({ name: "appointment_date", type: "varchar", nullable: true })
-  appointment_date: string;
+  // @Column({ name: "appointment_date", type: "varchar", nullable: true })
+  // appointment_date: string;
 
-  @Column({ name: "appointment_end_date", type: "varchar", nullable: true })
-  appointment_end_date: string;
+  // @Column({ name: "appointment_end_date", type: "varchar", nullable: true })
+  // appointment_end_date: string;
 
   @Column({ name: "calendly_booking_url", type: "varchar", nullable: true })
   calendly_booking_url: string;

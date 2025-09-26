@@ -21,6 +21,7 @@ import limiter from './config/rate-limit';
 import callOutputDataRoutes from './routes/callOutputDataUser.routes'
 import CRMDataRoutes from './routes/crmdata.routes'
 import DashboardRoutes from './routes/dashboard.routes'
+import CenterStage from './routes/centerstagedcall.routes'
 // Load environment variables
 dotenv.config()
 import { logRequest, logResponse, logError } from "./logger";
@@ -73,7 +74,7 @@ app.use('/call-output-data', callOutputDataRoutes)
 app.use('/crm-data', CRMDataRoutes)
 
 app.use('/dashboard', DashboardRoutes)
-
+app.use('/center-stage', CenterStage)
 app.use(multerErrorHandler);
 
 app.use('/', viewsRoutes)
