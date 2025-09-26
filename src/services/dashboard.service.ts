@@ -16,21 +16,46 @@ export class DashboardService {
     return monthList;
   }
 
-  // ✅ Total Call Minutes month-wise
+  // Total Call Minutes month-wise
   static async getTotalCallMinutes(months: number = 6) {
-    const rawResult: { month_number: number; year: number; totalMinutes: number }[] =
-      await AppDataSource.query(`
-      SELECT 
-        EXTRACT(MONTH FROM "updatedAt")::int AS month_number,
-        EXTRACT(YEAR FROM "updatedAt")::int AS year,
-        COALESCE(SUM("duration_ms") / 1000 / 60, 0) AS "totalMinutes"
-      FROM "call_output_data"
-      WHERE "updatedAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
-      GROUP BY month_number, year
-      ORDER BY year, month_number
-    `);
+    // const rawResult: { month_number: number; year: number; totalMinutes: number }[] =
+    //   await AppDataSource.query(`
+    //   SELECT 
+    //     EXTRACT(MONTH FROM "updatedAt")::int AS month_number,
+    //     EXTRACT(YEAR FROM "updatedAt")::int AS year,
+    //     COALESCE(SUM("duration_ms") / 1000 / 60, 0) AS "totalMinutes"
+    //   FROM "call_output_data"
+    //   WHERE "updatedAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
+    //   AND "isActive" = TRUE
+    //   AND "isDeleted" = FALSE
+    //   GROUP BY month_number, year
+    //   ORDER BY year, month_number
+    // `);
 
     // Always build last N months list
+    const rawResult: { month_number: number; year: number; totalMinutes: number; minutes: number; seconds: number }[] =
+  await AppDataSource.query(`
+    SELECT 
+      EXTRACT(MONTH FROM "updatedAt")::int AS month_number,
+      EXTRACT(YEAR FROM "updatedAt")::int AS year,
+      
+      -- Total minutes in decimal
+      COALESCE(SUM("duration_ms") / 1000 / 60, 0) AS "totalMinutes",
+
+      -- Whole minutes
+      FLOOR(COALESCE(SUM("duration_ms") / 1000 / 60, 0)) AS "minutes",
+
+      -- Remaining seconds
+      ROUND(COALESCE(SUM("duration_ms") / 1000, 0) % 60, 2) AS "seconds"
+
+    FROM "call_output_data"
+    WHERE "updatedAt" >= date_trunc('month', NOW()) - INTERVAL '${months - 1} MONTH'
+      AND "isActive" = TRUE
+      AND "isDeleted" = FALSE
+    GROUP BY month_number, year
+    ORDER BY year, month_number
+  `);
+
     const monthList = this.getLastMonths(months);
 
     const chartData = monthList.map((m) => {
@@ -63,6 +88,8 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
     .select('EXTRACT(MONTH FROM call."updatedAt")::int', 'month_number')
     .addSelect('COUNT(1)::int', 'totalCalls')
     .where('call."updatedAt" >= :startDate', { startDate })
+    .andWhere('call."isActive" = TRUE')
+    .andWhere('call."isDeleted" = FALSE')
     .groupBy('month_number')
     .orderBy('month_number')
     .getRawMany();
@@ -106,6 +133,8 @@ static async getLeads(months: number): Promise<{
     .addSelect('COUNT(1)::int', 'totalLeads')
     .where('call."updatedAt" >= :startDate AND call."updatedAt" <= :endDate', { startDate, endDate })
     .andWhere('call.sentiment_analysis = :sentiment', { sentiment: "Positive" })
+    .andWhere('call."isActive" = TRUE')
+    .andWhere('call."isDeleted" = FALSE')
     .groupBy('month_number')
     .orderBy('month_number')
     .getRawMany();
