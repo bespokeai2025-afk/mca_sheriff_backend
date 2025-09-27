@@ -194,7 +194,7 @@ export class callOutputDataService {
         .getRawMany();
 
       // 🔹 Return only counts
-      return successWithData("User call detail Count get successfully", {
+      return successWithData("User call detail Count fetched successfully", {
         totalCall,
         successCounts,
         failureCounts,
@@ -206,6 +206,7 @@ export class callOutputDataService {
       return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
     }
   }
+  
   public async createCallOutputData(reqBody: any) {
     try {
       let raw = reqBody.raw_data;
