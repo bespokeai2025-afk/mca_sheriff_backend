@@ -69,6 +69,14 @@ export class CenterStagedCallService {
     //  Execute query
     const calls = await query.getRawMany();
 
+     // Convert duration_ms to minutes
+    const callsWithMinutes = calls.map(call => ({
+      ...call,
+      duration_minutes: call.duration_ms
+        ? +(Number(call.duration_ms) / 1000 / 60).toFixed(2)
+        : 0,
+    }));
+
     //  Return paginated result
     return {
       data: calls,
