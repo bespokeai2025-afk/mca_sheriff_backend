@@ -53,6 +53,8 @@ export class CenterStagedCallService {
         'call."to_number" AS to_number',
         'crm.name AS customer_name',
         'call."call_status" AS call_status',
+        'call.recording_url',
+        'call.duration_ms',
         'call."disconnection_reason" AS disconnection_reason',
         'call."updatedAt" AS call_updatedAt'
       ])
