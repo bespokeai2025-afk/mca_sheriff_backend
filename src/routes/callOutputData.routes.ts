@@ -15,10 +15,6 @@ import { createCallOutputData, deletefaq, getUsercallingData,  updateCallOutputD
 // Import validation middleware
 import { validateCallOutputData, validateUserID } from "../middlewares/calloutputdata.validation";
 
-// Import file upload configuration
-import upload from "../config/multerConfig";
-
-
 // Create Express router
 const router = express.Router();
 
@@ -27,11 +23,11 @@ const router = express.Router();
 router.get("/all", verifyAccessToken, getUsercallingData);
 
 // Create a new main category
-router.post("/create", verifyAccessToken, upload.single('image'), validateCallOutputData, createCallOutputData);
+router.post("/create", verifyAccessToken, validateCallOutputData, createCallOutputData);
 
 
 // Update an existing main category
-router.put("/update/:id", verifyAccessToken, upload.single('image'), validateUserID, validateCallOutputData, validateRequest, updateCallOutputData)
+router.put("/update/:id", verifyAccessToken, validateUserID, validateCallOutputData, validateRequest, updateCallOutputData)
 
 
 // Delete a main category

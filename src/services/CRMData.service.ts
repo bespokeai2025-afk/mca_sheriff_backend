@@ -6,6 +6,16 @@ import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import axios from "axios";
+
+interface RetellTask {
+  to_number: string;
+  retell_llm_dynamic_variables?: {
+    name?: string;
+    greeting?: string;
+    [key: string]: any;
+  };
+}
+
 export class CRMDataService {
     // Repository for CMR Data database operations
     private CRMDataRepository = AppDataSource.getRepository(CRMData);
@@ -36,13 +46,22 @@ export class CRMDataService {
 
         //  RetellAI API Integration (using tasks array)
         try {
-            const tasks: { to_number: string }[] = [];
+            // const tasks: { to_number: string }[] = [];
 
-            for (const crm of mainCategories) {
-                if ((crm as any).mobile_number) {
-                    tasks.push({ to_number: (crm as any).mobile_number });
-                }
-            }
+            // for (const crm of mainCategories) {
+            //     if ((crm as any).mobile_number) {
+            //         tasks.push({ to_number: (crm as any).mobile_number });
+            //     }
+            // }
+            const tasks: RetellTask[] = mainCategories
+                    .filter((crm: any) => crm.mobile_number)
+                    .map((crm: any) => ({
+                    to_number: crm.mobile_number,
+                    retell_llm_dynamic_variables: {
+                        name: crm.name,
+                        greeting: `Hello, ${crm.name}, this is a test call from Retell!`
+                    }
+                    }));
 
             // if (tasks.length > 0) {
             //     const payload = {
@@ -121,7 +140,7 @@ export class CRMDataService {
             retellResponse
         }));
 
-        return successWithData("Batch call initiated successfully", enrichedCategories, {
+        return successWithData("CRM data", enrichedCategories, {
             totalItems,
             totalPages,
             currentPage,

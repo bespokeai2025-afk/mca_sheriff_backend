@@ -16,8 +16,11 @@ export class CallOutputData {
     @Column({ type: 'text', nullable: true, default: null })
   vendor_id: string | null;
 
-  @Column({ type: 'text', nullable: true, default: null })
-  crm_data_id: string | null;
+  @Column({ type: 'uuid', nullable: true })
+crm_data_id: string | null;
+
+  // @Column({ type: 'text', nullable: true, default: null })
+  // crm_data_id: string | null;
   
   @Column({ name: "event", type: "varchar", nullable: true })
   event: string;
