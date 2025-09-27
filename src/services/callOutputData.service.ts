@@ -8,6 +8,7 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import { CallOutputData } from "../entities/CallOutputData";
 import { ILike } from "typeorm";
+import { In } from "typeorm";
 import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
 import { mapCallOutputData } from "../utils/mapper";
 
@@ -42,13 +43,52 @@ export class callOutputDataService {
     if (totalItems >= 1 && totalPages < currentPage) {
       return errorWithoutData("Page limit exceeded")
     }
-    return successWithData("User calling output data get successfully !", mainCategories, {
+    return successWithData("User calling output data fetched successfully !", mainCategories, {
       totalItems,
       totalPages,
       currentPage,
       pageSize
     });
 
+  }
+
+
+// Lead 
+  public async getUsercallingDataLead(verifyUser: any, pageSize: number, currentPage: number) {
+    let whereCondition: any = {};
+
+    if (verifyUser.user_exist) {
+      whereCondition = { isActive: true, isDeleted: false };
+    }
+    if (verifyUser.admin_exist) {
+      whereCondition = { isDeleted: false };
+    }
+
+    // Add sentiment filter (positive, neutral)
+    whereCondition = {
+      ...whereCondition,
+      sentimentAnalysis: In(["positive", "neutral"])
+    };
+
+    const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
+      where: whereCondition,
+      order: { createdAt: "DESC" },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize
+    });
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    if (totalItems >= 1 && totalPages < currentPage) {
+      return errorWithoutData("Page limit exceeded");
+    }
+
+    return successWithData("User calling lead fetched successfully !", mainCategories, {
+      totalItems,
+      totalPages,
+      currentPage,
+      pageSize
+    });
   }
 
   public async getUsercallingHistory(
@@ -149,7 +189,7 @@ export class callOutputDataService {
   // }
 
 
-// To get Count
+  // To get Count
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
     try {
       let whereCondition: any = {};
@@ -441,7 +481,7 @@ export class callOutputDataService {
     return successWithoutData("call output data updated successfully");
   }
 
-  
+
   public async deletefaq(id: string, verifyUser: any) {
     if (verifyUser.user_exist) {
       return errorWithoutData("user cann't update attendance")

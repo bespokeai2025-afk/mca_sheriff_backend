@@ -29,6 +29,30 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
 };
 
 
+//Lead
+export const getUsercallingDataLead = async (req: Request, res: Response): Promise<any> => {
+  try {
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed");
+      return res.status(response.result ? 200 : 400).json(response);
+    }
+
+    const { pageSize, currentPage } = req.query;
+
+    const response = await calloutputdataservice.getUsercallingDataLead(
+      req.verifyUser, // make sure middleware sets this
+      parseInt(pageSize as string) || 50,
+      parseInt(currentPage as string) || 1
+    );
+
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    const response = errorWithData("Something went wrong", { error:error });
+    return res.status(response.result ? 200 : 400).json(response);
+  }
+};
+
+
 // export const getUsercallingHistory = async (
 //     req: Request,
 //     res: Response
