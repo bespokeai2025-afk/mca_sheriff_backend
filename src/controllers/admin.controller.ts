@@ -131,7 +131,7 @@ export const logoutAdmin = async (req: Request, res: Response): Promise<any> => 
 
 export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
     try {
-        // ❌ Do not check req.user or req.verifyUser here
+        //  Do not check req.user or req.verifyUser here
         const response: any = await adminService.loginAdminWithEmailPassword(req.body);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
