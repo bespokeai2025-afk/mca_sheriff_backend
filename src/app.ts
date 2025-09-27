@@ -98,10 +98,4 @@ AppDataSource.initialize()
         console.error("Error Connecting Database", err);
         process.exit(1);
     });
-
-// cron.schedule("0 0 * * *", async () => {
-//     console.log("Running OTP cleanup job...");
-//     await deleteOldOTPs();
-// });
-
 app.use(logError);
