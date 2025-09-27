@@ -51,57 +51,57 @@ export class callOutputDataService {
   }
 
 
-  public async getUsercallingHistory(
-    verifyUser: any,
-    pageSize: number,
-    currentPage: number,
-    toNumber?: string // entity property
-  ) {
-    try {
-      let whereCondition: any = {};
+ public async getUsercallingHistory(
+  verifyUser: any,
+  pageSize?: number,
+  currentPage?: number,
+  toNumber?: string
+) {
+  try {
+    let whereCondition: any = {};
 
-      // Base conditions depending on role
-      if (verifyUser.user_exist) {
-        whereCondition = { isActive: true, isDeleted: false };
-      }
-
-      if (verifyUser.admin_exist) {
-        whereCondition = { isDeleted: false };
-      }
-
-      // Add filter for toNumber if provided
-      if (toNumber) {
-        whereCondition = { ...whereCondition, toNumber }; // match entity property
-      }
-
-      // fetch data with pagination
-      const [historyData, totalItems] = await this.historyRepository.findAndCount({
-        where: whereCondition,
-        order: { createdAt: "DESC" },
-        skip: (currentPage - 1) * pageSize,
-        take: pageSize,
-      });
-
-      const totalPages = Math.ceil(totalItems / pageSize);
-
-      if (totalItems >= 1 && totalPages < currentPage) {
-        return errorWithoutData("Page limit exceeded");
-      }
-
-      return successWithData(
-        "User history data retrieved successfully!",
-        historyData,
-        {
-          totalItems,
-          totalPages,
-          currentPage,
-          pageSize,
-        }
-      );
-    } catch (err) {
-      return errorWithData("Something went wrong", err);
+    if (verifyUser.user_exist) {
+      whereCondition = { isActive: true, isDeleted: false };
     }
+
+    if (verifyUser.admin_exist) {
+      whereCondition = { isDeleted: false };
+    }
+
+    if (toNumber) {
+      whereCondition.toNumber = toNumber;
+    }
+
+    const queryOptions: any = {
+      where: whereCondition,
+      order: { createdAt: "DESC" },
+    };
+
+    // Only add pagination if pageSize and currentPage are provided
+    if (pageSize && currentPage) {
+      queryOptions.skip = (currentPage - 1) * pageSize;
+      queryOptions.take = pageSize;
+    }
+
+    const [historyData, totalItems] = await this.historyRepository.findAndCount(queryOptions);
+
+    const totalPages = pageSize ? Math.ceil(totalItems / pageSize) : 1;
+
+    return successWithData(
+      "User history data retrieved successfully!",
+      historyData,
+      {
+        totalItems,
+        totalPages,
+        currentPage: currentPage || 1,
+        pageSize: pageSize || totalItems,
+      }
+    );
+  } catch (err) {
+    return errorWithData("Something went wrong", err);
   }
+}
+
 
 
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {

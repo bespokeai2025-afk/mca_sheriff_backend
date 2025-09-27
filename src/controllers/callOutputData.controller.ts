@@ -45,11 +45,15 @@ export const getUsercallingHistory = async (
         // normalize query param `to_number` -> `toNumber` (entity property)
         const toNumber = to_number ? String(to_number) : undefined;
 
+        // parse integers if provided; leave undefined if not
+        const size = pageSize ? parseInt(pageSize as string, 10) : undefined;
+        const page = currentPage ? parseInt(currentPage as string, 10) : undefined;
+
         const response = await calloutputdataservice.getUsercallingHistory(
             req.verifyUser,
-            parseInt(pageSize as string, 10) || 50,
-            parseInt(currentPage as string, 10) || 1,
-            toNumber // pass the normalized field
+            size,   // optional pageSize
+            page,   // optional currentPage
+            toNumber
         );
 
         return res.status(response.result ? 200 : 400).json(response);
@@ -58,6 +62,7 @@ export const getUsercallingHistory = async (
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+
 
 export const getUserCallDataCount = async (req: Request, res: Response): Promise<any> => {
     try {
