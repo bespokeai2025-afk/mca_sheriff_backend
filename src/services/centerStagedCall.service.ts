@@ -1,7 +1,7 @@
 import { AppDataSource } from "../config/database";
 import { CallOutputData } from "../entities/CallOutputData";
 import { CRMData } from "../entities/CRMData";
-
+import { ILike } from "typeorm";
 export class CenterStagedCallService {
   static async callFilterCenterStage(
     from_date: string,
@@ -10,17 +10,17 @@ export class CenterStagedCallService {
     to_time: string,
     page: number = 1,
     pageSize: number = 20,
-    search?: string
+    // search?: string
   ) {
     if (!from_date || !to_date) {
       throw new Error("Both from_date and to_date are required");
     }
 
-    // 1️⃣ Build start/end timestamps
+    //  Build start/end timestamps
     const startTimestamp = new Date(`${from_date}T${from_time || "00:00:00"}`);
     const endTimestamp = new Date(`${to_date}T${to_time || "23:59:59"}`);
 
-    // 2️⃣ Base query builder
+    //  Base query builder
     const query = AppDataSource.getRepository(CallOutputData)
       .createQueryBuilder("call")
       .leftJoin(CRMData, "crm", "crm.id = call.crm_data_id")
@@ -30,19 +30,20 @@ export class CenterStagedCallService {
       .andWhere('crm."isActive" = TRUE')
       .andWhere('crm."isDeleted" = FALSE');
 
-    // 3️⃣ Apply search filter (case-insensitive)
-    if (search && search.trim() !== "") {
-      query.andWhere(
-        `(crm.name ILIKE :search OR call."to_number" ILIKE :search OR call."call_status" ILIKE :search)`,
-        { search: `%${search}%` }
-      );
-    }
+    //  Apply search filter (case-insensitive)
+    // if (search && search.trim() !== "") {
+            
+    //   query.andWhere(
+    //     `(crm.name ILIKE :search OR call."to_number" ILIKE :search OR call."call_status" ILIKE :search)`,
+    //     { search: `%${search}%` }
+    //   );
+    // }
 
-    // 4️⃣ Get total count for pagination
+    //  Get total count for pagination
     const totalQuery = query.clone();
     const total = await totalQuery.getCount();
 
-    // 5️⃣ Apply select, pagination, and sorting
+    //  Apply select, pagination, and sorting
     query
       .select([
         'call.id AS call_id',
@@ -56,14 +57,14 @@ export class CenterStagedCallService {
       .skip((page - 1) * pageSize)
       .take(pageSize);
 
-    // 6️⃣ Log SQL and parameters for debugging
+    // Log SQL and parameters for debugging
     // console.log("Generated SQL:", query.getSql());
     // console.log("Query Parameters:", query.getParameters());
 
-    // 7️⃣ Execute query
+    //  Execute query
     const calls = await query.getRawMany();
 
-    // 8️⃣ Return paginated result
+    //  Return paginated result
     return {
       data: calls,
       totalItems: total,
