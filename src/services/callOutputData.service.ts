@@ -67,7 +67,7 @@ export class callOutputDataService {
     // Add sentiment filter (positive, neutral)
     whereCondition = {
       ...whereCondition,
-      sentimentAnalysis: In(["positive", "neutral"])
+      sentimentAnalysis: In(["Positive", "Neutral"])
     };
 
     const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
