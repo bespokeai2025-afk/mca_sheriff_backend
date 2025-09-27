@@ -164,7 +164,6 @@ export class CRMDataService {
                 whereCondition = { isDeleted: false };
             }
 
-            // Apply flexible mobile number filter if provided
             if (mobile_number) {
                 whereCondition.mobile_number = ILike(`%${mobile_number.replace(/\s+/g, '')}%`);
             }

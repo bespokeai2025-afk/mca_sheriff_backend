@@ -51,51 +51,51 @@ export class callOutputDataService {
 
   }
 
-   public async getUsercallingHistory(
-          verifyUser: any,
-          pageSize: number,
-          currentPage: number,
-          toNumber?: string // optional
-      ) {
-          try {
-              let whereCondition: any = {};
-  
-              if (verifyUser.user_exist) {
-                  whereCondition = { isActive: true, isDeleted: false };
-              }
-              if (verifyUser.admin_exist) {
-                  whereCondition = { isDeleted: false };
-              }
-  
-              // Apply flexible mobile number filter if provided
-              if (toNumber) {
-                  whereCondition.toNumber = ILike(`%${toNumber.replace(/\s+/g, '')}%`);
-              }
-  
-              const [historyData, totalItems] = await this.historyRepository.findAndCount({
-                  where: whereCondition,
-                  order: { createdAt: 'DESC' },
-                  skip: toNumber ? 0 : (currentPage - 1) * pageSize,
-                  take: toNumber ? undefined : pageSize,
-              });
-  
-              const totalPages = toNumber ? 1 : Math.ceil(totalItems / pageSize);
-  
-              return successWithData(
-                  "User History data fetched successfully!",
-                  historyData,
-                  {
-                      totalItems,
-                      totalPages,
-                      currentPage: toNumber ? 1 : currentPage,
-                      pageSize: toNumber ? totalItems : pageSize,
-                  }
-              );
-  
-          } catch (error) {
-              return errorWithData("Something went wrong", { error });
-          }
+  public async getUsercallingHistory(
+    verifyUser: any,
+    pageSize: number,
+    currentPage: number,
+    toNumber?: string
+  ) {
+    try {
+      let whereCondition: any = {};
+
+      if (verifyUser.user_exist) {
+        whereCondition = { isActive: true, isDeleted: false };
       }
+      if (verifyUser.admin_exist) {
+        whereCondition = { isDeleted: false };
+      }
+
+
+      if (toNumber) {
+        whereCondition.toNumber = ILike(`%${toNumber.replace(/\s+/g, '')}%`);
+      }
+
+      const [historyData, totalItems] = await this.historyRepository.findAndCount({
+        where: whereCondition,
+        order: { createdAt: 'DESC' },
+        skip: toNumber ? 0 : (currentPage - 1) * pageSize,
+        take: toNumber ? undefined : pageSize,
+      });
+
+      const totalPages = toNumber ? 1 : Math.ceil(totalItems / pageSize);
+
+      return successWithData(
+        "User History data fetched successfully!",
+        historyData,
+        {
+          totalItems,
+          totalPages,
+          currentPage: toNumber ? 1 : currentPage,
+          pageSize: toNumber ? totalItems : pageSize,
+        }
+      );
+
+    } catch (error) {
+      return errorWithData("Something went wrong", { error });
+    }
+  }
 
   // public async getUsercallingHistory(
   //   verifyUser: any,
@@ -149,7 +149,7 @@ export class callOutputDataService {
   // }
 
 
-
+// To get Count
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
     try {
       let whereCondition: any = {};
@@ -160,11 +160,11 @@ export class callOutputDataService {
         whereCondition = { isDeleted: false };
       }
 
-      // 🔹 Count total items
+      // Count total items
       const totalCall = await this.callOutputRepository.count({ where: whereCondition });
 
 
-      // 🔹 Count only positive & neutral sentimentAnalysis
+      // Count only positive & neutral sentimentAnalysis
       const successCounts = await this.callOutputRepository
         .createQueryBuilder("call")
         .select("call.sentimentAnalysis", "sentimentAnalysis")
@@ -183,7 +183,7 @@ export class callOutputDataService {
         .groupBy("call.sentimentAnalysis")
         .getRawMany();
 
-      // 🔹 Count callStatus distribution
+      // Count callStatus distribution
       const notConnectedCounts = await this.callOutputRepository
         .createQueryBuilder("call")
         .select("call.callStatus", "callStatus")
@@ -193,7 +193,7 @@ export class callOutputDataService {
         .groupBy("call.callStatus")
         .getRawMany();
 
-      // 🔹 Return only counts
+      // Return only counts
       return successWithData("User call detail Count fetched successfully", {
         totalCall,
         successCounts,
@@ -206,7 +206,7 @@ export class callOutputDataService {
       return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
     }
   }
-  
+
   public async createCallOutputData(reqBody: any) {
     try {
       let raw = reqBody.raw_data;
@@ -440,6 +440,8 @@ export class callOutputDataService {
 
     return successWithoutData("call output data updated successfully");
   }
+
+  
   public async deletefaq(id: string, verifyUser: any) {
     if (verifyUser.user_exist) {
       return errorWithoutData("user cann't update attendance")
