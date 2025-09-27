@@ -6,6 +6,7 @@ import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import axios from "axios";
+import { ILike } from "typeorm";
 export class CRMDataService {
     // Repository for CMR Data database operations
     private CRMDataRepository = AppDataSource.getRepository(CRMData);
@@ -129,40 +130,51 @@ export class CRMDataService {
         });
     }
 
-      public async getUsercrmData(verifyUser: any, pageSize: number, currentPage: number) {
-     
-     
-             let whereCondition = {};
-             if (verifyUser.user_exist) {
-                 whereCondition = { isActive: true, isDeleted: false };
-             }
-             if (verifyUser.admin_exist) {
-     
-                 whereCondition = { isDeleted: false };
-     
-             }
-     
-             const [mainCategories, totalItems] = await this.CRMDataRepository .findAndCount({
-                 where: { isActive: true, isDeleted: false },
-                 order: { createdAt: 'DESC' },
-                 skip: (currentPage - 1) * pageSize,
-                 take: pageSize
-             });
-     
-     
-             const totalPages = Math.ceil(totalItems / pageSize);
-     
-             if (totalItems >= 1 && totalPages < currentPage) {
-                 return errorWithoutData("Page limit exceeded")
-             }
-             return successWithData("User CRM data get successfully !", mainCategories, {
-                 totalItems,
-                 totalPages,
-                 currentPage,
-                 pageSize
-             });
-     
-         } 
+    public async getUsercrmData(
+        verifyUser: any,
+        pageSize: number,
+        currentPage: number,
+        mobile_number?: string // optional
+    ) {
+        try {
+            let whereCondition: any = {};
+
+            if (verifyUser.user_exist) {
+                whereCondition = { isActive: true, isDeleted: false };
+            }
+            if (verifyUser.admin_exist) {
+                whereCondition = { isDeleted: false };
+            }
+
+            // Apply flexible mobile number filter if provided
+            if (mobile_number) {
+                whereCondition.mobile_number = ILike(`%${mobile_number.replace(/\s+/g, '')}%`);
+            }
+
+            const [crmData, totalItems] = await this.CRMDataRepository.findAndCount({
+                where: whereCondition,
+                order: { createdAt: 'DESC' },
+                skip: mobile_number ? 0 : (currentPage - 1) * pageSize,
+                take: mobile_number ? undefined : pageSize,
+            });
+
+            const totalPages = mobile_number ? 1 : Math.ceil(totalItems / pageSize);
+
+            return successWithData(
+                "User CRM data fetched successfully!",
+                crmData,
+                {
+                    totalItems,
+                    totalPages,
+                    currentPage: mobile_number ? 1 : currentPage,
+                    pageSize: mobile_number ? totalItems : pageSize,
+                }
+            );
+
+        } catch (error) {
+            return errorWithData("Something went wrong", { error });
+        }
+    }
 
     public async createCRMData(Data: object, verifyUser: any) {
 
@@ -179,5 +191,5 @@ export class CRMDataService {
         }
         return successWithData("crm data created successfully", crmdataoutput);
 
-    }   
+    }
 }

@@ -29,31 +29,55 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
 };
 
 
-export const getUsercallingHistory = async (
-    req: Request,
-    res: Response
-): Promise<any> => {
+// export const getUsercallingHistory = async (
+//     req: Request,
+//     res: Response
+// ): Promise<any> => {
+//     try {
+//         if (!req.user) {
+//             const response = errorWithoutData("Authentication failed");
+//             return res.status(response.result ? 200 : 400).json(response);
+//         }
+
+//         // extract query params
+//         const { pageSize, currentPage, to_number } = req.query;
+
+//         // normalize query param `to_number` -> `toNumber` (entity property)
+//         const toNumber = to_number ? String(to_number) : undefined;
+
+//         // parse integers if provided; leave undefined if not
+//         const size = pageSize ? parseInt(pageSize as string, 10) : undefined;
+//         const page = currentPage ? parseInt(currentPage as string, 10) : undefined;
+
+//         const response = await calloutputdataservice.getUsercallingHistory(
+//             req.verifyUser,
+//             size,   // optional pageSize
+//             page,   // optional currentPage
+//             toNumber
+//         );
+
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData("Something went wrong", { error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
+
+
+export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
     try {
         if (!req.user) {
             const response = errorWithoutData("Authentication failed");
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        // extract query params
-        const { pageSize, currentPage, to_number } = req.query;
-
-        // normalize query param `to_number` -> `toNumber` (entity property)
-        const toNumber = to_number ? String(to_number) : undefined;
-
-        // parse integers if provided; leave undefined if not
-        const size = pageSize ? parseInt(pageSize as string, 10) : undefined;
-        const page = currentPage ? parseInt(currentPage as string, 10) : undefined;
+        const { pageSize, currentPage, toNumber } = req.query;
 
         const response = await calloutputdataservice.getUsercallingHistory(
             req.verifyUser,
-            size,   // optional pageSize
-            page,   // optional currentPage
-            toNumber
+            parseInt(pageSize as string) || 50,
+            parseInt(currentPage as string) || 1,
+            toNumber as string // optional filter
         );
 
         return res.status(response.result ? 200 : 400).json(response);
