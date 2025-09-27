@@ -18,7 +18,7 @@ export class CenterStagedCallService {
       .createQueryBuilder("call")
       .select([
         'call.to_number AS "to_number"',
-        'call.customer_name AS "customer_name"',
+        'call.name AS "name"',
         'call.call_status AS "call_status"',
         'call.disconnection_reason AS "disconnection_reason"',
       ])

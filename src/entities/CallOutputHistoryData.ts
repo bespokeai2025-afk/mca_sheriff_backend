@@ -43,7 +43,7 @@ export class CallOutputHistoryData {
   @Column({ name: "agent_name", type: "varchar", nullable: true })
   agentName: string;
 
-  @Column({ name: "customer_name", type: "varchar", nullable: true })
+  @Column({ name: "name", type: "varchar", nullable: true })
   name: string;
 
   @Column({ name: "call_status", type: "varchar", nullable: true })
