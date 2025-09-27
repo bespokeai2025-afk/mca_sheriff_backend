@@ -55,7 +55,7 @@ export class callOutputDataService {
     verifyUser: any,
     pageSize: number,
     currentPage: number,
-    toNumber?: string // <-- optional filter
+    toNumber?: string // entity property
   ) {
     try {
       let whereCondition: any = {};
@@ -64,16 +64,18 @@ export class callOutputDataService {
       if (verifyUser.user_exist) {
         whereCondition = { isActive: true, isDeleted: false };
       }
+
       if (verifyUser.admin_exist) {
         whereCondition = { isDeleted: false };
       }
 
-      // Add filter for to_number if provided
+      // Add filter for toNumber if provided
       if (toNumber) {
-        whereCondition = { ...whereCondition, toNumber: toNumber };
+        whereCondition = { ...whereCondition, toNumber }; // match entity property
       }
 
-      const [mainCategories, totalItems] = await this.historyRepository.findAndCount({
+      // fetch data with pagination
+      const [historyData, totalItems] = await this.historyRepository.findAndCount({
         where: whereCondition,
         order: { createdAt: "DESC" },
         skip: (currentPage - 1) * pageSize,
@@ -86,17 +88,20 @@ export class callOutputDataService {
         return errorWithoutData("Page limit exceeded");
       }
 
-      return successWithData("User history data get successfully!", mainCategories, {
-        totalItems,
-        totalPages,
-        currentPage,
-        pageSize,
-      });
+      return successWithData(
+        "User history data retrieved successfully!",
+        historyData,
+        {
+          totalItems,
+          totalPages,
+          currentPage,
+          pageSize,
+        }
+      );
     } catch (err) {
       return errorWithData("Something went wrong", err);
     }
   }
-
 
 
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {

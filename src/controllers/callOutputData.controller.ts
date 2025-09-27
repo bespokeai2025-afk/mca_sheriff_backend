@@ -29,29 +29,35 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
 };
 
 
-export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
+export const getUsercallingHistory = async (
+    req: Request,
+    res: Response
+): Promise<any> => {
     try {
         if (!req.user) {
             const response = errorWithoutData("Authentication failed");
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        const { pageSize, currentPage, to_number } = req.query; //  added to_number
+        // extract query params
+        const { pageSize, currentPage, to_number } = req.query;
+
+        // normalize query param `to_number` -> `toNumber` (entity property)
+        const toNumber = to_number ? String(to_number) : undefined;
 
         const response = await calloutputdataservice.getUsercallingHistory(
             req.verifyUser,
-            parseInt(pageSize as string) || 50,
-            parseInt(currentPage as string) || 1,
-            to_number as string | undefined //  pass to service
+            parseInt(pageSize as string, 10) || 50,
+            parseInt(currentPage as string, 10) || 1,
+            toNumber // pass the normalized field
         );
 
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
-        const response = errorWithData("something went wrong", { error: error });
+        const response = errorWithData("Something went wrong", { error });
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
-
 
 export const getUserCallDataCount = async (req: Request, res: Response): Promise<any> => {
     try {
