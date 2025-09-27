@@ -7,6 +7,7 @@ import s3 from "../config/s3Bucket";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import { CallOutputData } from "../entities/CallOutputData";
+import { ILike } from "typeorm";
 import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
 import { mapCallOutputData } from "../utils/mapper";
 
@@ -50,52 +51,102 @@ export class callOutputDataService {
 
   }
 
-
-  public async getUsercallingHistory(
-    verifyUser: any,
-    pageSize: number,
-    currentPage: number,
-    toNumber?: string // <-- optional filter
-  ) {
-    try {
-      let whereCondition: any = {};
-
-      // Base conditions depending on role
-      if (verifyUser.user_exist) {
-        whereCondition = { isActive: true, isDeleted: false };
+   public async getUsercallingHistory(
+          verifyUser: any,
+          pageSize: number,
+          currentPage: number,
+          toNumber?: string // optional
+      ) {
+          try {
+              let whereCondition: any = {};
+  
+              if (verifyUser.user_exist) {
+                  whereCondition = { isActive: true, isDeleted: false };
+              }
+              if (verifyUser.admin_exist) {
+                  whereCondition = { isDeleted: false };
+              }
+  
+              // Apply flexible mobile number filter if provided
+              if (toNumber) {
+                  whereCondition.toNumber = ILike(`%${toNumber.replace(/\s+/g, '')}%`);
+              }
+  
+              const [historyData, totalItems] = await this.historyRepository.findAndCount({
+                  where: whereCondition,
+                  order: { createdAt: 'DESC' },
+                  skip: toNumber ? 0 : (currentPage - 1) * pageSize,
+                  take: toNumber ? undefined : pageSize,
+              });
+  
+              const totalPages = toNumber ? 1 : Math.ceil(totalItems / pageSize);
+  
+              return successWithData(
+                  "User History data fetched successfully!",
+                  historyData,
+                  {
+                      totalItems,
+                      totalPages,
+                      currentPage: toNumber ? 1 : currentPage,
+                      pageSize: toNumber ? totalItems : pageSize,
+                  }
+              );
+  
+          } catch (error) {
+              return errorWithData("Something went wrong", { error });
+          }
       }
-      if (verifyUser.admin_exist) {
-        whereCondition = { isDeleted: false };
-      }
 
-      // Add filter for to_number if provided
-      if (toNumber) {
-        whereCondition = { ...whereCondition, toNumber: toNumber };
-      }
+  // public async getUsercallingHistory(
+  //   verifyUser: any,
+  //   pageSize?: number,
+  //   currentPage?: number,
+  //   toNumber?: string
+  // ) {
+  //   try {
+  //     let whereCondition: any = {};
 
-      const [mainCategories, totalItems] = await this.historyRepository.findAndCount({
-        where: whereCondition,
-        order: { createdAt: "DESC" },
-        skip: (currentPage - 1) * pageSize,
-        take: pageSize,
-      });
+  //     if (verifyUser.user_exist) {
+  //       whereCondition = { isActive: true, isDeleted: false };
+  //     }
 
-      const totalPages = Math.ceil(totalItems / pageSize);
+  //     if (verifyUser.admin_exist) {
+  //       whereCondition = { isDeleted: false };
+  //     }
 
-      if (totalItems >= 1 && totalPages < currentPage) {
-        return errorWithoutData("Page limit exceeded");
-      }
+  //     if (toNumber) {
+  //       whereCondition.toNumber = toNumber;
+  //     }
 
-      return successWithData("User history data get successfully!", mainCategories, {
-        totalItems,
-        totalPages,
-        currentPage,
-        pageSize,
-      });
-    } catch (err) {
-      return errorWithData("Something went wrong", err);
-    }
-  }
+  //     const queryOptions: any = {
+  //       where: whereCondition,
+  //       order: { createdAt: "DESC" },
+  //     };
+
+  //     // Only add pagination if pageSize and currentPage are provided
+  //     if (pageSize && currentPage) {
+  //       queryOptions.skip = (currentPage - 1) * pageSize;
+  //       queryOptions.take = pageSize;
+  //     }
+
+  //     const [historyData, totalItems] = await this.historyRepository.findAndCount(queryOptions);
+
+  //     const totalPages = pageSize ? Math.ceil(totalItems / pageSize) : 1;
+
+  //     return successWithData(
+  //       "User history data retrieved successfully!",
+  //       historyData,
+  //       {
+  //         totalItems,
+  //         totalPages,
+  //         currentPage: currentPage || 1,
+  //         pageSize: pageSize || totalItems,
+  //       }
+  //     );
+  //   } catch (err) {
+  //     return errorWithData("Something went wrong", err);
+  //   }
+  // }
 
 
 
@@ -143,7 +194,7 @@ export class callOutputDataService {
         .getRawMany();
 
       // 🔹 Return only counts
-      return successWithData("User call detail Count get successfully", {
+      return successWithData("User call detail Count fetched successfully", {
         totalCall,
         successCounts,
         failureCounts,
@@ -155,6 +206,7 @@ export class callOutputDataService {
       return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
     }
   }
+  
   public async createCallOutputData(reqBody: any) {
     try {
       let raw = reqBody.raw_data;

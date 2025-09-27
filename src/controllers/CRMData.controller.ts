@@ -27,22 +27,28 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
 };
 
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
-
     try {
         if (!req.user) {
             const response = errorWithoutData("Authentication failed");
             return res.status(response.result ? 200 : 400).json(response);
         }
-        const { pageSize, currentPage } = req.query;
 
+        const { pageSize, currentPage, mobile_number } = req.query;
 
-        const response = await crmdataservice.getUsercrmData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
+        const response = await crmdataservice.getUsercrmData(
+            req.verifyUser,
+            parseInt(pageSize as string) || 50,
+            parseInt(currentPage as string) || 1,
+            mobile_number as string // optional filter
+        );
+
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
-        const response = errorWithData('something went wrong', { error: error });
+        const response = errorWithData("Something went wrong", { error });
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+
 
 export const createCRMData = async (req: Request, res: Response): Promise<any> => {
 
@@ -58,7 +64,7 @@ export const createCRMData = async (req: Request, res: Response): Promise<any> =
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        
+
 
         const data = { ...req.body, image: (req.file as Express.Multer.File & { location: string })?.location || null };
 
