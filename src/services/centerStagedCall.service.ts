@@ -2,6 +2,9 @@ import { AppDataSource } from "../config/database";
 import { CallOutputData } from "../entities/CallOutputData";
 import { CRMData } from "../entities/CRMData";
 import { ILike } from "typeorm";
+
+const DEFAULT_PAGE_SIZE = Number(process.env.PAGE_SIZE) || 10;
+
 export class CenterStagedCallService {
   static async callFilterCenterStage(
     from_date: string,
@@ -9,7 +12,7 @@ export class CenterStagedCallService {
     from_time: string,
     to_time: string,
     page: number = 1,
-    pageSize: number = 20,
+    pageSize: number = DEFAULT_PAGE_SIZE
     // search?: string
   ) {
     if (!from_date || !to_date) {
