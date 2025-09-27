@@ -79,7 +79,7 @@ export class CenterStagedCallService {
 
     //  Return paginated result
     return {
-      data: calls,
+       data: callsWithMinutes,
       totalItems: total,
       currentPage: page,
       pageSize,
