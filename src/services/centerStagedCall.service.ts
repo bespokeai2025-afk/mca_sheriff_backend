@@ -13,17 +13,14 @@ export class CenterStagedCallService {
     to_time: string,
     page: number = 1,
     pageSize: number = DEFAULT_PAGE_SIZE
-    // search?: string
   ) {
     if (!from_date || !to_date) {
       throw new Error("Both from_date and to_date are required");
     }
 
-    //  Build start/end timestamps
     const startTimestamp = new Date(`${from_date}T${from_time || "00:00:00"}`);
     const endTimestamp = new Date(`${to_date}T${to_time || "23:59:59"}`);
 
-    //  Base query builder
     const query = AppDataSource.getRepository(CallOutputData)
       .createQueryBuilder("call")
       .leftJoin(CRMData, "crm", "crm.id = call.crm_data_id")
@@ -33,26 +30,17 @@ export class CenterStagedCallService {
       .andWhere('crm."isActive" = TRUE')
       .andWhere('crm."isDeleted" = FALSE');
 
-    //  Apply search filter (case-insensitive)
-    // if (search && search.trim() !== "") {
-            
-    //   query.andWhere(
-    //     `(crm.name ILIKE :search OR call."to_number" ILIKE :search OR call."call_status" ILIKE :search)`,
-    //     { search: `%${search}%` }
-    //   );
-    // }
-
-    //  Get total count for pagination
     const totalQuery = query.clone();
     const total = await totalQuery.getCount();
 
-    //  Apply select, pagination, and sorting
     query
       .select([
         'call.id AS call_id',
         'call."to_number" AS to_number',
         'crm.name AS customer_name',
         'call."call_status" AS call_status',
+        'call.recording_url',
+        'call.duration_ms',
         'call."disconnection_reason" AS disconnection_reason',
         'call."updatedAt" AS call_updatedAt'
       ])
@@ -60,16 +48,23 @@ export class CenterStagedCallService {
       .skip((page - 1) * pageSize)
       .take(pageSize);
 
-    // Log SQL and parameters for debugging
-    // console.log("Generated SQL:", query.getSql());
-    // console.log("Query Parameters:", query.getParameters());
-
-    //  Execute query
     const calls = await query.getRawMany();
 
-    //  Return paginated result
+    // Replace duration_ms with MM:SS format
+    const callsWithFormattedDuration = calls.map(call => {
+      const ms = Number(call.duration_ms) || 0;
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+
+      return {
+        ...call,
+        duration_ms: `${minutes}:${seconds.toString().padStart(2, '0')}` // MM:SS
+      };
+    });
+
     return {
-      data: calls,
+      data: callsWithFormattedDuration,
       totalItems: total,
       currentPage: page,
       pageSize,
