@@ -121,7 +121,7 @@ export class CRMDataService {
             retellResponse
         }));
 
-        return successWithData("CRM data", enrichedCategories, {
+        return successWithData("Batch call initiated successfully", enrichedCategories, {
             totalItems,
             totalPages,
             currentPage,
