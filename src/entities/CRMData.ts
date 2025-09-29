@@ -21,6 +21,9 @@ export class CRMData /* extends Common */ {
     // Description of the main category
     @Column({ type: 'text' })
     mobile_number: string;
+
+    // @Column({ type: "boolean", default: true})
+    // need_to_call: string;
       
     @Column({ type: "boolean", default: true })
     isActive: boolean
