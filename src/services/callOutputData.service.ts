@@ -154,7 +154,7 @@ export class callOutputDataService {
             status: "Completed",
             createdAt: call.createdAt,
           });
-        } else if (call.callStatus === "started") {
+        } else if (call.callStatus === "call_started") {
           ongoing.push({
             id: call.id,
             name: call.name,
@@ -180,7 +180,7 @@ export class callOutputDataService {
       return {
         result: false,
         statuscode: 500,
-        message: "Something went wrong while fetching call dropdown",
+        message: "Something went wrong while fetching call status.",
         error: error.message, // now works
       };
     }
