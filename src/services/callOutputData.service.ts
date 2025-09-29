@@ -508,14 +508,15 @@ export class callOutputDataService {
       }
 
       // 10️⃣ Return response based on sentiment
-      if (mappedData.sentimentAnalysis === "negative") {
-        return successWithData("Negative sentiment processed successfully", savedCall);
+      if (mappedData.sentimentAnalysis === "negative" || mappedData.sentimentAnalysis === "Neutral") {
+          return successWithData("Negative/Neutral sentiment processed successfully", savedCall);
       } else if (mappedData.sentimentAnalysis === "positive") {
-        return successWithData("Positive sentiment processed successfully", savedCall);
+          return successWithData("Positive sentiment processed successfully", savedCall);
       } else {
-        // Handle missing/neutral sentiment
-        return successWithData("Call output data saved (no sentiment provided)", savedCall);
+          // Handle missing or undefined sentiment
+          return successWithData("Call output data saved (no sentiment provided)", savedCall);
       }
+
 
     } catch (error) {
       console.error("❌ Error creating call output data:", error);
