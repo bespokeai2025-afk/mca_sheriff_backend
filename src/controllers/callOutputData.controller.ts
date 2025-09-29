@@ -85,6 +85,25 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
 };
 
 
+//Completed and ongoing
+export const getCallDropdownList = async (req: Request, res: Response): Promise<any> => {
+  try {
+    // Optional authentication check if you have req.user or req.verifyUser
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed");
+      return res.status(response.result ? 200 : 400).json(response);
+    }
+
+    // Call your service function
+    const response = await calloutputdataservice.getCallDropdownList();
+
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : String(error);
+    const response = errorWithData("Something went wrong", { error: errMessage });
+    return res.status(response.result ? 200 : 400).json(response);
+  }
+};
 
 
 
