@@ -420,7 +420,10 @@ public async getCallDropdownList(
       const crmRecord = await this.CRMDataRepository.findOne({
         where: { mobile_number: mappedData.toNumber, isDeleted: false },
       });
-      mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
+      // mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
+      if (crmRecord) {
+          mappedData.crmData = crmRecord;
+      }
 
       // 7️⃣ Check if call already exists (by toNumber)
       let existingCall = await this.callOutputRepository.findOne({

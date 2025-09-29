@@ -17,9 +17,6 @@ export class CallOutputData {
   @Column({ type: 'text', nullable: true, default: null })
   vendor_id: string | null;
 
-  @Column({ type: 'uuid', nullable: true })
-  crm_data_id: string | null;
-
   // @Column({ type: 'text', nullable: true, default: null })
   // crm_data_id: string | null;
 
@@ -108,7 +105,9 @@ export class CallOutputData {
     this.updatedAt = new Date();
   }
 
+   //Correct ManyToOne relation to CRMData
   @ManyToOne(() => CRMData, (crmData) => crmData.callOutputs, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "crm_data_id" }) // explicitly link the foreign key column
   crmData: CRMData;
 }
 
