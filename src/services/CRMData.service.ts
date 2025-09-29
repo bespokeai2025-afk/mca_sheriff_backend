@@ -24,10 +24,10 @@ export class CRMDataService {
     public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
         let whereCondition = {};
         if (verifyUser.user_exist) {
-            whereCondition = { isActive: true, isDeleted: false };
+            whereCondition = { isActive: true, isDeleted: false, need_to_call: true };
         }
         if (verifyUser.admin_exist) {
-            whereCondition = { isDeleted: false };
+            whereCondition = { isDeleted: false, need_to_call: true };
         }
 
         const [mainCategories, totalItems] = await this.CRMDataRepository.findAndCount({
@@ -229,7 +229,7 @@ export class CRMDataService {
         const callOutputRepository = AppDataSource.getRepository(CallOutputData);
 
         const callOutput = callOutputRepository.create({
-            crm_data_id: crmdataoutput.id,
+            crmData: crmdataoutput, 
             name: crmdataoutput.name,
             toNumber: crmdataoutput.mobile_number,
             callStatus: "Yet to call",
