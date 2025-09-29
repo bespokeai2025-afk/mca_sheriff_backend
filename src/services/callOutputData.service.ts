@@ -170,7 +170,7 @@ export class callOutputDataService {
       return {
         result: true,
         statuscode: 200,
-        message: "Call dropdown fetched successfully!",
+        message: "Call status data fetched successfully!",
         data: {
           completed,
           ongoing,
