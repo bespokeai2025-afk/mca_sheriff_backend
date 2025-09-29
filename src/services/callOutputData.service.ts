@@ -357,78 +357,197 @@ export class callOutputDataService {
       return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
     }
   }
+public async createCallOutputData(reqBody: any) {
+  try {
+    let raw = reqBody.raw_data;
 
-  public async createCallOutputData(reqBody: any) {
-    try {
-      let raw = reqBody.raw_data;
-
-      // 1️⃣ Parse JSON string if raw_data is a string
-      if (typeof raw === "string") {
-        try {
-          raw = JSON.parse(raw);
-        } catch (parseErr) {
-          return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
-        }
+    // 1️⃣ Parse JSON string if raw_data is a string
+    if (typeof raw === "string") {
+      try {
+        raw = JSON.parse(raw);
+      } catch (parseErr) {
+        return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
       }
+    }
 
-      // 2️⃣ Handle array
-      if (Array.isArray(raw)) {
-        raw = raw[0];
-      }
+    // 2️⃣ If raw_data is an array, pick the first element
+    if (Array.isArray(raw)) {
+      raw = raw[0];
+    }
 
-      // 3️⃣ Ensure raw is object
-      if (!raw || typeof raw !== "object") {
-        return errorWithoutData("Invalid request: raw_data is missing or malformed");
-      }
+    // 3️⃣ Ensure raw is an object
+    if (!raw || typeof raw !== "object") {
+      return errorWithoutData("Invalid request: raw_data is missing or malformed");
+    }
 
-      // 4️⃣ Map fields
-      const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
-      console.log("📥 Final Mapped Data for DB:", mappedData);
+    // 4️⃣ Map raw data to CallOutputData entity
+    const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+    console.log("📥 Final Mapped Data for DB:", mappedData);
 
-      // 5️⃣ Check CRMData for number
-      const crmRecord = await this.CRMDataRepository.findOne({
-        where: { mobile_number: mappedData.toNumber, isDeleted: false }
-      });
+    // 5️⃣ Try to find CRM record for this number
+    const crmRecord = await this.CRMDataRepository.findOne({
+      where: { mobile_number: mappedData.toNumber, isDeleted: false }
+    });
 
-      mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
+    mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
 
-      // 6️⃣ Check if call already exists (by callId)
-      let savedCall: CallOutputData;
+    // 6️⃣ Sentiment-based branching
+    if (mappedData.sentimentAnalysis === "negative") {
+      console.log(" Negative sentiment detected → check call_output_data by toNumber");
+
+      // 🔍 Check if record exists for this number
       const existingCall = await this.callOutputRepository.findOne({
-        where: { callId: mappedData.callId }
+        where: { toNumber: mappedData.toNumber }
       });
 
+      let savedCall: CallOutputData;
       if (existingCall) {
+        // Update existing record
         savedCall = await this.callOutputRepository.save({
           ...existingCall,
-          ...mappedData
+          ...mappedData,
         });
       } else {
+        // Insert new record
         const newCall = this.callOutputRepository.create(mappedData);
         savedCall = await this.callOutputRepository.save(newCall);
       }
 
-      // 7️⃣ Now save into history table with correct call_output_data_id
+      // 📝 Always add a history record
       const historyRecord = this.historyRepository.create({
         ...mappedData,
-        call_output_data_id: savedCall.id,   // ✅ main fix
+        call_output_data_id: savedCall.id,
       } as DeepPartial<CallOutputHistoryData>);
       await this.historyRepository.save(historyRecord);
 
-    //    if (crmRecord) {
-    //   crmRecord.need_to_call = false;
-    //   await this.CRMDataRepository.save(crmRecord);
-    // }
+      // 🔄 Update CRM flag (example: disable "need_to_call")
+      if (crmRecord) {
+        crmRecord.need_to_call = false;
+        await this.CRMDataRepository.save(crmRecord);
+      }
 
-      return successWithData("Call output data saved successfully", savedCall);
+      return successWithData("Negative sentiment processed successfully", savedCall);
 
-    } catch (error) {
-      console.error("Error creating call output data:", error);
-      return errorWithData("Failed to create call output data", {
-        error: (error as Error).message
+    } else if (mappedData.sentimentAnalysis === "positive") {
+      console.log(" Positive sentiment detected → check call_output_data by toNumber");
+
+      // 🔍 Check if record exists for this number
+      const existingCall = await this.callOutputRepository.findOne({
+        where: { toNumber: mappedData.toNumber }
       });
+
+      let savedCall: CallOutputData;
+      if (existingCall) {
+        // Update existing record
+        savedCall = await this.callOutputRepository.save({
+          ...existingCall,
+          ...mappedData,
+        });
+      } else {
+        // Insert new record
+        const newCall = this.callOutputRepository.create(mappedData);
+        savedCall = await this.callOutputRepository.save(newCall);
+      }
+
+      // 📝 Always add a history record
+      const historyRecord = this.historyRepository.create({
+        ...mappedData,
+        call_output_data_id: savedCall.id,
+      } as DeepPartial<CallOutputHistoryData>);
+      await this.historyRepository.save(historyRecord);
+
+      // 🔄 Example: If positive, maybe mark CRM as already contacted
+      if (crmRecord) {
+        crmRecord.need_to_call = false; // you can customize logic here
+        await this.CRMDataRepository.save(crmRecord);
+      }
+
+      return successWithData("Positive sentiment processed successfully", savedCall);
+
+    } else {
+      //  Invalid or missing sentiment
+      return errorWithoutData("Sentiment analysis missing or invalid");
     }
+
+  } catch (error) {
+    console.error("Error creating call output data:", error);
+    return errorWithData("Failed to create call output data", {
+      error: (error as Error).message,
+    });
   }
+}
+
+  // public async createCallOutputData(reqBody: any) {
+  //   try {
+  //     let raw = reqBody.raw_data;
+
+  //     // 1️⃣ Parse JSON string if raw_data is a string
+  //     if (typeof raw === "string") {
+  //       try {
+  //         raw = JSON.parse(raw);
+  //       } catch (parseErr) {
+  //         return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
+  //       }
+  //     }
+
+  //     // 2️⃣ Handle array
+  //     if (Array.isArray(raw)) {
+  //       raw = raw[0];
+  //     }
+
+  //     // 3️⃣ Ensure raw is object
+  //     if (!raw || typeof raw !== "object") {
+  //       return errorWithoutData("Invalid request: raw_data is missing or malformed");
+  //     }
+
+  //     // 4️⃣ Map fields
+  //     const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+  //     console.log("📥 Final Mapped Data for DB:", mappedData);
+
+  //     // 5️⃣ Check CRMData for number
+  //     const crmRecord = await this.CRMDataRepository.findOne({
+  //       where: { mobile_number: mappedData.toNumber, isDeleted: false }
+  //     });
+
+  //     mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
+
+  //     // 6️⃣ Check if call already exists (by callId)
+  //     let savedCall: CallOutputData;
+  //     const existingCall = await this.callOutputRepository.findOne({
+  //       where: { callId: mappedData.callId }
+  //     });
+
+  //     if (existingCall) {
+  //       savedCall = await this.callOutputRepository.save({
+  //         ...existingCall,
+  //         ...mappedData
+  //       });
+  //     } else {
+  //       const newCall = this.callOutputRepository.create(mappedData);
+  //       savedCall = await this.callOutputRepository.save(newCall);
+  //     }
+
+  //     // 7️⃣ Now save into history table with correct call_output_data_id
+  //     const historyRecord = this.historyRepository.create({
+  //       ...mappedData,
+  //       call_output_data_id: savedCall.id,   // main fix
+  //     } as DeepPartial<CallOutputHistoryData>);
+  //     await this.historyRepository.save(historyRecord);
+
+  //      if (crmRecord) {
+  //     crmRecord.need_to_call = false;
+  //     await this.CRMDataRepository.save(crmRecord);
+  //   }
+
+  //     return successWithData("Call output data saved successfully", savedCall);
+
+  //   } catch (error) {
+  //     console.error("Error creating call output data:", error);
+  //     return errorWithData("Failed to create call output data", {
+  //       error: (error as Error).message
+  //     });
+  //   }
+  // }
 
 
   //     public async createCallOutputData(reqBody: any) {

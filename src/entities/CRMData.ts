@@ -24,7 +24,7 @@ export class CRMData /* extends Common */ {
     mobile_number: string;
 
     @Column({ type: "boolean", default: true})
-    need_to_call: string;
+    need_to_call: boolean;
       
     @Column({ type: "boolean", default: true })
     isActive: boolean
