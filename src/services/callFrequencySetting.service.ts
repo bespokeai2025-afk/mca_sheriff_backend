@@ -6,7 +6,6 @@ interface CallFrequencyInput {
   number_count?: number;
   selected_days?: string[];
   selected_weeks?: string[];
-  call_frequency_setting: string; // cron expression or frequency string
 }
 
 export class CallFrequencySettingService {
@@ -16,19 +15,42 @@ export class CallFrequencySettingService {
     this.repo = AppDataSource.getRepository(CallFrequencySetting);
   }
 
+  // Generate cron expression based on selected days and weeks
+  private generateCron(input: CallFrequencyInput): string {
+    // Example: map days to cron numbers (Monday=1, Sunday=0)
+    const dayMap: Record<string, number> = {
+      Sunday: 0,
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+    };
+
+    const dayNumbers = (input.selected_days || []).map(d => dayMap[d]).join(",");
+    
+    // Example: you can also use number_count or selected_weeks in logic
+    // For simplicity, we'll just set hour 5, minute 30
+    const cron = `30 5 * * ${dayNumbers || "*"}`; // runs at 05:30 on selected days
+    return cron;
+  }
+
   // Create new frequency setting
   async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
+    const cronExp = this.generateCron(data);
+
     const entity = this.repo.create({
       number_count: data.number_count,
       selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
       selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
-      call_frequency_setting: data.call_frequency_setting,
+      call_frequency_setting: cronExp,
     });
 
     return await this.repo.save(entity);
   }
 
-  // Get all active records (not deleted)
+  // Get all active records
   async getAll(): Promise<CallFrequencySetting[]> {
     return await this.repo.find({
       where: { isDeleted: false },
@@ -36,21 +58,18 @@ export class CallFrequencySettingService {
     });
   }
 
-  // Deactivate record
-  async deactivate(id: string): Promise<boolean> {
-    const result = await this.repo.update(id, { isActive: false });
-    return result.affected !== 0;
-  }
+  // Update existing frequency setting by ID
+  async update(id: string, data: CallFrequencyInput): Promise<CallFrequencySetting | null> {
+    const existing = await this.repo.findOne({ where: { id } });
+    if (!existing) return null;
 
-  // Soft delete record
-  async softDelete(id: string): Promise<boolean> {
-    const result = await this.repo.update(id, { isDeleted: true, isActive: false });
-    return result.affected !== 0;
-  }
+    const cronExp = this.generateCron(data);
 
-  // Reactivate record
-  async activate(id: string): Promise<boolean> {
-    const result = await this.repo.update(id, { isActive: true, isDeleted: false });
-    return result.affected !== 0;
+    existing.number_count = data.number_count ?? existing.number_count;
+    existing.selected_days = data.selected_days ? JSON.stringify(data.selected_days) : existing.selected_days;
+    existing.selected_weeks = data.selected_weeks ? JSON.stringify(data.selected_weeks) : existing.selected_weeks;
+    existing.call_frequency_setting = cronExp;
+
+    return await this.repo.save(existing);
   }
 }

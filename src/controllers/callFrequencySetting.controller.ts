@@ -8,22 +8,17 @@ export class CallFrequencySettingController {
   // Create a new call frequency setting
   static async create(req: Request, res: Response): Promise<void> {
     try {
-      const { number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
+      const { number_count, selected_days, selected_weeks } = req.body;
 
-      if (!call_frequency_setting) {
+      // Optional: validate that at least selected_days exists
+      if (!selected_days || selected_days.length === 0) {
         res.status(400).json(
-          errorWithData("call_frequency_setting (cronExp) is required", null, 400)
+          errorWithData("selected_days is required", null, 400)
         );
         return;
       }
 
-      // Prepare payload only with valid fields
-      const payload: any = { call_frequency_setting };
-      if (number_count !== undefined) payload.number_count = number_count;
-      if (selected_days !== undefined) payload.selected_days = selected_days;
-      if (selected_weeks !== undefined) payload.selected_weeks = selected_weeks;
-
-      // Call service to save in database
+      const payload = { number_count, selected_days, selected_weeks };
       const result = await service.create(payload);
 
       res.status(200).json(
@@ -51,4 +46,37 @@ export class CallFrequencySettingController {
       );
     }
   }
+   // Update existing call frequency setting by ID
+  static async update(req: Request, res: Response): Promise<void> {
+    try {
+    //   const { id } = req.params;
+    //   const { number_count, selected_days, selected_weeks } = req.body;
+       const { id, number_count, selected_days, selected_weeks } = req.body;
+      if (!id) {
+        res.status(400).json(errorWithData("ID parameter is required", null, 400));
+        return;
+      }
+
+      if (!selected_days || selected_days.length === 0) {
+        res.status(400).json(errorWithData("selected_days is required", null, 400));
+        return;
+      }
+
+      const payload = { number_count, selected_days, selected_weeks };
+      const updated = await service.update(id, payload);
+
+      if (!updated) {
+        res.status(404).json(errorWithData("Call frequency setting not found", null, 404));
+        return;
+      }
+
+      res.status(200).json(
+        successWithData("Call frequency setting updated successfully", updated, undefined, 200)
+      );
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json(errorWithData("Failed to update call frequency setting", err.message, 500));
+    }
+  }
+
 }
