@@ -17,43 +17,82 @@ export class callOutputDataService {
   private callOutputRepository = AppDataSource.getRepository(CallOutputData);
   private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
 
-  public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
+
+//Get User calling response
+  // public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
 
 
-    let whereCondition = {};
-    if (verifyUser.user_exist) {
-      whereCondition = { isActive: true, isDeleted: false };
-    }
-    if (verifyUser.admin_exist) {
+  //   let whereCondition = {};
+  //   if (verifyUser.user_exist) {
+  //     whereCondition = { isActive: true, isDeleted: false };
+  //   }
+  //   if (verifyUser.admin_exist) {
 
-      whereCondition = { isDeleted: false };
+  //     whereCondition = { isDeleted: false };
 
-    }
+  //   }
 
-    const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
-      where: { isActive: true, isDeleted: false },
-      order: { createdAt: 'DESC' },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize
-    });
+  //   const [mainCategories, totalItems] = await this.callOutputRepository.findAndCount({
+  //     where: { isActive: true, isDeleted: false },
+  //     order: { createdAt: 'DESC' },
+  //     skip: (currentPage - 1) * pageSize,
+  //     take: pageSize
+  //   });
 
 
-    const totalPages = Math.ceil(totalItems / pageSize);
+  //   const totalPages = Math.ceil(totalItems / pageSize);
 
-    if (totalItems >= 1 && totalPages < currentPage) {
-      return errorWithoutData("Page limit exceeded")
-    }
-    return successWithData("User calling output data fetched successfully !", mainCategories, {
-      totalItems,
-      totalPages,
-      currentPage,
-      pageSize
-    });
+  //   if (totalItems >= 1 && totalPages < currentPage) {
+  //     return errorWithoutData("Page limit exceeded")
+  //   }
+  //   return successWithData("User calling output data fetched successfully !", mainCategories, {
+  //     totalItems,
+  //     totalPages,
+  //     currentPage,
+  //     pageSize
+  //   });
 
+  // }
+
+
+    //Yet to Call
+public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
+  let whereCondition = {};
+  if (verifyUser.user_exist) {
+    whereCondition = { isActive: true, isDeleted: false };
+  }
+  if (verifyUser.admin_exist) {
+    whereCondition = { isDeleted: false };
   }
 
+  const queryBuilder = this.callOutputRepository
+    .createQueryBuilder("call_output")
+    .leftJoinAndSelect("call_output.crmData", "crm")
+    .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted", {
+      isActive: true,
+      isDeleted: false,
+    })
+    .orderBy("call_output.createdAt", "DESC")
+    .skip((currentPage - 1) * pageSize)
+    .take(pageSize);
 
-// Lead 
+  const [data, totalItems] = await queryBuilder.getManyAndCount();
+
+  const totalPages = Math.ceil(totalItems / pageSize);
+  if (totalItems >= 1 && totalPages < currentPage) {
+    return errorWithoutData("Page limit exceeded");
+  }
+
+  return successWithData("User call data response fetched successfully!", data, {
+    totalItems,
+    totalPages,
+    currentPage,
+    pageSize,
+  });
+}
+
+
+// Call data Response Lead 
   public async getUsercallingDataLead(verifyUser: any, pageSize: number, currentPage: number) {
     let whereCondition: any = {};
 
@@ -136,6 +175,9 @@ export class callOutputDataService {
       return errorWithData("Something went wrong", { error });
     }
   }
+
+
+
 
   // public async getUsercallingHistory(
   //   verifyUser: any,

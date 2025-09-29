@@ -5,6 +5,7 @@
 
 import { Entity, Column, Check, OneToMany, JoinColumn, BeforeUpdate, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 // import { Common } from './Common';
+import { CallOutputData } from './CallOutputData';
 
 
 // MainCategory entity representing main categories
@@ -21,13 +22,13 @@ export class CRMData /* extends Common */ {
     // Description of the main category
     @Column({ type: 'text' })
     mobile_number: string;
-      
+
     @Column({ type: "boolean", default: true })
     isActive: boolean
-    
+
     @Column({ type: "boolean", default: false })
     isDeleted: boolean
-    
+
     @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
     createdAt: Date
 
@@ -40,4 +41,7 @@ export class CRMData /* extends Common */ {
     updateTimestamp() {
         this.updatedAt = new Date();
     }
+
+    @OneToMany(() => CallOutputData, (callOutput) => callOutput.crmData)
+    callOutputs: CallOutputData[];
 }

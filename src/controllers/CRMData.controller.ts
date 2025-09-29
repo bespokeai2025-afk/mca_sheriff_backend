@@ -50,29 +50,60 @@ export const getUsercrmData = async (req: Request, res: Response): Promise<any> 
 };
 
 
-export const createCRMData = async (req: Request, res: Response): Promise<any> => {
+// export const createCRMData = async (req: Request, res: Response): Promise<any> => {
 
+//     try {
+//         if (!req.user) {
+//             const response = errorWithoutData("Authentication failed");
+//             return res.status(response.result ? 200 : 400).json(response);
+//         }
+//         const user = await adminRepository.findOneBy({ id: req.user.id })
+
+//         if (!user) {
+//             const response = errorWithoutData('only admin can create a faq');
+//             return res.status(response.result ? 200 : 400).json(response);
+//         }
+
+
+
+//         const data = { ...req.body, image: (req.file as Express.Multer.File & { location: string })?.location || null };
+
+//         const response = await crmdataservice.createCRMData(data, req.verifyUser);
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData("something went wrong", { error: error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
+
+
+export const createCRMData = async (req: Request, res: Response): Promise<any> => {
     try {
         if (!req.user) {
             const response = errorWithoutData("Authentication failed");
             return res.status(response.result ? 200 : 400).json(response);
         }
-        const user = await adminRepository.findOneBy({ id: req.user.id })
 
+        // Ensure only admin can create CRM data
+        const user = await adminRepository.findOneBy({ id: req.user.id });
         if (!user) {
-            const response = errorWithoutData('only admin can create a faq');
+            const response = errorWithoutData("Only admin can create CRM data");
             return res.status(response.result ? 200 : 400).json(response);
         }
 
+        // Prepare data (image optional, if uploaded via Multer + S3)
+        const data = {
+            ...req.body,
+            image: (req.file as Express.Multer.File & { location: string })?.location || null
+        };
 
-
-        const data = { ...req.body, image: (req.file as Express.Multer.File & { location: string })?.location || null };
-
+        // Service handles both CRMData + CallOutputData
         const response = await crmdataservice.createCRMData(data, req.verifyUser);
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
-        const response = errorWithData("something went wrong", { error: error });
+        const response = errorWithData("Something went wrong", { error });
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+
 

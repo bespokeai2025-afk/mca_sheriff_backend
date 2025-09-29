@@ -10,22 +10,52 @@ const calloutputdataservice = new callOutputDataService();
 const userhistoryservice = new callOutputDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
 
-export const getUsercallingData = async (req: Request, res: Response): Promise<any> => {
 
-    try {
-        if (!req.user) {
-            const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
-        }
-        const { pageSize, currentPage } = req.query;
+//Get user calling response
+// export const getUsercallingData = async (req: Request, res: Response): Promise<any> => {
+
+//     try {
+//         if (!req.user) {
+//             const response = errorWithoutData("Authentication failed");
+//             return res.status(response.result ? 200 : 400).json(response);
+//         }
+//         const { pageSize, currentPage } = req.query;
 
 
-        const response = await calloutputdataservice.getUsercallingData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData('something went wrong', { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
-    }
+//         const response = await calloutputdataservice.getUsercallingData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData('something went wrong', { error: error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
+
+
+
+//Yet To call
+export const getUsercallingData = async (req: Request, res: Response) : Promise<any> => {
+  try {
+    const { pageSize = 50, currentPage = 1 } = req.query;
+
+    // Assuming you already attach verifyUser to req in middleware
+    const verifyUser = (req as any).verifyUser;
+
+    const response = await calloutputdataservice.getUsercallingData(
+      verifyUser,
+      Number(pageSize),
+      Number(currentPage)
+    );
+
+    return res.status(response.statuscode || 200).json(response);
+  } catch (error) {
+    console.error("Error in getUserYetToCall controller:", error);
+    return res.status(500).json({
+      result: false,
+      statuscode: 500,
+      message: "Internal Server Error",
+      error: (error as Error).message,
+    });
+  }
 };
 
 
@@ -53,6 +83,9 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
+
+
 
 
 // export const getUsercallingHistory = async (
@@ -90,6 +123,9 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
 // };
 
 
+
+
+// Get User call history
 export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
     try {
         if (!req.user) {
