@@ -186,62 +186,68 @@ export class callOutputDataService {
   //   }
   // }
 
+
   public async getCallDropdownList() {
-    try {
-      // Fetch calls with event either 'call_analyzed' or 'call_started'
-      const calls = await this.callOutputRepository.find({
-        where: [
-          { event: "call_analyzed", isDeleted: false, isActive: true },
-          { event: "call_started", isDeleted: false, isActive: true },
-        ],
-        order: { createdAt: "DESC" },
-      });
+  try {
+    // Fetch calls with event either 'call_analyzed' or 'call_started'
+    const calls = await this.callOutputRepository.find({
+      where: [
+        { event: "call_analyzed", isDeleted: false, isActive: true },
+        { event: "call_started", isDeleted: false, isActive: true },
+      ],
+      order: { createdAt: "DESC" },
+    });
 
-      const completed: any[] = [];
-      const ongoing: any[] = [];
+    const completed: any[] = [];
+    const ongoing: any[] = [];
 
-      calls.forEach((call) => {
-        if (call.event === "ended") {
-          completed.push({
-            id: call.id,
-            name: call.name,
-            callId: call.callId,
-            toNumber: call.toNumber,
-            fromNumber: call.fromNumber,
-            status: "Completed",
-            createdAt: call.createdAt,
-          });
-        } else if (call.event === "call_started") {
-          ongoing.push({
-            id: call.id,
-            name: call.name,
-            callId: call.callId,
-            toNumber: call.toNumber,
-            fromNumber: call.fromNumber,
-            status: "Ongoing",
-            createdAt: call.createdAt,
-          });
-        }
-      });
+    calls.forEach((call) => {
+      // Determine completed
+      if (call.event === "call_analyzed" && call.callStatus === "ended") {
+        completed.push({
+          id: call.id,
+          name: call.name,
+          callId: call.callId,
+          toNumber: call.toNumber,
+          fromNumber: call.fromNumber,
+          status: "Completed",
+          createdAt: call.createdAt,
+        });
+      } 
+      // Determine ongoing
+      else if ((call.event === "call_started" && call.callStatus === "ongoing") ||
+               (call.event === "call_analyzed" && call.callStatus === "ongoing")) {
+        ongoing.push({
+          id: call.id,
+          name: call.name,
+          callId: call.callId,
+          toNumber: call.toNumber,
+          fromNumber: call.fromNumber,
+          status: "Ongoing",
+          createdAt: call.createdAt,
+        });
+      }
+    });
 
-      return {
-        result: true,
-        statuscode: 200,
-        message: "Call status data fetched successfully!",
-        data: {
-          completed,
-          ongoing,
-        },
-      };
-    } catch (error: any) {
-      return {
-        result: false,
-        statuscode: 500,
-        message: "Something went wrong while fetching call status.",
-        error: error.message,
-      };
-    }
+    return {
+      result: true,
+      statuscode: 200,
+      message: "Call status data fetched successfully!",
+      data: {
+        completed,
+        ongoing,
+      },
+    };
+  } catch (error: any) {
+    return {
+      result: false,
+      statuscode: 500,
+      message: "Something went wrong while fetching call status.",
+      error: error.message,
+    };
   }
+}
+
 
 
 
