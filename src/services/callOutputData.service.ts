@@ -18,7 +18,7 @@ export class callOutputDataService {
   private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
 
 
-//Get User calling response
+  //Get User calling response
   // public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
 
 
@@ -55,44 +55,44 @@ export class callOutputDataService {
   // }
 
 
-    //Yet to Call
-public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
-  let whereCondition = {};
-  if (verifyUser.user_exist) {
-    whereCondition = { isActive: true, isDeleted: false };
+  //Yet to Call
+  public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
+    let whereCondition = {};
+    if (verifyUser.user_exist) {
+      whereCondition = { isActive: true, isDeleted: false };
+    }
+    if (verifyUser.admin_exist) {
+      whereCondition = { isDeleted: false };
+    }
+
+    const queryBuilder = this.callOutputRepository
+      .createQueryBuilder("call_output")
+      .leftJoinAndSelect("call_output.crmData", "crm")
+      .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted", {
+        isActive: true,
+        isDeleted: false,
+      })
+      .orderBy("call_output.createdAt", "DESC")
+      .skip((currentPage - 1) * pageSize)
+      .take(pageSize);
+
+    const [data, totalItems] = await queryBuilder.getManyAndCount();
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+    if (totalItems >= 1 && totalPages < currentPage) {
+      return errorWithoutData("Page limit exceeded");
+    }
+
+    return successWithData("User call data response fetched successfully!", data, {
+      totalItems,
+      totalPages,
+      currentPage,
+      pageSize,
+    });
   }
-  if (verifyUser.admin_exist) {
-    whereCondition = { isDeleted: false };
-  }
-
-  const queryBuilder = this.callOutputRepository
-    .createQueryBuilder("call_output")
-    .leftJoinAndSelect("call_output.crmData", "crm")
-    .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted", {
-      isActive: true,
-      isDeleted: false,
-    })
-    .orderBy("call_output.createdAt", "DESC")
-    .skip((currentPage - 1) * pageSize)
-    .take(pageSize);
-
-  const [data, totalItems] = await queryBuilder.getManyAndCount();
-
-  const totalPages = Math.ceil(totalItems / pageSize);
-  if (totalItems >= 1 && totalPages < currentPage) {
-    return errorWithoutData("Page limit exceeded");
-  }
-
-  return successWithData("User call data response fetched successfully!", data, {
-    totalItems,
-    totalPages,
-    currentPage,
-    pageSize,
-  });
-}
 
 
-// Call data Response Lead 
+  // Call data Response Lead 
   public async getUsercallingDataLead(verifyUser: any, pageSize: number, currentPage: number) {
     let whereCondition: any = {};
 
@@ -129,6 +129,64 @@ public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: 
       pageSize
     });
   }
+
+
+  // Complete and ongoing
+  async getCallDropdownList() {
+    try {
+      // Fetch only analyzed calls
+      const calls = await this.callOutputRepository.find({
+        where: { event: "call_analyzed", isDeleted: false, isActive: true },
+        order: { createdAt: "DESC" },
+      });
+
+      const completed: any[] = [];
+      const ongoing: any[] = [];
+
+      calls.forEach((call) => {
+        if (call.callStatus === "ended") {
+          completed.push({
+            id: call.id,
+            name: call.name,
+            callId: call.callId,
+            toNumber: call.toNumber,
+            fromNumber: call.fromNumber,
+            status: "Completed",
+            createdAt: call.createdAt,
+          });
+        } else if (call.callStatus === "started") {
+          ongoing.push({
+            id: call.id,
+            name: call.name,
+            callId: call.callId,
+            toNumber: call.toNumber,
+            fromNumber: call.fromNumber,
+            status: "Ongoing",
+            createdAt: call.createdAt,
+          });
+        }
+      });
+
+      return {
+        result: true,
+        statuscode: 200,
+        message: "Call dropdown fetched successfully!",
+        data: {
+          completed,
+          ongoing,
+        },
+      };
+    } catch (error: any) {
+      return {
+        result: false,
+        statuscode: 500,
+        message: "Something went wrong while fetching call dropdown",
+        error: error.message, // now works
+      };
+    }
+  }
+
+
 
   public async getUsercallingHistory(
     verifyUser: any,
@@ -175,60 +233,6 @@ public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: 
       return errorWithData("Something went wrong", { error });
     }
   }
-
-
-
-
-  // public async getUsercallingHistory(
-  //   verifyUser: any,
-  //   pageSize?: number,
-  //   currentPage?: number,
-  //   toNumber?: string
-  // ) {
-  //   try {
-  //     let whereCondition: any = {};
-
-  //     if (verifyUser.user_exist) {
-  //       whereCondition = { isActive: true, isDeleted: false };
-  //     }
-
-  //     if (verifyUser.admin_exist) {
-  //       whereCondition = { isDeleted: false };
-  //     }
-
-  //     if (toNumber) {
-  //       whereCondition.toNumber = toNumber;
-  //     }
-
-  //     const queryOptions: any = {
-  //       where: whereCondition,
-  //       order: { createdAt: "DESC" },
-  //     };
-
-  //     // Only add pagination if pageSize and currentPage are provided
-  //     if (pageSize && currentPage) {
-  //       queryOptions.skip = (currentPage - 1) * pageSize;
-  //       queryOptions.take = pageSize;
-  //     }
-
-  //     const [historyData, totalItems] = await this.historyRepository.findAndCount(queryOptions);
-
-  //     const totalPages = pageSize ? Math.ceil(totalItems / pageSize) : 1;
-
-  //     return successWithData(
-  //       "User history data retrieved successfully!",
-  //       historyData,
-  //       {
-  //         totalItems,
-  //         totalPages,
-  //         currentPage: currentPage || 1,
-  //         pageSize: pageSize || totalItems,
-  //       }
-  //     );
-  //   } catch (err) {
-  //     return errorWithData("Something went wrong", err);
-  //   }
-  // }
 
 
   // To get Count
