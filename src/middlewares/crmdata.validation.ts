@@ -11,21 +11,21 @@ export const validatecrmdata = [
     .trim()
     .escape(),
 
-  body("mobile_number")
-    .notEmpty().withMessage("Mobile number is required.")
-    .isString().withMessage("Mobile number must be a string")
-    .isLength({ min: 10, max: 15 }).withMessage("Mobile number must be between 10 to 15 characters")
-    .trim()
-    .escape()
-    .custom(async (value) => {
-      const existingUser = await crmRepository.findOne({
-        where: { mobile_number: value },
-      });
+  // body("mobile_number")
+  //   .notEmpty().withMessage("Mobile number is required.")
+  //   .isString().withMessage("Mobile number must be a string")
+  //   .isLength({ min: 10, max: 15 }).withMessage("Mobile number must be between 10 to 15 characters")
+  //   .trim()
+  //   .escape()
+  //   .custom(async (value) => {
+  //     const existingUser = await crmRepository.findOne({
+  //       where: { mobile_number: value },
+  //     });
 
-      if (existingUser) {
-        return Promise.reject("Mobile number already exists.");
-      }
-    }),
+  //     if (existingUser) {
+  //       return Promise.reject("Mobile number already exists.");
+  //     }
+  //   }),
 ];
 
 export const validateUserID = [

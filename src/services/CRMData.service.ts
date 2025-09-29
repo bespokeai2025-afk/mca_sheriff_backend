@@ -24,10 +24,10 @@ export class CRMDataService {
     public async getCRMData(verifyUser: any, pageSize: number, currentPage: number) {
         let whereCondition = {};
         if (verifyUser.user_exist) {
-            whereCondition = { isActive: true, isDeleted: false };
+            whereCondition = { isActive: true, isDeleted: false, need_to_call: true };
         }
         if (verifyUser.admin_exist) {
-            whereCondition = { isDeleted: false };
+            whereCondition = { isDeleted: false, need_to_call: true };
         }
 
         const [mainCategories, totalItems] = await this.CRMDataRepository.findAndCount({
