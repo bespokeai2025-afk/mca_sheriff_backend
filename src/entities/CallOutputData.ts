@@ -1,5 +1,6 @@
-import { Entity, Column, Check, OneToMany, JoinColumn, BeforeUpdate, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, Check, OneToMany, JoinColumn, BeforeUpdate, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn,ManyToOne } from 'typeorm';
 import { Common } from './Common';
+import { CRMData } from './CRMData';
 
 export enum CallStatus {
   CONNECTED = "connected",
@@ -10,18 +11,18 @@ export enum CallStatus {
 
 @Entity({ name: 'call_output_data' })
 export class CallOutputData {
-      @PrimaryGeneratedColumn("uuid")
-    id: string
+  @PrimaryGeneratedColumn("uuid")
+  id: string
 
-    @Column({ type: 'text', nullable: true, default: null })
+  @Column({ type: 'text', nullable: true, default: null })
   vendor_id: string | null;
 
   @Column({ type: 'uuid', nullable: true })
-crm_data_id: string | null;
+  crm_data_id: string | null;
 
   // @Column({ type: 'text', nullable: true, default: null })
   // crm_data_id: string | null;
-  
+
   @Column({ name: "event", type: "varchar", nullable: true })
   event: string;
 
@@ -78,7 +79,7 @@ crm_data_id: string | null;
 
   @Column({ name: "email", type: "varchar", nullable: true })
   email: string;
-  
+
   // @Column({ name: "appointment_date", type: "varchar", nullable: true })
   // appointment_date: string;
 
@@ -87,24 +88,27 @@ crm_data_id: string | null;
 
   @Column({ name: "calendly_booking_url", type: "varchar", nullable: true })
   calendly_booking_url: string;
-    
-    @Column({ type: "boolean", default: true })
-    isActive: boolean
-    
-    @Column({ type: "boolean", default: false })
-    isDeleted: boolean
-    
-    @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
-    createdAt: Date
 
-    // Timestamp for when the entity was last updated
-    @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
-    updatedAt: Date
+  @Column({ type: "boolean", default: true })
+  isActive: boolean
 
-    // Update the updatedAt timestamp before the entity is updated
-    @BeforeUpdate()
-    updateTimestamp() {
-        this.updatedAt = new Date();
-    }
+  @Column({ type: "boolean", default: false })
+  isDeleted: boolean
+
+  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date
+
+  // Timestamp for when the entity was last updated
+  @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
+  updatedAt: Date
+
+  // Update the updatedAt timestamp before the entity is updated
+  @BeforeUpdate()
+  updateTimestamp() {
+    this.updatedAt = new Date();
+  }
+
+  @ManyToOne(() => CRMData, (crmData) => crmData.callOutputs, { onDelete: "CASCADE" })
+  crmData: CRMData;
 }
 

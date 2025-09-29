@@ -7,13 +7,14 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import axios from "axios";
 import { ILike } from "typeorm";
+import { CallOutputData } from "../entities/CallOutputData";
 interface RetellTask {
-  to_number: string;
-  retell_llm_dynamic_variables?: {
-    name?: string;
-    greeting?: string;
-    [key: string]: any;
-  };
+    to_number: string;
+    retell_llm_dynamic_variables?: {
+        name?: string;
+        greeting?: string;
+        [key: string]: any;
+    };
 }
 
 export class CRMDataService {
@@ -54,14 +55,14 @@ export class CRMDataService {
             //     }
             // }
             const tasks: RetellTask[] = mainCategories
-                    .filter((crm: any) => crm.mobile_number)
-                    .map((crm: any) => ({
+                .filter((crm: any) => crm.mobile_number)
+                .map((crm: any) => ({
                     to_number: crm.mobile_number,
                     retell_llm_dynamic_variables: {
                         name: crm.name,
                         greeting: `Hello, ${crm.name}, this is a test call from Retell!`
                     }
-                    }));
+                }));
 
             // if (tasks.length > 0) {
             //     const payload = {
@@ -193,20 +194,52 @@ export class CRMDataService {
         }
     }
 
-    public async createCRMData(Data: object, verifyUser: any) {
+    // public async createCRMData(Data: object, verifyUser: any) {
 
+    //     if (verifyUser.user_exist) {
+    //         return errorWithoutData('Only admin can create CMR Data')
+    //     }
+
+    //     const newCMRData = await this.CRMDataRepository.create(Data)
+
+    //     const crmdataoutput = await this.CRMDataRepository.save(newCMRData)
+
+    //     if (!crmdataoutput) {
+    //         return errorWithoutData('CMR Data not created')
+    //     }
+    //     return successWithData("crm data created successfully", crmdataoutput);
+
+    // }
+
+
+    public async createCRMData(Data: object, verifyUser: any) {
         if (verifyUser.user_exist) {
-            return errorWithoutData('Only admin can create CMR Data')
+            return errorWithoutData('Only admin can create CMR Data');
         }
 
-        const newCMRData = await this.CRMDataRepository.create(Data)
-
-        const crmdataoutput = await this.CRMDataRepository.save(newCMRData)
+        // Save CRM record
+        const newCRMData = this.CRMDataRepository.create(Data);
+        const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
 
         if (!crmdataoutput) {
-            return errorWithoutData('CMR Data not created')
+            return errorWithoutData('CRM Data not created');
         }
-        return successWithData("crm data created successfully", crmdataoutput);
 
+        // 🔹 Insert into call_output_data with "Yet to call"
+        const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+
+        const callOutput = callOutputRepository.create({
+            crm_data_id: crmdataoutput.id,
+            name: crmdataoutput.name,
+            toNumber: crmdataoutput.mobile_number,
+            callStatus: "Yet to call",
+        });
+
+        await callOutputRepository.save(callOutput);
+
+        return successWithData("CRM data created successfully", {
+            crmdata: crmdataoutput,
+            callOutput,
+        });
     }
 }

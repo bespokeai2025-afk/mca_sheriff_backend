@@ -11,6 +11,7 @@ router.get("/get-all-calldata", verifyAccessToken, getUsercallingData);
 router.get("/get-call-count", verifyAccessToken, getUserCallDataCount );
 router.get("/get-user-history", verifyAccessToken, getUsercallingHistory );
 router.get("/get-userCall-lead",verifyAccessToken,getUsercallingDataLead);
+// router.get("/user-yet-tocall",verifyAccessToken,getUserYetToCall);
 // router.post("/create", verifyAccessToken,  validateCallOutputData, validateRequest, createCallOutputData);
 router.post("/create", createCallOutputData);
 router.put("/update/:id", updateCallOutputData)
