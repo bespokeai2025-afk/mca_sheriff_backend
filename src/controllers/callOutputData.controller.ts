@@ -114,11 +114,12 @@ export const getCallDropdownList = async (req: Request, res: Response): Promise<
       return res.status(response.result ? 200 : 400).json(response);
     }
 
-    const { pageSize, currentPage } = req.query;
+    const { pageSize, currentPage, toNumber } = req.query;
 
     const response = await calloutputdataservice.getCallDropdownList(
       parseInt(pageSize as string) || 50,
-      parseInt(currentPage as string) || 1
+      parseInt(currentPage as string) || 1,
+      toNumber as string // optional filter
     );
 
     return res.status(response.result ? 200 : 400).json(response);
@@ -127,6 +128,8 @@ export const getCallDropdownList = async (req: Request, res: Response): Promise<
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
+
 
 
 

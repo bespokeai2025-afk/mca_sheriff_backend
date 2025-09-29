@@ -132,81 +132,123 @@ export class callOutputDataService {
 
 
 
-// Completed and ongoing
-//   public async getCallDropdownList() {
-//   try {
-  
-//     const calls = await this.callOutputRepository.find({
-//       where: [
-//         { event: "call_analyzed", isDeleted: false, isActive: true },
-//         { event: "call_started", isDeleted: false, isActive: true },
-//       ],
-//       order: { createdAt: "DESC" },
-//     });
+  // Completed and ongoing
 
-//     const completed: any[] = [];
-//     const ongoing: any[] = [];
+  // public async getCallDropdownList(
+  //   pageSize: number,
+  //   currentPage: number
+  // ) {
+  //   try {
+  //     // Build where condition for both analyzed & started calls
+  //     const whereCondition = [
+  //       { event: "call_analyzed", isDeleted: false, isActive: true },
+  //       { event: "call_started", isDeleted: false, isActive: true },
+  //     ];
 
-//     calls.forEach((call) => {
+  //     // Fetch with pagination
+  //     const [calls, totalItems] = await this.callOutputRepository.findAndCount({
+  //       where: whereCondition,
+  //       order: { createdAt: "DESC" },
+  //       skip: (currentPage - 1) * pageSize,
+  //       take: pageSize,
+  //     });
 
-//       if (call.event === "call_analyzed" && call.callStatus === "ended") {
-//         completed.push({
-//           id: call.id,
-//           name: call.name,
-//           callId: call.callId,
-//           toNumber: call.toNumber,
-//           fromNumber: call.fromNumber,
-//           status: "Completed",
-//           createdAt: call.createdAt,
-//         });
-//       } 
-      
-//       else if ((call.event === "call_started" && call.callStatus === "ongoing") ||
-//                (call.event === "call_analyzed" && call.callStatus === "ongoing")) {
-//         ongoing.push({
-//           id: call.id,
-//           name: call.name,
-//           callId: call.callId,
-//           toNumber: call.toNumber,
-//           fromNumber: call.fromNumber,
-//           status: "Ongoing",
-//           createdAt: call.createdAt,
-//         });
-//       }
-//     });
+  //     const totalPages = Math.ceil(totalItems / pageSize);
 
-//     return {
-//       result: true,
-//       statuscode: 200,
-//       message: "Call status data fetched successfully!",
-//       data: {
-//         completed,
-//         ongoing,
-//       },
-//     };
-//   } catch (error: any) {
-//     return {
-//       result: false,
-//       statuscode: 500,
-//       message: "Something went wrong while fetching call status.",
-//       error: error.message,
-//     };
-//   }
-// }
+  //     if (totalItems >= 1 && totalPages < currentPage) {
+  //       return {
+  //         result: false,
+  //         statuscode: 400,
+  //         message: "Page limit exceeded",
+  //       };
+  //     }
+
+  //     // Separate completed & ongoing calls
+  //     const completed: any[] = [];
+  //     const ongoing: any[] = [];
+
+  //     calls.forEach((call) => {
+  //       if (call.event === "call_analyzed" && call.callStatus === "ended") {
+  //         completed.push({
+  //           id: call.id,
+  //           name: call.name,
+  //           callId: call.callId,
+  //           toNumber: call.toNumber,
+  //           fromNumber: call.fromNumber,
+  //           status: "Completed",
+  //           createdAt: call.createdAt,
+  //         });
+  //       } else if (
+  //         (call.event === "call_started" && call.callStatus === "ongoing") ||
+  //         (call.event === "call_analyzed" && call.callStatus === "ongoing")
+  //       ) {
+  //         ongoing.push({
+  //           id: call.id,
+  //           name: call.name,
+  //           callId: call.callId,
+  //           toNumber: call.toNumber,
+  //           fromNumber: call.fromNumber,
+  //           status: "Ongoing",
+  //           createdAt: call.createdAt,
+  //         });
+  //       }
+  //     });
+
+  //     return {
+  //       result: true,
+  //       statuscode: 200,
+  //       message: "Call status data fetched successfully!",
+  //       data: {
+  //         completed,
+  //         ongoing,
+  //       },
+  //       pagination: {
+  //         totalItems,
+  //         totalPages,
+  //         currentPage,
+  //         pageSize,
+  //       },
+  //     };
+  //   } catch (error: any) {
+  //     return {
+  //       result: false,
+  //       statuscode: 500,
+  //       message: "Something went wrong while fetching call status.",
+  //       error: error.message,
+  //     };
+  //   }
+  // }
 
 
-public async getCallDropdownList(
+  public async getCallDropdownList(
   pageSize: number,
-  currentPage: number
+  currentPage: number,
+  toNumber?: string
 ) {
   try {
-    // Build where condition for both analyzed & started calls
-    const whereCondition = [
+    // Base condition type
+    type CallWhere = {
+      event: string;
+      isDeleted: boolean;
+      isActive: boolean;
+      toNumber?: string;
+    };
+
+    // Base where condition
+    let whereCondition: CallWhere[] = [
       { event: "call_analyzed", isDeleted: false, isActive: true },
       { event: "call_started", isDeleted: false, isActive: true },
     ];
 
-    // Fetch with pagination
+    // Apply toNumber filter if provided
+    if (toNumber) {
+      whereCondition = whereCondition.map((cond: CallWhere) => ({
+        ...cond,
+        toNumber,
+      }));
+    }
+
+    // Fetch paginated data
     const [calls, totalItems] = await this.callOutputRepository.findAndCount({
       where: whereCondition,
       order: { createdAt: "DESC" },
@@ -236,20 +278,23 @@ public async getCallDropdownList(
           callId: call.callId,
           toNumber: call.toNumber,
           fromNumber: call.fromNumber,
+          transcript:call.transcript,
+          recordingUrl:call.recordingUrl,
           status: "Completed",
+          sentimentAnalysis:call.sentimentAnalysis,
           createdAt: call.createdAt,
         });
-      } else if (
-        (call.event === "call_started" && call.callStatus === "ongoing") ||
-        (call.event === "call_analyzed" && call.callStatus === "ongoing")
-      ) {
+      } else {
         ongoing.push({
           id: call.id,
           name: call.name,
           callId: call.callId,
           toNumber: call.toNumber,
           fromNumber: call.fromNumber,
+          transcript:call.transcript,
+          recordingUrl:call.recordingUrl,
           status: "Ongoing",
+          sentimentAnalysis:call.sentimentAnalysis,
           createdAt: call.createdAt,
         });
       }
