@@ -229,7 +229,7 @@ export class CRMDataService {
         const callOutputRepository = AppDataSource.getRepository(CallOutputData);
 
         const callOutput = callOutputRepository.create({
-            crm_data_id: crmdataoutput.id,
+            crmData: crmdataoutput, 
             name: crmdataoutput.name,
             toNumber: crmdataoutput.mobile_number,
             callStatus: "Yet to call",
