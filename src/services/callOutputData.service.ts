@@ -132,11 +132,68 @@ export class callOutputDataService {
 
 
   // Complete and ongoing
-  async getCallDropdownList() {
+  //  public async getCallDropdownList() {
+  //   try {
+  //     // Fetch only analyzed calls
+  //     const calls = await this.callOutputRepository.find({
+  //       where: { event: "call_analyzed", isDeleted: false, isActive: true },
+  //       order: { createdAt: "DESC" },
+  //     });
+
+  //     const completed: any[] = [];
+  //     const ongoing: any[] = [];
+
+  //     calls.forEach((call) => {
+  //       if (call.callStatus === "ended") {
+  //         completed.push({
+  //           id: call.id,
+  //           name: call.name,
+  //           callId: call.callId,
+  //           toNumber: call.toNumber,
+  //           fromNumber: call.fromNumber,
+  //           status: "Completed",
+  //           createdAt: call.createdAt,
+  //         });
+  //       } else if (call.callStatus === "ongoing") {
+  //         ongoing.push({
+  //           id: call.id,
+  //           name: call.name,
+  //           callId: call.callId,
+  //           toNumber: call.toNumber,
+  //           fromNumber: call.fromNumber,
+  //           status: "Ongoing",
+  //           createdAt: call.createdAt,
+  //         });
+  //       }
+  //     });
+
+  //     return {
+  //       result: true,
+  //       statuscode: 200,
+  //       message: "Call status data fetched successfully!",
+  //       data: {
+  //         completed,
+  //         ongoing,
+  //       },
+  //     };
+  //   } catch (error: any) {
+  //     return {
+  //       result: false,
+  //       statuscode: 500,
+  //       message: "Something went wrong while fetching call status.",
+  //       error: error.message, // now works
+  //     };
+  //   }
+  // }
+
+  public async getCallDropdownList() {
     try {
-      // Fetch only analyzed calls
+      // Fetch calls with event either 'call_analyzed' or 'call_started'
       const calls = await this.callOutputRepository.find({
-        where: { event: "call_analyzed", isDeleted: false, isActive: true },
+        where: [
+          { event: "call_analyzed", isDeleted: false, isActive: true },
+          { event: "call_started", isDeleted: false, isActive: true },
+        ],
         order: { createdAt: "DESC" },
       });
 
@@ -144,7 +201,7 @@ export class callOutputDataService {
       const ongoing: any[] = [];
 
       calls.forEach((call) => {
-        if (call.callStatus === "ended") {
+        if (call.event === "ended") {
           completed.push({
             id: call.id,
             name: call.name,
@@ -154,7 +211,7 @@ export class callOutputDataService {
             status: "Completed",
             createdAt: call.createdAt,
           });
-        } else if (call.callStatus === "call_started") {
+        } else if (call.event === "call_started") {
           ongoing.push({
             id: call.id,
             name: call.name,
@@ -181,7 +238,7 @@ export class callOutputDataService {
         result: false,
         statuscode: 500,
         message: "Something went wrong while fetching call status.",
-        error: error.message, // now works
+        error: error.message,
       };
     }
   }
