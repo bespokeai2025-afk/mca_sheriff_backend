@@ -187,9 +187,11 @@ export class callOutputDataService {
   // }
 
 
+
+// Completed and ongoing
   public async getCallDropdownList() {
   try {
-    // Fetch calls with event either 'call_analyzed' or 'call_started'
+  
     const calls = await this.callOutputRepository.find({
       where: [
         { event: "call_analyzed", isDeleted: false, isActive: true },
@@ -202,7 +204,7 @@ export class callOutputDataService {
     const ongoing: any[] = [];
 
     calls.forEach((call) => {
-      // Determine completed
+
       if (call.event === "call_analyzed" && call.callStatus === "ended") {
         completed.push({
           id: call.id,
@@ -214,7 +216,7 @@ export class callOutputDataService {
           createdAt: call.createdAt,
         });
       } 
-      // Determine ongoing
+      
       else if ((call.event === "call_started" && call.callStatus === "ongoing") ||
                (call.event === "call_analyzed" && call.callStatus === "ongoing")) {
         ongoing.push({
