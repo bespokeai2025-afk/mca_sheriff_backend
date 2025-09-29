@@ -350,6 +350,11 @@ export class callOutputDataService {
       } as DeepPartial<CallOutputHistoryData>);
       await this.historyRepository.save(historyRecord);
 
+    //    if (crmRecord) {
+    //   crmRecord.need_to_call = false;
+    //   await this.CRMDataRepository.save(crmRecord);
+    // }
+
       return successWithData("Call output data saved successfully", savedCall);
 
     } catch (error) {

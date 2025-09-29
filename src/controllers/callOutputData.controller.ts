@@ -198,21 +198,21 @@ export const getUserCallDataCount = async (req: Request, res: Response): Promise
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
     try {
         // 🔍 Log the full request body
-        console.log("👉 Incoming Request Body:", req.body, null, 2);
+        console.log(" Incoming Request Body:", req.body, null, 2);
 
         // 🔍 If you only care about raw_data
         if (req.body.raw_data) {
-            console.log("👉 Raw Data Payload:", req.body.raw_data);
+            console.log(" Raw Data Payload:", req.body.raw_data);
         }
 
         const response = await calloutputdataservice.createCallOutputData(req.body);
 
         // 🔍 Log service response before sending
-        console.log("✅ Service Response:", response);
+        console.log(" Service Response:", response);
 
         res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
-        console.error("❌ Error creating call output data:", error);
+        console.error(" Error creating call output data:", error);
 
         const response = errorWithData("Something went wrong", { error });
         res.status(400).json(response);
