@@ -287,25 +287,48 @@ public async getCallDropdownList(
       };
     }
 
-    // Map all calls to a single array with status
-    const allCalls = calls.map((call) => ({
-      id: call.id,
-      name: call.name,
-      callId: call.callId,
-      toNumber: call.toNumber,
-      fromNumber: call.fromNumber,
-      transcript: call.transcript,
-      recordingUrl: call.recordingUrl,
-      sentimentAnalysis: call.sentimentAnalysis,
-      status: call.callStatus === "ended" ? "Completed" : "Ongoing",
-      createdAt: call.createdAt,
-    }));
+    // Separate completed & ongoing calls
+    const completed: any[] = [];
+    const ongoing: any[] = [];
+
+    calls.forEach((call) => {
+      if (call.event === "call_analyzed" && call.callStatus === "ended") {
+        completed.push({
+          id: call.id,
+          name: call.name,
+          callId: call.callId,
+          toNumber: call.toNumber,
+          fromNumber: call.fromNumber,
+          transcript: call.transcript,
+          recordingUrl: call.recordingUrl,
+          status: "Completed",
+          sentimentAnalysis: call.sentimentAnalysis,
+          createdAt: call.createdAt,
+        });
+      } else {
+        ongoing.push({
+          id: call.id,
+          name: call.name,
+          callId: call.callId,
+          toNumber: call.toNumber,
+          fromNumber: call.fromNumber,
+          transcript: call.transcript,
+          recordingUrl: call.recordingUrl,
+          status: "Ongoing",
+          sentimentAnalysis: call.sentimentAnalysis,
+          createdAt: call.createdAt,
+        });
+      }
+    });
 
     return {
       result: true,
       statuscode: 200,
-      message: "Call data fetched successfully!",
-      data: allCalls,
+      message: "Call status data fetched successfully!",
+      data: {
+        completed,
+        ongoing,
+      },
       pagination: {
         totalItems,
         totalPages,
@@ -317,7 +340,7 @@ public async getCallDropdownList(
     return {
       result: false,
       statuscode: 500,
-      message: "Something went wrong while fetching call data.",
+      message: "Something went wrong while fetching call status.",
       error: error.message,
     };
   }
