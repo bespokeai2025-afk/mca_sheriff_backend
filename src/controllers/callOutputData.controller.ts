@@ -86,27 +86,31 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
 
 
 //Completed and ongoing
+
 // export const getCallDropdownList = async (req: Request, res: Response): Promise<any> => {
 //   try {
-//     // Optional authentication check if you have req.user or req.verifyUser
 //     if (!req.user) {
 //       const response = errorWithoutData("Authentication failed");
 //       return res.status(response.result ? 200 : 400).json(response);
 //     }
 
-//     // Call your service function
-//     const response = await calloutputdataservice.getCallDropdownList();
+//     const { pageSize, currentPage, toNumber } = req.query;
+
+//     const response = await calloutputdataservice.getCallDropdownList(
+//       parseInt(pageSize as string) || 50,
+//       parseInt(currentPage as string) || 1,
+//       toNumber as string // optional filter
+//     );
 
 //     return res.status(response.result ? 200 : 400).json(response);
-//   } catch (error: unknown) {
-//     const errMessage = error instanceof Error ? error.message : String(error);
-//     const response = errorWithData("Something went wrong", { error: errMessage });
+//   } catch (error) {
+//     const response = errorWithData("Something went wrong", { error });
 //     return res.status(response.result ? 200 : 400).json(response);
 //   }
 // };
 
 
-//Completed and ongoing
+
 export const getCallDropdownList = async (req: Request, res: Response): Promise<any> => {
   try {
     if (!req.user) {
@@ -116,10 +120,11 @@ export const getCallDropdownList = async (req: Request, res: Response): Promise<
 
     const { pageSize, currentPage, toNumber } = req.query;
 
+    // Only pass toNumber if it exists
     const response = await calloutputdataservice.getCallDropdownList(
       parseInt(pageSize as string) || 50,
       parseInt(currentPage as string) || 1,
-      toNumber as string // optional filter
+      toNumber ? (toNumber as string) : undefined
     );
 
     return res.status(response.result ? 200 : 400).json(response);
@@ -128,6 +133,7 @@ export const getCallDropdownList = async (req: Request, res: Response): Promise<
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
 
 
 
