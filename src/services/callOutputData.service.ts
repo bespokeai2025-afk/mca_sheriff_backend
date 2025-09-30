@@ -435,10 +435,10 @@ export class callOutputDataService {
   }
    public async createCallOutputData(reqBody: any) {
     try {
-      // 1️⃣ Extract raw data
+      // Extract raw data
       let raw = reqBody.raw_data;
 
-      // 2️⃣ Parse if JSON string
+      //  Parse if JSON string
       if (typeof raw === "string") {
         try {
           raw = JSON.parse(raw);
@@ -447,21 +447,21 @@ export class callOutputDataService {
         }
       }
 
-      // 3️⃣ If raw_data is array, pick first element
+      //  If raw_data is array, pick first element
       if (Array.isArray(raw)) {
         raw = raw[0];
       }
 
-      // 4️⃣ Validate raw object
+      //  Validate raw object
       if (!raw || typeof raw !== "object") {
         return errorWithoutData("Invalid request: raw_data is missing or malformed");
       }
 
-      // 5️⃣ Map raw data to entity
+      //  Map raw data to entity
       const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
       console.log("📥 Mapped Data:", mappedData);
 
-      // 6️⃣ Find related CRM record by toNumber
+      //  Find related CRM record by toNumber
       const crmRecord = await this.CRMDataRepository.findOne({
         where: { mobile_number: mappedData.toNumber, isDeleted: false },
       });
@@ -470,7 +470,7 @@ export class callOutputDataService {
           mappedData.crmData = crmRecord;
       }
 
-      // 7️⃣ Check if call already exists (by toNumber)
+      //  Check if call already exists (by toNumber)
       let existingCall = await this.callOutputRepository.findOne({
         where: { toNumber: mappedData.toNumber },
       });
@@ -478,7 +478,7 @@ export class callOutputDataService {
       let savedCall: CallOutputData;
 
       if (existingCall) {
-        // 🔄 Update existing call
+        // Update existing call
         savedCall = await this.callOutputRepository.save({
           ...existingCall,
           ...mappedData,
