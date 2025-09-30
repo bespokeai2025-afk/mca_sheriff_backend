@@ -1,83 +1,107 @@
 import axios from "axios";
 import { Agent } from "../entities/AgentEntity";
+
+interface RetailAgent {
+  agent_id: string;
+  agent_name: string;
+  channel: string;
+  version: number;
+  last_modification_timestamp: number;
+  response_engine: any;
+  webhook_url: string;
+  language: string;
+  voice_id: string;
+  is_active?: boolean;
+}
+
 export class AgentService {
-  static async getAgents(payload: any): Promise<any> {
-    const url = "https://api.retellai.com/list-agents";
-    const headers = {
-      Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
-      "Content-Type": "application/json",
-    };
 
-    console.log("🚀 Sending request to RetellAI API");
-    console.log("URL:", url);
-    console.log("Headers:", headers);
-    console.log("Payload:", payload);
+  // Save selected agents to DB
+  static async saveAgents(agents: any[]): Promise<any> {
+    const savedAgents = [];
 
-    try {
-      // NOTE: RetellAI List Agents API uses GET, not POST
-      const response = await axios.get(url, {
-        headers,
-        params: payload, // Use params for GET query parameters
-      });
+    for (const a of agents) {
+      let agent = await Agent.findOne({ where: { agent_id: a.agent_id } });
 
-      console.log("✅ Response received from RetellAI API:");
-      console.log("Status:", response.status);
-      console.log("Data:", response.data);
-
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        console.error("❌ RetellAI API Error:", {
-          status: error.response.status,
-          data: error.response.data,
-        });
-        throw new Error(
-          `RetellAI API Error: ${error.response.status} - ${JSON.stringify(
-            error.response.data
-          )}`
-        );
-      } else if (error.request) {
-        console.error("❌ No response received from RetellAI:", error.request);
-        throw new Error("No response received from RetellAI API");
-      } else {
-        console.error("❌ Error sending request:", error.message);
-        throw new Error(`Error sending request: ${error.message}`);
+      if (!agent) {
+        agent = new Agent();
+        agent.agent_id = a.agent_id;
       }
+
+      agent.agent_name = a.agent_name;
+      agent.is_active = true;
+      agent.channel = a.channel;
+      agent.version = a.version;
+      agent.last_modification_timestamp = a.last_modification_timestamp;
+      agent.response_engine = a.response_engine;
+      agent.webhook_url = a.webhook_url;
+      agent.language = a.language;
+      agent.voice_id = a.voice_id;
+
+      await agent.save();
+      savedAgents.push(agent);
     }
+
+    return savedAgents;
   }
 
-   static async saveAgents(agents: any[]): Promise<any> {
+  // Fetch all agents with is_active flag merged
+  static async getAgentsWithActiveFlag(): Promise<RetailAgent[]> {
     try {
-      const savedAgents = [];
+      const url = "https://api.retellai.com/list-agents";
+      const headers = { Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2" };
 
-      for (const a of agents) {
-        // Use agent_id from RetellAI to find existing record
-        let agent = await Agent.findOne({ where: { agent_id: a.agent_id } });
+      // 1️⃣ Fetch all agents from RetellAI
+      const response = await axios.get(url, { headers });
+      const allAgents: RetailAgent[] = response.data?.data || [];
+      console.log("RetellAI agents count:", allAgents.length);
 
-        if (!agent) {
-          // New record — UUID will be generated automatically
-          agent = new Agent();
-          agent.agent_id = a.agent_id;
+      // 2️⃣ Fetch active agents from DB
+      const activeAgents = await Agent.find({ where: { is_active: true } }) || [];
+      console.log("Active agents in DB:", activeAgents.map(a => a.agent_id));
+
+      const activeIds = new Set(activeAgents.map(a => a.agent_id.toLowerCase()));
+
+      // 3️⃣ Merge is_active flag into RetellAI agents
+      const mergedAgents = allAgents.map(agent => ({
+        ...agent,
+        is_active: activeIds.has(agent.agent_id.toLowerCase()),
+      }));
+
+      // 4️⃣ Remove duplicates, keep highest version
+      const uniqueAgentsMap = new Map<string, RetailAgent>();
+      for (const agent of mergedAgents) {
+        const existing = uniqueAgentsMap.get(agent.agent_id);
+        if (!existing || agent.version > existing.version) {
+          uniqueAgentsMap.set(agent.agent_id, agent);
         }
-
-        agent.agent_name = a.agent_name;
-        agent.is_active = true; // mark as active when selected
-        agent.channel = a.channel;
-        agent.version = a.version;
-        agent.last_modification_timestamp = a.last_modification_timestamp;
-        agent.response_engine = a.response_engine;
-        agent.webhook_url = a.webhook_url;
-        agent.language = a.language;
-        agent.voice_id = a.voice_id;
-
-        await agent.save();
-        savedAgents.push(agent);
       }
 
-      return savedAgents;
+      // 5️⃣ Add DB-only active agents not in RetellAI
+      for (const dbAgent of activeAgents) {
+        if (!uniqueAgentsMap.has(dbAgent.agent_id)) {
+          uniqueAgentsMap.set(dbAgent.agent_id, {
+            agent_id: dbAgent.agent_id,
+            agent_name: dbAgent.agent_name,
+            channel: dbAgent.channel,
+            version: dbAgent.version,
+            last_modification_timestamp: dbAgent.last_modification_timestamp,
+            response_engine: dbAgent.response_engine,
+            webhook_url: dbAgent.webhook_url,
+            language: dbAgent.language,
+            voice_id: dbAgent.voice_id,
+            is_active: true,
+          });
+        }
+      }
+
+      const finalAgents = Array.from(uniqueAgentsMap.values());
+      console.log("Final merged agents count:", finalAgents.length);
+
+      return finalAgents;
     } catch (error) {
-      console.error("Error saving agents:", error);
-      throw new Error("Failed to save agents");
+      console.error("Error fetching agents with active flag:", error);
+      throw new Error("Failed to fetch agents with active flag");
     }
   }
 }
