@@ -134,93 +134,113 @@ export class callOutputDataService {
 
   // Completed and ongoing
 
-  // public async getCallDropdownList(
-  //   pageSize: number,
-  //   currentPage: number
-  // ) {
-  //   try {
-  //     // Build where condition for both analyzed & started calls
-  //     const whereCondition = [
-  //       { event: "call_analyzed", isDeleted: false, isActive: true },
-  //       { event: "call_started", isDeleted: false, isActive: true },
-  //     ];
+//   public async getCallDropdownList(
+//   pageSize: number,
+//   currentPage: number,
+//   toNumber?: string
+// ) {
+//   try {
+//     // Base condition type
+//     type CallWhere = {
+//       event: string;
+//       isDeleted: boolean;
+//       isActive: boolean;
+//       toNumber?: string;
+//     };
 
-  //     // Fetch with pagination
-  //     const [calls, totalItems] = await this.callOutputRepository.findAndCount({
-  //       where: whereCondition,
-  //       order: { createdAt: "DESC" },
-  //       skip: (currentPage - 1) * pageSize,
-  //       take: pageSize,
-  //     });
+//     // Base where condition
+//     let whereCondition: CallWhere[] = [
+//       { event: "call_analyzed", isDeleted: false, isActive: true },
+//       { event: "call_started", isDeleted: false, isActive: true },
+//     ];
 
-  //     const totalPages = Math.ceil(totalItems / pageSize);
+//     // Apply toNumber filter if provided
+//     if (toNumber) {
+//       whereCondition = whereCondition.map((cond: CallWhere) => ({
+//         ...cond,
+//         toNumber,
+//       }));
+//     }
 
-  //     if (totalItems >= 1 && totalPages < currentPage) {
-  //       return {
-  //         result: false,
-  //         statuscode: 400,
-  //         message: "Page limit exceeded",
-  //       };
-  //     }
+//     // Fetch paginated data
+//     const [calls, totalItems] = await this.callOutputRepository.findAndCount({
+//       where: whereCondition,
+//       order: { createdAt: "DESC" },
+//       skip: (currentPage - 1) * pageSize,
+//       take: pageSize,
+//     });
 
-  //     // Separate completed & ongoing calls
-  //     const completed: any[] = [];
-  //     const ongoing: any[] = [];
+//     const totalPages = Math.ceil(totalItems / pageSize);
 
-  //     calls.forEach((call) => {
-  //       if (call.event === "call_analyzed" && call.callStatus === "ended") {
-  //         completed.push({
-  //           id: call.id,
-  //           name: call.name,
-  //           callId: call.callId,
-  //           toNumber: call.toNumber,
-  //           fromNumber: call.fromNumber,
-  //           status: "Completed",
-  //           createdAt: call.createdAt,
-  //         });
-  //       } else if (
-  //         (call.event === "call_started" && call.callStatus === "ongoing") ||
-  //         (call.event === "call_analyzed" && call.callStatus === "ongoing")
-  //       ) {
-  //         ongoing.push({
-  //           id: call.id,
-  //           name: call.name,
-  //           callId: call.callId,
-  //           toNumber: call.toNumber,
-  //           fromNumber: call.fromNumber,
-  //           status: "Ongoing",
-  //           createdAt: call.createdAt,
-  //         });
-  //       }
-  //     });
+//     if (totalItems >= 1 && totalPages < currentPage) {
+//       return {
+//         result: false,
+//         statuscode: 400,
+//         message: "Page limit exceeded",
+//       };
+//     }
 
-  //     return {
-  //       result: true,
-  //       statuscode: 200,
-  //       message: "Call status data fetched successfully!",
-  //       data: {
-  //         completed,
-  //         ongoing,
-  //       },
-  //       pagination: {
-  //         totalItems,
-  //         totalPages,
-  //         currentPage,
-  //         pageSize,
-  //       },
-  //     };
-  //   } catch (error: any) {
-  //     return {
-  //       result: false,
-  //       statuscode: 500,
-  //       message: "Something went wrong while fetching call status.",
-  //       error: error.message,
-  //     };
-  //   }
-  // }
+//     // Separate completed & ongoing calls
+//     const completed: any[] = [];
+//     const ongoing: any[] = [];
+
+//     calls.forEach((call) => {
+//       if (call.event === "call_analyzed" && call.callStatus === "ended") {
+//         completed.push({
+//           id: call.id,
+//           name: call.name,
+//           callId: call.callId,
+//           toNumber: call.toNumber,
+//           fromNumber: call.fromNumber,
+//           transcript:call.transcript,
+//           recordingUrl:call.recordingUrl,
+//           status: "Completed",
+//           sentimentAnalysis:call.sentimentAnalysis,
+//           createdAt: call.createdAt,
+//         });
+//       } else {
+//         ongoing.push({
+//           id: call.id,
+//           name: call.name,
+//           callId: call.callId,
+//           toNumber: call.toNumber,
+//           fromNumber: call.fromNumber,
+//           transcript:call.transcript,
+//           recordingUrl:call.recordingUrl,
+//           status: "Ongoing",
+//           sentimentAnalysis:call.sentimentAnalysis,
+//           createdAt: call.createdAt,
+//         });
+//       }
+//     });
+
+//     return {
+//       result: true,
+//       statuscode: 200,
+//       message: "Call status data fetched successfully!",
+//       data: {
+//         completed,
+//         ongoing,
+//       },
+//       pagination: {
+//         totalItems,
+//         totalPages,
+//         currentPage,
+//         pageSize,
+//       },
+//     };
+//   } catch (error: any) {
+//     return {
+//       result: false,
+//       statuscode: 500,
+//       message: "Something went wrong while fetching call status.",
+//       error: error.message,
+//     };
+//   }
+// }
 
 
-  public async getCallDropdownList(
+public async getCallDropdownList(
   pageSize: number,
   currentPage: number,
   toNumber?: string
@@ -234,17 +254,18 @@ export class callOutputDataService {
       toNumber?: string;
     };
 
-    // Base where condition
+    // Base where condition for analyzed & started calls
     let whereCondition: CallWhere[] = [
       { event: "call_analyzed", isDeleted: false, isActive: true },
       { event: "call_started", isDeleted: false, isActive: true },
     ];
 
-    // Apply toNumber filter if provided
+    // Normalize and apply toNumber filter if provided
     if (toNumber) {
+      const normalizedNumber = toNumber.replace(/\+/g, "");
       whereCondition = whereCondition.map((cond: CallWhere) => ({
         ...cond,
-        toNumber,
+        toNumber: normalizedNumber,
       }));
     }
 
@@ -278,10 +299,10 @@ export class callOutputDataService {
           callId: call.callId,
           toNumber: call.toNumber,
           fromNumber: call.fromNumber,
-          transcript:call.transcript,
-          recordingUrl:call.recordingUrl,
+          transcript: call.transcript,
+          recordingUrl: call.recordingUrl,
           status: "Completed",
-          sentimentAnalysis:call.sentimentAnalysis,
+          sentimentAnalysis: call.sentimentAnalysis,
           createdAt: call.createdAt,
         });
       } else {
@@ -291,10 +312,10 @@ export class callOutputDataService {
           callId: call.callId,
           toNumber: call.toNumber,
           fromNumber: call.fromNumber,
-          transcript:call.transcript,
-          recordingUrl:call.recordingUrl,
+          transcript: call.transcript,
+          recordingUrl: call.recordingUrl,
           status: "Ongoing",
-          sentimentAnalysis:call.sentimentAnalysis,
+          sentimentAnalysis: call.sentimentAnalysis,
           createdAt: call.createdAt,
         });
       }
