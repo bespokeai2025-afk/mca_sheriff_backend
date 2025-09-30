@@ -134,217 +134,217 @@ export class callOutputDataService {
 
   // Completed and ongoing
 
-//   public async getCallDropdownList(
-//   pageSize: number,
-//   currentPage: number,
-//   toNumber?: string
-// ) {
-//   try {
-//     // Base condition type
-//     type CallWhere = {
-//       event: string;
-//       isDeleted: boolean;
-//       isActive: boolean;
-//       toNumber?: string;
-//     };
+  //   public async getCallDropdownList(
+  //   pageSize: number,
+  //   currentPage: number,
+  //   toNumber?: string
+  // ) {
+  //   try {
+  //     // Base condition type
+  //     type CallWhere = {
+  //       event: string;
+  //       isDeleted: boolean;
+  //       isActive: boolean;
+  //       toNumber?: string;
+  //     };
 
-//     // Base where condition
-//     let whereCondition: CallWhere[] = [
-//       { event: "call_analyzed", isDeleted: false, isActive: true },
-//       { event: "call_started", isDeleted: false, isActive: true },
-//     ];
+  //     // Base where condition
+  //     let whereCondition: CallWhere[] = [
+  //       { event: "call_analyzed", isDeleted: false, isActive: true },
+  //       { event: "call_started", isDeleted: false, isActive: true },
+  //     ];
 
-//     // Apply toNumber filter if provided
-//     if (toNumber) {
-//       whereCondition = whereCondition.map((cond: CallWhere) => ({
-//         ...cond,
-//         toNumber,
-//       }));
-//     }
+  //     // Apply toNumber filter if provided
+  //     if (toNumber) {
+  //       whereCondition = whereCondition.map((cond: CallWhere) => ({
+  //         ...cond,
+  //         toNumber,
+  //       }));
+  //     }
 
-//     // Fetch paginated data
-//     const [calls, totalItems] = await this.callOutputRepository.findAndCount({
-//       where: whereCondition,
-//       order: { createdAt: "DESC" },
-//       skip: (currentPage - 1) * pageSize,
-//       take: pageSize,
-//     });
+  //     // Fetch paginated data
+  //     const [calls, totalItems] = await this.callOutputRepository.findAndCount({
+  //       where: whereCondition,
+  //       order: { createdAt: "DESC" },
+  //       skip: (currentPage - 1) * pageSize,
+  //       take: pageSize,
+  //     });
 
-//     const totalPages = Math.ceil(totalItems / pageSize);
+  //     const totalPages = Math.ceil(totalItems / pageSize);
 
-//     if (totalItems >= 1 && totalPages < currentPage) {
-//       return {
-//         result: false,
-//         statuscode: 400,
-//         message: "Page limit exceeded",
-//       };
-//     }
+  //     if (totalItems >= 1 && totalPages < currentPage) {
+  //       return {
+  //         result: false,
+  //         statuscode: 400,
+  //         message: "Page limit exceeded",
+  //       };
+  //     }
 
-//     // Separate completed & ongoing calls
-//     const completed: any[] = [];
-//     const ongoing: any[] = [];
+  //     // Separate completed & ongoing calls
+  //     const completed: any[] = [];
+  //     const ongoing: any[] = [];
 
-//     calls.forEach((call) => {
-//       if (call.event === "call_analyzed" && call.callStatus === "ended") {
-//         completed.push({
-//           id: call.id,
-//           name: call.name,
-//           callId: call.callId,
-//           toNumber: call.toNumber,
-//           fromNumber: call.fromNumber,
-//           transcript:call.transcript,
-//           recordingUrl:call.recordingUrl,
-//           status: "Completed",
-//           sentimentAnalysis:call.sentimentAnalysis,
-//           createdAt: call.createdAt,
-//         });
-//       } else {
-//         ongoing.push({
-//           id: call.id,
-//           name: call.name,
-//           callId: call.callId,
-//           toNumber: call.toNumber,
-//           fromNumber: call.fromNumber,
-//           transcript:call.transcript,
-//           recordingUrl:call.recordingUrl,
-//           status: "Ongoing",
-//           sentimentAnalysis:call.sentimentAnalysis,
-//           createdAt: call.createdAt,
-//         });
-//       }
-//     });
+  //     calls.forEach((call) => {
+  //       if (call.event === "call_analyzed" && call.callStatus === "ended") {
+  //         completed.push({
+  //           id: call.id,
+  //           name: call.name,
+  //           callId: call.callId,
+  //           toNumber: call.toNumber,
+  //           fromNumber: call.fromNumber,
+  //           transcript:call.transcript,
+  //           recordingUrl:call.recordingUrl,
+  //           status: "Completed",
+  //           sentimentAnalysis:call.sentimentAnalysis,
+  //           createdAt: call.createdAt,
+  //         });
+  //       } else {
+  //         ongoing.push({
+  //           id: call.id,
+  //           name: call.name,
+  //           callId: call.callId,
+  //           toNumber: call.toNumber,
+  //           fromNumber: call.fromNumber,
+  //           transcript:call.transcript,
+  //           recordingUrl:call.recordingUrl,
+  //           status: "Ongoing",
+  //           sentimentAnalysis:call.sentimentAnalysis,
+  //           createdAt: call.createdAt,
+  //         });
+  //       }
+  //     });
 
-//     return {
-//       result: true,
-//       statuscode: 200,
-//       message: "Call status data fetched successfully!",
-//       data: {
-//         completed,
-//         ongoing,
-//       },
-//       pagination: {
-//         totalItems,
-//         totalPages,
-//         currentPage,
-//         pageSize,
-//       },
-//     };
-//   } catch (error: any) {
-//     return {
-//       result: false,
-//       statuscode: 500,
-//       message: "Something went wrong while fetching call status.",
-//       error: error.message,
-//     };
-//   }
-// }
+  //     return {
+  //       result: true,
+  //       statuscode: 200,
+  //       message: "Call status data fetched successfully!",
+  //       data: {
+  //         completed,
+  //         ongoing,
+  //       },
+  //       pagination: {
+  //         totalItems,
+  //         totalPages,
+  //         currentPage,
+  //         pageSize,
+  //       },
+  //     };
+  //   } catch (error: any) {
+  //     return {
+  //       result: false,
+  //       statuscode: 500,
+  //       message: "Something went wrong while fetching call status.",
+  //       error: error.message,
+  //     };
+  //   }
+  // }
 
 
-public async getCallDropdownList(
-  pageSize: number,
-  currentPage: number,
-  toNumber?: string
-) {
-  try {
-    // Base condition type
-    type CallWhere = {
-      event: string;
-      isDeleted: boolean;
-      isActive: boolean;
-      toNumber?: string;
-    };
+  public async getCallDropdownList(
+    verifyUser: any,
+    pageSize: number,
+    currentPage: number,
+    toNumber?: string
+  ) {
+    try {
+      let whereCondition: any[] = [];
 
-    // Base where condition for analyzed & started calls
-    let whereCondition: CallWhere[] = [
-      { event: "call_analyzed", isDeleted: false, isActive: true },
-      { event: "call_started", isDeleted: false, isActive: true },
-    ];
+      // Base conditions (both events allowed)
+      const baseConditions: any = {
+        isDeleted: false,
+        isActive: true,
+      };
 
-    // Normalize and apply toNumber filter if provided
-    if (toNumber) {
-      const normalizedNumber = toNumber.replace(/\+/g, "");
-      whereCondition = whereCondition.map((cond: CallWhere) => ({
-        ...cond,
-        toNumber: normalizedNumber,
-      }));
-    }
+      if (verifyUser.user_exist) {
+        // Only active & non-deleted for normal user
+        baseConditions.isActive = true;
+        baseConditions.isDeleted = false;
+      }
 
-    // Fetch paginated data
-    const [calls, totalItems] = await this.callOutputRepository.findAndCount({
-      where: whereCondition,
-      order: { createdAt: "DESC" },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize,
-    });
+      if (verifyUser.admin_exist) {
+        // Admin sees even inactive calls (but not deleted)
+        baseConditions.isDeleted = false;
+      }
 
-    const totalPages = Math.ceil(totalItems / pageSize);
+      // Add event types
+      const analyzedCond: any = { ...baseConditions, event: "call_analyzed" };
+      const startedCond: any = { ...baseConditions, event: "call_started" };
 
-    if (totalItems >= 1 && totalPages < currentPage) {
+      // Apply toNumber filter with ILike (handles +, spaces, partial match)
+      if (toNumber) {
+        const normalizedNumber = toNumber.replace(/\s+/g, "");
+        analyzedCond.toNumber = ILike(`%${normalizedNumber}%`);
+        startedCond.toNumber = ILike(`%${normalizedNumber}%`);
+      }
+
+      whereCondition = [analyzedCond, startedCond];
+
+      // Fetch with pagination (skip/take disabled when searching)
+      const [calls, totalItems] = await this.callOutputRepository.findAndCount({
+        where: whereCondition,
+        order: { createdAt: "DESC" },
+        skip: toNumber ? 0 : (currentPage - 1) * pageSize,
+        take: toNumber ? undefined : pageSize,
+      });
+
+      const totalPages = toNumber ? 1 : Math.ceil(totalItems / pageSize);
+
+      // Separate into completed & ongoing
+      const completed: any[] = [];
+      const ongoing: any[] = [];
+
+      calls.forEach((call) => {
+        if (call.event === "call_analyzed" && call.callStatus === "ended") {
+          completed.push({
+            id: call.id,
+            name: call.name,
+            callId: call.callId,
+            toNumber: call.toNumber,
+            fromNumber: call.fromNumber,
+            transcript: call.transcript,
+            recordingUrl: call.recordingUrl,
+            status: "Completed",
+            sentimentAnalysis: call.sentimentAnalysis,
+            createdAt: call.createdAt,
+          });
+        } else {
+          ongoing.push({
+            id: call.id,
+            name: call.name,
+            callId: call.callId,
+            toNumber: call.toNumber,
+            fromNumber: call.fromNumber,
+            transcript: call.transcript,
+            recordingUrl: call.recordingUrl,
+            status: "Ongoing",
+            sentimentAnalysis: call.sentimentAnalysis,
+            createdAt: call.createdAt,
+          });
+        }
+      });
+
+      return {
+        result: true,
+        statuscode: 200,
+        message: "Call status data fetched successfully!",
+        data: { completed, ongoing },
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: toNumber ? 1 : currentPage,
+          pageSize: toNumber ? totalItems : pageSize,
+        },
+      };
+    } catch (error: any) {
       return {
         result: false,
-        statuscode: 400,
-        message: "Page limit exceeded",
+        statuscode: 500,
+        message: "Something went wrong while fetching call status.",
+        error: error.message,
       };
     }
-
-    // Separate completed & ongoing calls
-    const completed: any[] = [];
-    const ongoing: any[] = [];
-
-    calls.forEach((call) => {
-      if (call.event === "call_analyzed" && call.callStatus === "ended") {
-        completed.push({
-          id: call.id,
-          name: call.name,
-          callId: call.callId,
-          toNumber: call.toNumber,
-          fromNumber: call.fromNumber,
-          transcript: call.transcript,
-          recordingUrl: call.recordingUrl,
-          status: "Completed",
-          sentimentAnalysis: call.sentimentAnalysis,
-          createdAt: call.createdAt,
-        });
-      } else {
-        ongoing.push({
-          id: call.id,
-          name: call.name,
-          callId: call.callId,
-          toNumber: call.toNumber,
-          fromNumber: call.fromNumber,
-          transcript: call.transcript,
-          recordingUrl: call.recordingUrl,
-          status: "Ongoing",
-          sentimentAnalysis: call.sentimentAnalysis,
-          createdAt: call.createdAt,
-        });
-      }
-    });
-
-    return {
-      result: true,
-      statuscode: 200,
-      message: "Call status data fetched successfully!",
-      data: {
-        completed,
-        ongoing,
-      },
-      pagination: {
-        totalItems,
-        totalPages,
-        currentPage,
-        pageSize,
-      },
-    };
-  } catch (error: any) {
-    return {
-      result: false,
-      statuscode: 500,
-      message: "Something went wrong while fetching call status.",
-      error: error.message,
-    };
   }
-}
+
 
 
 
@@ -454,7 +454,7 @@ public async getCallDropdownList(
       return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
     }
   }
-   public async createCallOutputData(reqBody: any) {
+  public async createCallOutputData(reqBody: any) {
     try {
       // 1️⃣ Extract raw data
       let raw = reqBody.raw_data;
@@ -488,7 +488,7 @@ public async getCallDropdownList(
       });
       // mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
       if (crmRecord) {
-          mappedData.crmData = crmRecord;
+        mappedData.crmData = crmRecord;
       }
 
       // 7️⃣ Check if call already exists (by toNumber)
@@ -545,125 +545,125 @@ public async getCallDropdownList(
       });
     }
   }
-// public async createCallOutputData(reqBody: any) {
-//   try {
-//     let raw = reqBody.raw_data;
+  // public async createCallOutputData(reqBody: any) {
+  //   try {
+  //     let raw = reqBody.raw_data;
 
-//     // 1️⃣ Parse JSON string if raw_data is a string
-//     if (typeof raw === "string") {
-//       try {
-//         raw = JSON.parse(raw);
-//       } catch (parseErr) {
-//         return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
-//       }
-//     }
+  //     // 1️⃣ Parse JSON string if raw_data is a string
+  //     if (typeof raw === "string") {
+  //       try {
+  //         raw = JSON.parse(raw);
+  //       } catch (parseErr) {
+  //         return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
+  //       }
+  //     }
 
-//     // 2️⃣ If raw_data is an array, pick the first element
-//     if (Array.isArray(raw)) {
-//       raw = raw[0];
-//     }
+  //     // 2️⃣ If raw_data is an array, pick the first element
+  //     if (Array.isArray(raw)) {
+  //       raw = raw[0];
+  //     }
 
-//     // 3️⃣ Ensure raw is an object
-//     if (!raw || typeof raw !== "object") {
-//       return errorWithoutData("Invalid request: raw_data is missing or malformed");
-//     }
+  //     // 3️⃣ Ensure raw is an object
+  //     if (!raw || typeof raw !== "object") {
+  //       return errorWithoutData("Invalid request: raw_data is missing or malformed");
+  //     }
 
-//     // 4️⃣ Map raw data to CallOutputData entity
-//     const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
-//     console.log("📥 Final Mapped Data for DB:", mappedData);
+  //     // 4️⃣ Map raw data to CallOutputData entity
+  //     const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+  //     console.log("📥 Final Mapped Data for DB:", mappedData);
 
-//     // 5️⃣ Try to find CRM record for this number
-//     const crmRecord = await this.CRMDataRepository.findOne({
-//       where: { mobile_number: mappedData.toNumber, isDeleted: false }
-//     });
+  //     // 5️⃣ Try to find CRM record for this number
+  //     const crmRecord = await this.CRMDataRepository.findOne({
+  //       where: { mobile_number: mappedData.toNumber, isDeleted: false }
+  //     });
 
-//     mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
+  //     mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
 
-//     // 6️⃣ Sentiment-based branching
-//     if (mappedData.sentimentAnalysis === "negative") {
-//       console.log(" Negative sentiment detected → check call_output_data by toNumber");
+  //     // 6️⃣ Sentiment-based branching
+  //     if (mappedData.sentimentAnalysis === "negative") {
+  //       console.log(" Negative sentiment detected → check call_output_data by toNumber");
 
-//       // 🔍 Check if record exists for this number
-//       const existingCall = await this.callOutputRepository.findOne({
-//         where: { toNumber: mappedData.toNumber }
-//       });
+  //       // 🔍 Check if record exists for this number
+  //       const existingCall = await this.callOutputRepository.findOne({
+  //         where: { toNumber: mappedData.toNumber }
+  //       });
 
-//       let savedCall: CallOutputData;
-//       if (existingCall) {
-//         // Update existing record
-//         savedCall = await this.callOutputRepository.save({
-//           ...existingCall,
-//           ...mappedData,
-//         });
-//       } else {
-//         // Insert new record
-//         const newCall = this.callOutputRepository.create(mappedData);
-//         savedCall = await this.callOutputRepository.save(newCall);
-//       }
+  //       let savedCall: CallOutputData;
+  //       if (existingCall) {
+  //         // Update existing record
+  //         savedCall = await this.callOutputRepository.save({
+  //           ...existingCall,
+  //           ...mappedData,
+  //         });
+  //       } else {
+  //         // Insert new record
+  //         const newCall = this.callOutputRepository.create(mappedData);
+  //         savedCall = await this.callOutputRepository.save(newCall);
+  //       }
 
-//       // 📝 Always add a history record
-//       const historyRecord = this.historyRepository.create({
-//         ...mappedData,
-//         call_output_data_id: savedCall.id,
-//       } as DeepPartial<CallOutputHistoryData>);
-//       await this.historyRepository.save(historyRecord);
+  //       // 📝 Always add a history record
+  //       const historyRecord = this.historyRepository.create({
+  //         ...mappedData,
+  //         call_output_data_id: savedCall.id,
+  //       } as DeepPartial<CallOutputHistoryData>);
+  //       await this.historyRepository.save(historyRecord);
 
-//       // 🔄 Update CRM flag (example: disable "need_to_call")
-//       if (crmRecord) {
-//         crmRecord.need_to_call = false;
-//         await this.CRMDataRepository.save(crmRecord);
-//       }
+  //       // 🔄 Update CRM flag (example: disable "need_to_call")
+  //       if (crmRecord) {
+  //         crmRecord.need_to_call = false;
+  //         await this.CRMDataRepository.save(crmRecord);
+  //       }
 
-//       return successWithData("Negative sentiment processed successfully", savedCall);
+  //       return successWithData("Negative sentiment processed successfully", savedCall);
 
-//     } else if (mappedData.sentimentAnalysis === "positive") {
-//       console.log(" Positive sentiment detected → check call_output_data by toNumber");
+  //     } else if (mappedData.sentimentAnalysis === "positive") {
+  //       console.log(" Positive sentiment detected → check call_output_data by toNumber");
 
-//       // 🔍 Check if record exists for this number
-//       const existingCall = await this.callOutputRepository.findOne({
-//         where: { toNumber: mappedData.toNumber }
-//       });
+  //       // 🔍 Check if record exists for this number
+  //       const existingCall = await this.callOutputRepository.findOne({
+  //         where: { toNumber: mappedData.toNumber }
+  //       });
 
-//       let savedCall: CallOutputData;
-//       if (existingCall) {
-//         // Update existing record
-//         savedCall = await this.callOutputRepository.save({
-//           ...existingCall,
-//           ...mappedData,
-//         });
-//       } else {
-//         // Insert new record
-//         const newCall = this.callOutputRepository.create(mappedData);
-//         savedCall = await this.callOutputRepository.save(newCall);
-//       }
+  //       let savedCall: CallOutputData;
+  //       if (existingCall) {
+  //         // Update existing record
+  //         savedCall = await this.callOutputRepository.save({
+  //           ...existingCall,
+  //           ...mappedData,
+  //         });
+  //       } else {
+  //         // Insert new record
+  //         const newCall = this.callOutputRepository.create(mappedData);
+  //         savedCall = await this.callOutputRepository.save(newCall);
+  //       }
 
-//       // 📝 Always add a history record
-//       const historyRecord = this.historyRepository.create({
-//         ...mappedData,
-//         call_output_data_id: savedCall.id,
-//       } as DeepPartial<CallOutputHistoryData>);
-//       await this.historyRepository.save(historyRecord);
+  //       // 📝 Always add a history record
+  //       const historyRecord = this.historyRepository.create({
+  //         ...mappedData,
+  //         call_output_data_id: savedCall.id,
+  //       } as DeepPartial<CallOutputHistoryData>);
+  //       await this.historyRepository.save(historyRecord);
 
-//       // 🔄 Example: If positive, maybe mark CRM as already contacted
-//       if (crmRecord) {
-//         crmRecord.need_to_call = false; // you can customize logic here
-//         await this.CRMDataRepository.save(crmRecord);
-//       }
+  //       // 🔄 Example: If positive, maybe mark CRM as already contacted
+  //       if (crmRecord) {
+  //         crmRecord.need_to_call = false; // you can customize logic here
+  //         await this.CRMDataRepository.save(crmRecord);
+  //       }
 
-//       return successWithData("Positive sentiment processed successfully", savedCall);
+  //       return successWithData("Positive sentiment processed successfully", savedCall);
 
-//     } else {
-//       //  Invalid or missing sentiment
-//       return errorWithoutData("Sentiment analysis missing or invalid");
-//     }
+  //     } else {
+  //       //  Invalid or missing sentiment
+  //       return errorWithoutData("Sentiment analysis missing or invalid");
+  //     }
 
-//   } catch (error) {
-//     console.error("Error creating call output data:", error);
-//     return errorWithData("Failed to create call output data", {
-//       error: (error as Error).message,
-//     });
-//   }
-// }
+  //   } catch (error) {
+  //     console.error("Error creating call output data:", error);
+  //     return errorWithData("Failed to create call output data", {
+  //       error: (error as Error).message,
+  //     });
+  //   }
+  // }
 
   // public async createCallOutputData(reqBody: any) {
   //   try {

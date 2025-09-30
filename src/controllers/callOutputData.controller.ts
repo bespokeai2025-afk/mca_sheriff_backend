@@ -110,7 +110,6 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
 // };
 
 
-
 export const getCallDropdownList = async (req: Request, res: Response): Promise<any> => {
   try {
     if (!req.user) {
@@ -120,8 +119,8 @@ export const getCallDropdownList = async (req: Request, res: Response): Promise<
 
     const { pageSize, currentPage, toNumber } = req.query;
 
-    // Only pass toNumber if it exists
     const response = await calloutputdataservice.getCallDropdownList(
+      req.verifyUser, // required for role-based filtering
       parseInt(pageSize as string) || 50,
       parseInt(currentPage as string) || 1,
       toNumber ? (toNumber as string) : undefined
@@ -133,6 +132,8 @@ export const getCallDropdownList = async (req: Request, res: Response): Promise<
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
+
 
 
 
