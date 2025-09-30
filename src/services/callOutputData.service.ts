@@ -522,10 +522,15 @@ public async getCallDropdownList(
       console.log("📝 History record saved");
 
       // 9️⃣ Update CRM flag if exists
-      if (crmRecord) {
-        crmRecord.need_to_call = false; // Example logic
+      // if (crmRecord) {
+      //   crmRecord.need_to_call = false; // Example logic
+      //   await this.CRMDataRepository.save(crmRecord);
+      //   console.log("🔄 CRM record updated");
+      // }
+      if (crmRecord && mappedData.callStatus === "call_started") {
+        crmRecord.need_to_call = false;
         await this.CRMDataRepository.save(crmRecord);
-        console.log("🔄 CRM record updated");
+        console.log(" CRM record updated (need_to_call=false after call_started)");
       }
 
       // 10️⃣ Return response based on sentiment
