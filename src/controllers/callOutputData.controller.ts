@@ -11,24 +11,6 @@ const userhistoryservice = new callOutputDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
 
 
-//Get user calling response
-// export const getUsercallingData = async (req: Request, res: Response): Promise<any> => {
-
-//     try {
-//         if (!req.user) {
-//             const response = errorWithoutData("Authentication failed");
-//             return res.status(response.result ? 200 : 400).json(response);
-//         }
-//         const { pageSize, currentPage } = req.query;
-
-
-//         const response = await calloutputdataservice.getUsercallingData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
-//         return res.status(response.result ? 200 : 400).json(response);
-//     } catch (error) {
-//         const response = errorWithData('something went wrong', { error: error });
-//         return res.status(response.result ? 200 : 400).json(response);
-//     }
-// };
 
 
 
@@ -61,7 +43,10 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
 
 
 
-//Lead
+
+
+
+//Lead of user calls
 export const getUsercallingDataLead = async (req: Request, res: Response): Promise<any> => {
   try {
     if (!req.user) {
@@ -85,101 +70,8 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
 };
 
 
-//Completed and ongoing
-
-// export const getCallDropdownList = async (req: Request, res: Response): Promise<any> => {
-//   try {
-//     if (!req.user) {
-//       const response = errorWithoutData("Authentication failed");
-//       return res.status(response.result ? 200 : 400).json(response);
-//     }
-
-//     const { pageSize, currentPage, toNumber } = req.query;
-
-//     const response = await calloutputdataservice.getCallDropdownList(
-//       parseInt(pageSize as string) || 50,
-//       parseInt(currentPage as string) || 1,
-//       toNumber as string // optional filter
-//     );
-
-//     return res.status(response.result ? 200 : 400).json(response);
-//   } catch (error) {
-//     const response = errorWithData("Something went wrong", { error });
-//     return res.status(response.result ? 200 : 400).json(response);
-//   }
-// };
 
 
-export const getCallDropdownList = async (req: Request, res: Response): Promise<any> => {
-  try {
-    if (!req.user) {
-      const response = errorWithoutData("Authentication failed");
-      return res.status(response.result ? 200 : 400).json(response);
-    }
-
-    const { pageSize, currentPage, toNumber } = req.query;
-
-    const response = await calloutputdataservice.getCallDropdownList(
-      req.verifyUser, // required for role-based filtering
-      parseInt(pageSize as string) || 50,
-      parseInt(currentPage as string) || 1,
-      toNumber ? (toNumber as string) : undefined
-    );
-
-    return res.status(response.result ? 200 : 400).json(response);
-  } catch (error) {
-    const response = errorWithData("Something went wrong", { error });
-    return res.status(response.result ? 200 : 400).json(response);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-// export const getUsercallingHistory = async (
-//     req: Request,
-//     res: Response
-// ): Promise<any> => {
-//     try {
-//         if (!req.user) {
-//             const response = errorWithoutData("Authentication failed");
-//             return res.status(response.result ? 200 : 400).json(response);
-//         }
-
-//         // extract query params
-//         const { pageSize, currentPage, to_number } = req.query;
-
-//         // normalize query param `to_number` -> `toNumber` (entity property)
-//         const toNumber = to_number ? String(to_number) : undefined;
-
-//         // parse integers if provided; leave undefined if not
-//         const size = pageSize ? parseInt(pageSize as string, 10) : undefined;
-//         const page = currentPage ? parseInt(currentPage as string, 10) : undefined;
-
-//         const response = await calloutputdataservice.getUsercallingHistory(
-//             req.verifyUser,
-//             size,   // optional pageSize
-//             page,   // optional currentPage
-//             toNumber
-//         );
-
-//         return res.status(response.result ? 200 : 400).json(response);
-//     } catch (error) {
-//         const response = errorWithData("Something went wrong", { error });
-//         return res.status(response.result ? 200 : 400).json(response);
-//     }
-// };
-
-
-
-
-// Get User call history
 export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
   try {
     if (!req.user) {
@@ -187,13 +79,17 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
       return res.status(response.result ? 200 : 400).json(response);
     }
 
-    const { pageSize, currentPage, toNumber } = req.query;
+    const { pageSize, currentPage, toNumber, status } = req.query;
+
+    // Normalize status to lowercase to match service expectations
+    const normalizedStatus = (status as string)?.toLowerCase() as "completed" | "ongoing" | undefined;
 
     const response = await calloutputdataservice.getUsercallingHistory(
       req.verifyUser,
       parseInt(pageSize as string) || 50,
       parseInt(currentPage as string) || 1,
-      toNumber as string // optional filter
+      toNumber as string,          // optional filter
+      normalizedStatus             // optional filter
     );
 
     return res.status(response.result ? 200 : 400).json(response);
@@ -204,6 +100,9 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
 };
 
 
+
+
+//count of user call 
 export const getUserCallDataCount = async (req: Request, res: Response): Promise<any> => {
   try {
     const verifyUser = req.user; // assume auth middleware sets this
@@ -230,6 +129,7 @@ export const getUserCallDataCount = async (req: Request, res: Response): Promise
   }
 };
 
+
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
@@ -253,6 +153,9 @@ export const createCallOutputData = async (req: Request, res: Response): Promise
     res.status(400).json(response);
   }
 };
+
+
+
 export const updateCallOutputData = async (req: Request, res: Response): Promise<any> => {
 
   try {
@@ -282,6 +185,9 @@ export const updateCallOutputData = async (req: Request, res: Response): Promise
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
+
+
 export const deletefaq = async (req: Request, res: Response): Promise<any> => {
 
   try {

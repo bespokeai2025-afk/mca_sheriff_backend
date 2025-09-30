@@ -91,7 +91,7 @@ export const createCRMData = async (req: Request, res: Response): Promise<any> =
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        // Prepare data (image optional, if uploaded via Multer + S3)
+        // Prepare data
         const data = {
             ...req.body,
             image: (req.file as Express.Multer.File & { location: string })?.location || null
