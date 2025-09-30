@@ -14,24 +14,24 @@ export class Agent extends BaseEntity {
   @Column({ nullable: true })
   is_active: boolean;
 
-  @Column({ nullable: true })
-  channel: string;
+  // @Column({ nullable: true })
+  // channel: string;
 
-  @Column({ nullable: true })
-  version: number;
+  // @Column({ nullable: true })
+  // version: number;
 
-  @Column({ type: "bigint", nullable: true })
-  last_modification_timestamp: number;
+  // @Column({ type: "bigint", nullable: true })
+  // last_modification_timestamp: number;
 
-  @Column({ type: "json", nullable: true })
-  response_engine: any;
+  // @Column({ type: "json", nullable: true })
+  // response_engine: any;
 
-  @Column({ nullable: true })
-  webhook_url: string;
+  // @Column({ nullable: true })
+  // webhook_url: string;
 
-  @Column({ nullable: true })
-  language: string;
+  // @Column({ nullable: true })
+  // language: string;
 
-  @Column({ nullable: true })
-  voice_id: string;
+  // @Column({ nullable: true })
+  // voice_id: string;
 }

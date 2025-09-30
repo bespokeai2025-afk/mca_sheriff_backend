@@ -14,18 +14,18 @@ export class AgentController {
    * GET /agent
    * Fetch all agents from RetellAI API (raw data)
    */
-  // static async getAgent(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     const payload = req.body || {}; // Optional query/filter payload
-  //     const data = await AgentService.getAgents(payload);
+  static async getAgent(req: Request, res: Response): Promise<void> {
+    try {
+      const payload = req.body || {}; // Optional query/filter payload
+      const data = await AgentService.getAgents(payload);
 
-  //     // Send response (no return, matches Promise<void>)
-  //     res.status(200).json(successWithData("All agents fetched successfully", data));
-  //   } catch (error) {
-  //     console.error("Controller error in getAgent:", error);
-  //     res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
-  //   }
-  // }
+      // Send response (no return, matches Promise<void>)
+      res.status(200).json(successWithData("All agents fetched successfully", data));
+    } catch (error) {
+      console.error("Controller error in getAgent:", error);
+      res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
+    }
+  }
 
   /**
    * POST /agent/save
@@ -48,34 +48,14 @@ export class AgentController {
       console.error("Controller error in saveSelectedAgents:", error);
       res.status(500).json(errorWithData("Failed to save agents", error, 500));
     }
-  }
-
-  /**
-   * GET /agent/active
-   * Fetch all agents from RetellAI and merge 'is_active' flag from DB
-   * Returns all agents, marking those stored as active in DB.
-   */
-//   static async getAgentsActive(req: Request, res: Response): Promise<void> {
-//   try {
-//     const agents = await AgentService.getAgentsWithActiveFlag();
-//     res.status(200).json(
-//       successWithData("All agents fetched with active status", agents)
-//     );
-//   } catch (error) {
-//     console.error("Controller error in getAgentsActive:", error);
-//     res.status(500).json(
-//       errorWithData("Failed to fetch agents with active status", error, 500)
-//     );
-//   }
-// }
-
+  } 
   static async getAgentsActive(req: Request, res: Response): Promise<void> {
     try {
       const payload = req.body || {}; // Optional query/filter payload
       const data = await AgentService.getAgentsActive(payload);
 
-      // Send response (no return, matches Promise<void>)
-      res.status(200).json(successWithData("All agents fetched successfully", data));
+      // Send the service response directly
+      res.status(200).json(data);
     } catch (error) {
       console.error("Controller error in getAgent:", error);
       res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
