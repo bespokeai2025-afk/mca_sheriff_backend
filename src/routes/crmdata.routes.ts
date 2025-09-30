@@ -8,7 +8,9 @@ import { validatecrmdata, validateUserID } from "../middlewares/crmdata.validati
 const router = express.Router();
 // Get all main categories
 router.get("/start-batch-calling", verifyAccessToken, getCRMData);
-router.post("/create", verifyAccessToken, validatecrmdata, validateRequest, createCRMData);
+// router.post("/create", verifyAccessToken, validatecrmdata, validateRequest, createCRMData);
+router.post("/create", createCRMData);
+
 router.get("/get-crm-data", verifyAccessToken, getUsercrmData);
 router.get("/ok", verifyAccessToken, getUsercrmData);
 
