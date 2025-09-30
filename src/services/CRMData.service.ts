@@ -232,7 +232,8 @@ export class CRMDataService {
             crmData: crmdataoutput, 
             name: crmdataoutput.name,
             toNumber: crmdataoutput.mobile_number,
-            callStatus: "Yet to call",
+            email: crmdataoutput.email,
+            // callStatus: "Yet to call",
         });
 
         await callOutputRepository.save(callOutput);
