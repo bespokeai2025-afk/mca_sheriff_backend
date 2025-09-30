@@ -5,7 +5,7 @@ import { verifyAccessToken } from "../middlewares/auth.middleware";
 const router = express.Router();
 
 router.get("/get",  AgentController.getAgent);
-router.post("/update", verifyAccessToken, AgentController.saveSelectedAgents);
+router.get("/update", verifyAccessToken, AgentController.saveSelectedAgents);
 
 router.get("/get-list", verifyAccessToken, AgentController.getAgentsActive);
 // router.get("/update-active", verifyAccessToken, AgentController.getAgentsWithStatus);

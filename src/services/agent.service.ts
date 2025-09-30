@@ -60,25 +60,56 @@ export class AgentService {
   // }
 
   // Service: saveAgents
+
 static async saveAgents(agents: any[]): Promise<any> {
   const savedAgents = [];
 
+  // 1️⃣ Fetch all agents from RetellAI
+  const url = "https://api.retellai.com/list-agents";
+  const headers = {
+    Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
+    "Content-Type": "application/json",
+  };
+
+  const response = await axios.get(url, { headers });
+  
+  // ✅ This is the array of agents from RetellAI
+  const retailAgents: any[] = response.data?.data || [];
+
+  // Create a map for easy lookup by agent_id
+  const retailMap = new Map(retailAgents.map(a => [a.agent_id, a]));
+
   for (const a of agents) {
-    // Try to find existing agent
     let agent = await Agent.findOne({ where: { agent_id: a.agent_id } });
 
     if (!agent) {
-      // If not found, create new
       agent = new Agent();
       agent.agent_id = a.agent_id;
-    }  
-    agent.is_active = true; // set active
+    }
+
+    // Look up agent_name and other info from RetellAI
+    const retailAgent = retailMap.get(a.agent_id);
+    if (retailAgent) {
+      agent.agent_name = retailAgent.agent_name; // <-- this must exist now
+      // agent.channel = retailAgent.channel;
+      // agent.webhook_url = retailAgent.webhook_url;
+    } else {
+      console.warn(`Agent not found in RetellAI: ${a.agent_id}`);
+    }
+
+    agent.is_active = true;
     await agent.save();
     savedAgents.push(agent);
   }
 
-  return savedAgents;
+  return {
+    result: true,
+    statuscode: 200,
+    message: "Agents saved successfully",
+    data: savedAgents
+  };
 }
+
 
 // static async getAgentsActive(payload: any): Promise<any> {
 //   const url = "https://api.retellai.com/list-agents";
@@ -132,7 +163,7 @@ static async getAgentsActive(payload: any): Promise<any> {
 
   try {
     // 1️⃣ Fetch all agents from RetellAI
-    const response = await axios.get(url, { headers, params: payload });
+    const response = await axios.post(url, { headers, params: payload });
     const retailAgents: RetailAgent[] = response.data || [];
 
     // 2️⃣ Fetch all active agents from DB

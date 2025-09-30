@@ -106,4 +106,36 @@ export const createCRMData = async (req: Request, res: Response): Promise<any> =
     }
 };
 
+// export const createCRMDataWithoutAuth = async (req: Request, res: Response): Promise<any> => {
+//     try {
+//         // Prepare data
+//         const data = {
+//             ...req.body,
+//             image: (req.file as Express.Multer.File & { location: string })?.location || null
+//         };
+
+//         // Service handles both CRMData + CallOutputData
+//         const response = await crmdataservice.createCRMData(data, req.verifyUser);
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData("Something went wrong", { error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
+
+export const createCRMDataWithoutAuth = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const data = {
+            ...req.body,
+            image: (req.file as Express.Multer.File & { location: string })?.location || null
+        };
+
+        const response = await crmdataservice.createCRMDataWithoutAuth(data);
+        return res.status(response.result ? 200 : 500).json(response);
+    } catch (error) {
+        const response = errorWithData("Something went wrong", error);
+        return res.status(500).json(response);
+    }
+};
+
 

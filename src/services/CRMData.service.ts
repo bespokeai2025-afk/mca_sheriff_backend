@@ -243,4 +243,57 @@ export class CRMDataService {
             callOutput,
         });
     }
+    // public async createCRMDataWithoutAuth(Data: object, verifyUser: any) {
+    //     if (verifyUser.user_exist) {
+    //         return errorWithoutData('Only admin can create CMR Data');
+    //     }
+
+    //     // Save CRM record
+    //     const newCRMData = this.CRMDataRepository.create(Data);
+    //     const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
+
+    //     if (!crmdataoutput) {
+    //         return errorWithoutData('CRM Data not created');
+    //     }
+
+    //     // 🔹 Insert into call_output_data with "Yet to call"
+    //     const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+
+    //     const callOutput = callOutputRepository.create({
+    //         crmData: crmdataoutput, 
+    //         name: crmdataoutput.name,
+    //         toNumber: crmdataoutput.mobile_number,
+    //         email: crmdataoutput.email,
+    //         // callStatus: "Yet to call",
+    //     });
+
+    //     await callOutputRepository.save(callOutput);
+
+    //     return successWithData("CRM data created successfully", {
+    //         crmdata: crmdataoutput,
+    //         callOutput,
+    //     });
+    // }
+
+  public async createCRMDataWithoutAuth(Data: object) {
+    try {
+        // Save CRM record only
+        const newCRMData = this.CRMDataRepository.create(Data);
+        const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
+
+        if (!crmdataoutput) {
+            return errorWithoutData('CRM Data not created');
+        }
+
+        // Return the CRM data inside an array
+        return successWithData("CRM data created successfully", [crmdataoutput]);
+
+    } catch (error) {
+        console.error("Error creating CRM data:", error);
+        return errorWithData("Something went wrong", error);
+    }
+}
+
+
+
 }
