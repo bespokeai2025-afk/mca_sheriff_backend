@@ -55,18 +55,31 @@ export class AgentController {
    * Fetch all agents from RetellAI and merge 'is_active' flag from DB
    * Returns all agents, marking those stored as active in DB.
    */
+//   static async getAgentsActive(req: Request, res: Response): Promise<void> {
+//   try {
+//     const agents = await AgentService.getAgentsWithActiveFlag();
+//     res.status(200).json(
+//       successWithData("All agents fetched with active status", agents)
+//     );
+//   } catch (error) {
+//     console.error("Controller error in getAgentsActive:", error);
+//     res.status(500).json(
+//       errorWithData("Failed to fetch agents with active status", error, 500)
+//     );
+//   }
+// }
+
   static async getAgentsActive(req: Request, res: Response): Promise<void> {
-  try {
-    const agents = await AgentService.getAgentsWithActiveFlag();
-    res.status(200).json(
-      successWithData("All agents fetched with active status", agents)
-    );
-  } catch (error) {
-    console.error("Controller error in getAgentsActive:", error);
-    res.status(500).json(
-      errorWithData("Failed to fetch agents with active status", error, 500)
-    );
+    try {
+      const payload = req.body || {}; // Optional query/filter payload
+      const data = await AgentService.getAgentsActive(payload);
+
+      // Send response (no return, matches Promise<void>)
+      res.status(200).json(successWithData("All agents fetched successfully", data));
+    } catch (error) {
+      console.error("Controller error in getAgent:", error);
+      res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
+    }
   }
-}
 
 }
