@@ -23,6 +23,13 @@ export class CRMData /* extends Common */ {
     @Column({ type: 'text' })
     mobile_number: string;
 
+    @Column({ type: 'text', nullable: true })
+    email: string;
+
+    @Column({ type: 'text', nullable: true })
+    email_id: string;
+
+
     @Column({ type: "boolean", default: true})
     need_to_call: boolean;
       

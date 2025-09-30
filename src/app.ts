@@ -23,6 +23,7 @@ import CRMDataRoutes from './routes/crmdata.routes'
 import DashboardRoutes from './routes/dashboard.routes'
 import CenterStage from './routes/centerstagedcall.routes'
 import CallFrequency from './routes/callFrequencySetting.routes'
+import Agent from './routes/agent.routes'
 // Load environment variables
 dotenv.config()
 import { logRequest, logResponse, logError } from "./logger";
@@ -77,6 +78,7 @@ app.use('/crm-data', CRMDataRoutes)
 app.use('/dashboard', DashboardRoutes)
 app.use('/center-stage', CenterStage)
 app.use('/frquency-setting', CallFrequency)
+app.use('/agent', Agent)
 app.use(multerErrorHandler);
 
 app.use('/', viewsRoutes)

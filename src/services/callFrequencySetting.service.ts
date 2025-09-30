@@ -6,6 +6,7 @@ interface CallFrequencyInput {
   number_count?: number;
   selected_days?: string[];
   selected_weeks?: string[];
+  call_frequency_setting: string;
 }
 
 export class CallFrequencySettingService {
@@ -38,13 +39,11 @@ export class CallFrequencySettingService {
 
   // Create new frequency setting
   async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
-    const cronExp = this.generateCron(data);
-
     const entity = this.repo.create({
       number_count: data.number_count,
       selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
       selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
-      call_frequency_setting: cronExp,
+      call_frequency_setting: data.call_frequency_setting, // use user input directly
     });
 
     return await this.repo.save(entity);
@@ -59,16 +58,15 @@ export class CallFrequencySettingService {
   }
 
   // Update existing frequency setting by ID
+  // Optional: Update existing frequency setting
   async update(id: string, data: CallFrequencyInput): Promise<CallFrequencySetting | null> {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
 
-    const cronExp = this.generateCron(data);
-
     existing.number_count = data.number_count ?? existing.number_count;
     existing.selected_days = data.selected_days ? JSON.stringify(data.selected_days) : existing.selected_days;
     existing.selected_weeks = data.selected_weeks ? JSON.stringify(data.selected_weeks) : existing.selected_weeks;
-    existing.call_frequency_setting = cronExp;
+    existing.call_frequency_setting = data.call_frequency_setting;
 
     return await this.repo.save(existing);
   }
