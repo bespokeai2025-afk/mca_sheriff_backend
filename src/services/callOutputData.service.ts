@@ -521,12 +521,6 @@ public async getCallDropdownList(
       await this.historyRepository.save(historyRecord);
       console.log("📝 History record saved");
 
-      // 9️⃣ Update CRM flag if exists
-      // if (crmRecord) {
-      //   crmRecord.need_to_call = false; // Example logic
-      //   await this.CRMDataRepository.save(crmRecord);
-      //   console.log("🔄 CRM record updated");
-      // }
       if (crmRecord && mappedData.callStatus === "call_started") {
         crmRecord.need_to_call = false;
         await this.CRMDataRepository.save(crmRecord);
@@ -534,9 +528,9 @@ public async getCallDropdownList(
       }
 
       // 10️⃣ Return response based on sentiment
-      if (mappedData.sentimentAnalysis === "negative" || mappedData.sentimentAnalysis === "Neutral") {
+      if (mappedData.sentimentAnalysis === "negative") {
           return successWithData("Negative/Neutral sentiment processed successfully", savedCall);
-      } else if (mappedData.sentimentAnalysis === "positive") {
+      } else if (mappedData.sentimentAnalysis === "positive" || mappedData.sentimentAnalysis === "Neutral") {
           return successWithData("Positive sentiment processed successfully", savedCall);
       } else {
           // Handle missing or undefined sentiment
@@ -545,7 +539,7 @@ public async getCallDropdownList(
 
 
     } catch (error) {
-      console.error("❌ Error creating call output data:", error);
+      console.error(" Error creating call output data:", error);
       return errorWithData("Failed to create call output data", {
         error: (error as Error).message,
       });
