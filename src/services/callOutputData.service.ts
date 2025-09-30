@@ -101,7 +101,7 @@ export class callOutputDataService {
 
 
 
-
+//Call Status and history
 public async getUsercallingHistory(
   verifyUser: any,
   pageSize: number,
@@ -131,27 +131,23 @@ public async getUsercallingHistory(
     }
 
     // Prepare conditions
-    const analyzedCompletedCond: any = { ...baseConditions, event: "call_analyzed", callStatus: "ended" };
-    const analyzedOngoingCond: any = { ...baseConditions, event: "call_analyzed" };
-    const startedCond: any = { ...baseConditions, event: "call_started" };
+    const completedCond: any = { ...baseConditions, event: "call_analyzed", callStatus: "ended" };
+    const ongoingCond: any = { ...baseConditions, event: "call_started", callStatus: "ongoing" };
 
     // Apply number filter
     if (toNumber) {
       const normalizedNumber = toNumber.replace(/\s+/g, "");
-      analyzedCompletedCond.toNumber = ILike(`%${normalizedNumber}%`);
-      analyzedOngoingCond.toNumber = ILike(`%${normalizedNumber}%`);
-      startedCond.toNumber = ILike(`%${normalizedNumber}%`);
+      completedCond.toNumber = ILike(`%${normalizedNumber}%`);
+      ongoingCond.toNumber = ILike(`%${normalizedNumber}%`);
     }
 
     // Set whereCondition based on status
     if (status === "completed") {
-      whereCondition = [analyzedCompletedCond];
+      whereCondition = [completedCond];
     } else if (status === "ongoing") {
-      // Ongoing = started + analyzed but not ended
-      whereCondition = [startedCond, analyzedOngoingCond];
+      whereCondition = [ongoingCond];
     } else {
-      // Both completed & ongoing
-      whereCondition = [analyzedCompletedCond, startedCond, analyzedOngoingCond];
+      whereCondition = [completedCond, ongoingCond]; // both
     }
 
     // Fetch data
@@ -173,7 +169,14 @@ public async getUsercallingHistory(
       fromNumber: call.fromNumber,
       transcript: call.transcript,
       recordingUrl: call.recordingUrl,
-      status: call.event === "call_analyzed" && call.callStatus === "ended" ? "Completed" : "Ongoing",
+      event: call.event,
+      callStatus: call.callStatus,
+      status:
+        call.event === "call_analyzed" && call.callStatus === "ended"
+          ? "Completed"
+          : call.event === "call_started" && call.callStatus === "ongoing"
+          ? "Ongoing"
+          : "Unknown", // fallback just in case
       sentimentAnalysis: call.sentimentAnalysis,
       createdAt: call.createdAt,
     }));
@@ -182,7 +185,7 @@ public async getUsercallingHistory(
       result: true,
       statuscode: 200,
       message: "User calling history fetched successfully!",
-      data, 
+      data,
       pagination: {
         totalItems,
         totalPages,

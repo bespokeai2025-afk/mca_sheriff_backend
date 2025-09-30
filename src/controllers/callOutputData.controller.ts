@@ -81,15 +81,21 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
 
     const { pageSize, currentPage, toNumber, status } = req.query;
 
-    // Normalize status to lowercase to match service expectations
-    const normalizedStatus = (status as string)?.toLowerCase() as "completed" | "ongoing" | undefined;
+    // Normalize and validate status
+    let normalizedStatus: "completed" | "ongoing" | undefined;
+    if (typeof status === "string") {
+      const lower = status.toLowerCase();
+      if (lower === "completed" || lower === "ongoing") {
+        normalizedStatus = lower as "completed" | "ongoing";
+      }
+    }
 
     const response = await calloutputdataservice.getUsercallingHistory(
       req.verifyUser,
-      parseInt(pageSize as string) || 50,
-      parseInt(currentPage as string) || 1,
-      toNumber as string,          // optional filter
-      normalizedStatus             // optional filter
+      parseInt(pageSize as string, 10) || 50,
+      parseInt(currentPage as string, 10) || 1,
+      toNumber as string,       // optional filter
+      normalizedStatus          // optional filter
     );
 
     return res.status(response.result ? 200 : 400).json(response);
@@ -98,6 +104,7 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
 
 
 
