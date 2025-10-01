@@ -266,27 +266,45 @@ export class CRMDataService {
 public async createCRMDataWithoutAuth(DataArray: object[]) {
     try {
         const insertedRecords: any[] = [];
+        const skippedLeadIds: string[] = [];
 
         for (const rawData of DataArray) {
-            // 🔹 map input object into CRMData entity shape
             const mappedData = mapIncomingCRMData(rawData);
+
+            const existingRecord = await this.CRMDataRepository.findOne({
+                where: { lead_id: mappedData.lead_id }
+            });
+
+            if (existingRecord) {
+                skippedLeadIds.push(mappedData.lead_id);
+                console.log(`Skipping existing lead_id: ${mappedData.lead_id}`);
+                continue;
+            }
 
             const newCRMData = this.CRMDataRepository.create(mappedData);
             const savedRecord = await this.CRMDataRepository.save(newCRMData);
             insertedRecords.push(savedRecord);
         }
 
-        if (insertedRecords.length === 0) {
-            return errorWithoutData("CRM Data not created");
-        }
-
-        return successWithData("CRM data created successfully", insertedRecords);
-
+        // Always return result: true
+        return {
+            result: true,
+            statuscode: 200,
+            message:
+                insertedRecords.length > 0
+                    ? "CRM data created successfully"
+                    : "No new CRM data created (all lead_id already exist)",
+            data: {
+                insertedRecords,
+                skippedLeadIds,
+            },
+        };
     } catch (error) {
         console.error("Error creating CRM data:", error);
         return errorWithData("Something went wrong", error);
     }
 }
+
 
 
 }
