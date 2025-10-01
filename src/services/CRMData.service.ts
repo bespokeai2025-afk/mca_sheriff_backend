@@ -196,89 +196,29 @@ export class CRMDataService {
         } catch (error) {
             return errorWithData("Something went wrong", { error });
         }
-    }
+    }    
+     public async createCRMData(Data: object, verifyUser: any) {
+        try {
+            // Only admin allowed
+            if (verifyUser?.user_exist) {
+                return errorWithoutData("Only admin can create CRM Data");
+            }
 
-    // public async createCRMData(Data: object, verifyUser: any) {
+            // Create CRM entity instance
+            const newCRMData = this.CRMDataRepository.create(Data);
 
-    //     if (verifyUser.user_exist) {
-    //         return errorWithoutData('Only admin can create CMR Data')
-    //     }
+            // Save to DB
+            const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
 
-    //     const newCMRData = await this.CRMDataRepository.create(Data)
+            if (!crmdataoutput) {
+                return errorWithoutData("CRM Data not created");
+            }
 
-    //     const crmdataoutput = await this.CRMDataRepository.save(newCMRData)
-
-    //     if (!crmdataoutput) {
-    //         return errorWithoutData('CMR Data not created')
-    //     }
-    //     return successWithData("crm data created successfully", crmdataoutput);
-
-    // }
-
-
-    public async createCRMData(Data: object, verifyUser: any) {
-        if (verifyUser.user_exist) {
-            return errorWithoutData('Only admin can create CMR Data');
+            return successWithData("CRM data created successfully", crmdataoutput);
+        } catch (error) {
+            return errorWithoutData("Error creating CRM Data: " + (error as Error).message);
         }
-
-        // Save CRM record
-        const newCRMData = this.CRMDataRepository.create(Data);
-        const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
-
-        if (!crmdataoutput) {
-            return errorWithoutData('CRM Data not created');
-        }
-
-        // 🔹 Insert into call_output_data with "Yet to call"
-        const callOutputRepository = AppDataSource.getRepository(CallOutputData);
-
-        const callOutput = callOutputRepository.create({
-            crmData: crmdataoutput, 
-            name: crmdataoutput.name,
-            toNumber: crmdataoutput.mobile_number,
-            // lead_id: crmdataoutput.lead_id,
-            // unique_id: crmdataoutput.unique_id,
-            // callStatus: "Yet to call",
-        });
-
-        await callOutputRepository.save(callOutput);
-
-        return successWithData("CRM data created successfully", {
-            crmdata: crmdataoutput,
-            callOutput,
-        });
     }
-    // public async createCRMDataWithoutAuth(Data: object, verifyUser: any) {
-    //     if (verifyUser.user_exist) {
-    //         return errorWithoutData('Only admin can create CMR Data');
-    //     }
-
-    //     // Save CRM record
-    //     const newCRMData = this.CRMDataRepository.create(Data);
-    //     const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
-
-    //     if (!crmdataoutput) {
-    //         return errorWithoutData('CRM Data not created');
-    //     }
-
-    //     // 🔹 Insert into call_output_data with "Yet to call"
-    //     const callOutputRepository = AppDataSource.getRepository(CallOutputData);
-
-    //     const callOutput = callOutputRepository.create({
-    //         crmData: crmdataoutput, 
-    //         name: crmdataoutput.name,
-    //         toNumber: crmdataoutput.mobile_number,
-    //         email: crmdataoutput.email,
-    //         // callStatus: "Yet to call",
-    //     });
-
-    //     await callOutputRepository.save(callOutput);
-
-    //     return successWithData("CRM data created successfully", {
-    //         crmdata: crmdataoutput,
-    //         callOutput,
-    //     });
-    // }
 
   public async createCRMDataWithoutAuth(Data: object) {
     try {
