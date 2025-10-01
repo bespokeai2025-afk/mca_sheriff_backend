@@ -56,17 +56,46 @@ export class CRMDataService {
             //         tasks.push({ to_number: (crm as any).mobile_number });
             //     }
             // }
+            // const tasks: RetellTask[] = mainCategories
+            //     .filter((crm: any) => crm.mobile_number)
+            //     .map((crm: any) => ({
+                    
+            //         to_number: crm.mobile_number,
+            //         retell_llm_dynamic_variables: {
+            //         name: crm.name ?? "",           
+            //         lead_id: crm.lead_id ? String(crm.lead_id) : "",
+            //         unique_id: crm.unique_id ? String(crm.unique_id) : "",
+                     
+            //             greeting: `Hello, ${crm.name}, ${crm.lead_id}, ${crm.unique_id} this is a test call from Retell!`
+            //         }
+            //     }));
+
             const tasks: RetellTask[] = mainCategories
-                .filter((crm: any) => crm.mobile_number)
-                .map((crm: any) => ({
-                    to_number: crm.mobile_number,
-                    retell_llm_dynamic_variables: {
-                    name: crm.name ?? "",           
-                    lead_id: crm.lead_id ? String(crm.lead_id) : "",
-                    unique_id: crm.unique_id ? String(crm.unique_id) : "",
-                        greeting: `Hello, ${crm.name}, ${crm.lead_id}, ${crm.unique_id}, this is a test call from Retell!`
-                    }
-                }));
+  .filter((crm: any) => crm.mobile_number)
+  .map((crm: any) => {
+    const name = crm.name ?? "";
+    const leadId = crm.lead_id ? String(crm.lead_id) : "";
+    const uniqueId = crm.unique_id ? String(crm.unique_id) : "";
+
+    // ✅ Log each CRM record and the variables being used
+    console.log("Mapping CRM:", {
+      name,
+      lead_id: leadId,
+      unique_id: uniqueId,
+      mobile_number: crm.mobile_number
+    });
+
+    return {
+      to_number: crm.mobile_number,
+      retell_llm_dynamic_variables: {
+        name,
+        lead_id: leadId,
+        unique_id: uniqueId,
+        greeting: `Hello, ${name}, ${leadId}, ${uniqueId} this is a test call from Retell!`
+      }
+    };
+  });
+
             if (tasks.length > 0) {
                 const payload = {
                     from_number: "+18326624593",
@@ -91,6 +120,8 @@ export class CRMDataService {
                     );
 
                     retellResponse = response.data;
+
+                    
                     console.log(" RetellAI response:", response.data);
 
                 } catch (error: any) {
@@ -193,25 +224,43 @@ export class CRMDataService {
         }
     }
 
-  public async createCRMDataWithoutAuth(Data: object) {
+//   public async createCRMDataWithoutAuth(Data: object) {
+//     try {
+//         // Save CRM record only
+//         const newCRMData = this.CRMDataRepository.create(Data);
+//         const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
+
+//         if (!crmdataoutput) {
+//             return errorWithoutData('CRM Data not created');
+//         }
+
+//         // Return the CRM data inside an array
+//         return successWithData("CRM data created successfully", [crmdataoutput]);
+
+//     } catch (error) {
+//         console.error("Error creating CRM data:", error);
+//         return errorWithData("Something went wrong", error);
+//     }
+// }
+
+public async createCRMDataWithoutAuth(DataArray: object[]) {
     try {
-        // Save CRM record only
-        const newCRMData = this.CRMDataRepository.create(Data);
+        // Use .create() with an array to handle multiple records
+        const newCRMData = this.CRMDataRepository.create(DataArray);
         const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
 
-        if (!crmdataoutput) {
+        if (!crmdataoutput || crmdataoutput.length === 0) {
             return errorWithoutData('CRM Data not created');
         }
 
-        // Return the CRM data inside an array
-        return successWithData("CRM data created successfully", [crmdataoutput]);
+        // Return the CRM data array
+        return successWithData("CRM data created successfully", crmdataoutput);
 
     } catch (error) {
         console.error("Error creating CRM data:", error);
         return errorWithData("Something went wrong", error);
     }
 }
-
 
 
 }
