@@ -315,7 +315,7 @@ public async getUsercallingHistory(
       } else {
         // 🆕 Insert new call
         const newCall = this.callOutputRepository.create(mappedData);
-        console.log(mappedData, "savitaaaaaaaa");
+  
         
         savedCall = await this.callOutputRepository.save(newCall);
         console.log("🆕 New call created");

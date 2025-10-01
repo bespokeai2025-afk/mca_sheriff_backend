@@ -284,8 +284,22 @@ public async createCRMDataWithoutAuth(DataArray: object[]) {
             const newCRMData = this.CRMDataRepository.create(mappedData);
             const savedRecord = await this.CRMDataRepository.save(newCRMData);
             insertedRecords.push(savedRecord);
+
+
+
+             const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+             const callOutput = callOutputRepository.create({
+                crmData: savedRecord, 
+                name: savedRecord.name,
+                toNumber: savedRecord.mobile_number,
+                lead_id: savedRecord.lead_id,
+                callStatus: "Yet to call",
+            });
+            await callOutputRepository.save(callOutput);
         }
 
+
+        
         // Always return result: true
         return {
             result: true,
