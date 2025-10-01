@@ -25,71 +25,139 @@ export class AgentService {
 //       throw new Error("Failed to fetch agents from RetellAI");
 //     }
 //   }
- static async saveAgents(agents: any[]): Promise<any> {
-    const savedAgents = [];
+static async saveAgents(
+  agents: { agent_id: string; is_active: boolean }[]
+): Promise<any> {
+  const savedAgents = [];
 
-    try {
-      // Fetch all agents from RetellAI
-      const url = "https://api.retellai.com/list-agents";
-      const headers = {
-        Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
-        "Content-Type": "application/json",
-      };
+  try {
+    // 1️⃣ Fetch all agents from RetellAI
+    const url = "https://api.retellai.com/list-agents";
+    const headers = {
+      Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
+      "Content-Type": "application/json",
+    };
 
-      const response = await axios.get(url, { headers });
-      const retailAgents: any[] = response.data || [];
-      console.log("RetellAI raw response:", retailAgents);
+    const response = await axios.get(url, { headers });
+    const retailAgents: any[] = response.data || [];
 
-      // Deduplicate agents by agent_id and take the latest version
-      const retailMap = new Map<string, any>();
-      for (const a of retailAgents) {
-        const existing = retailMap.get(a.agent_id);
-        if (!existing || a.last_modification_timestamp > existing.last_modification_timestamp) {
-          retailMap.set(a.agent_id, a);
-        }
+    // 2️⃣ Deduplicate agents by agent_id (take latest version)
+    const retailMap = new Map<string, any>();
+    for (const a of retailAgents) {
+      const existing = retailMap.get(a.agent_id);
+      if (!existing || a.last_modification_timestamp > existing.last_modification_timestamp) {
+        retailMap.set(a.agent_id, a);
       }
-
-      // Loop through input agents
-      for (const a of agents) {
-        let agent = await Agent.findOne({ where: { agent_id: a.agent_id } });
-
-        if (!agent) {
-          agent = new Agent();
-          agent.agent_id = a.agent_id;
-        }
-
-        // Lookup latest agent info from RetellAI
-        const retailAgent = retailMap.get(a.agent_id);
-        if (retailAgent) {
-          agent.agent_name = retailAgent.agent_name; // now it will update
-          agent.is_active = true;
-          // Optionally, update other fields
-          // agent.channel = retailAgent.channel;
-          // agent.webhook_url = retailAgent.webhook_url;
-        } else {
-          console.warn(`Agent not found in RetellAI: ${a.agent_id}`);
-        }
-
-        await agent.save();
-        savedAgents.push(agent);
-      }
-
-      return {
-        result: true,
-        statuscode: 200,
-        message: "Agents saved successfully",
-        data: savedAgents,
-      };
-    } catch (error: any) {
-      console.error("Error saving agents:", error.message);
-      return {
-        result: false,
-        statuscode: 500,
-        message: "Failed to save agents",
-        data: [],
-      };
     }
+
+    // 3️⃣ Loop through input agents
+    for (const inputAgent of agents) {
+      // Find agent in DB
+      let agent = await Agent.findOne({ where: { agent_id: inputAgent.agent_id } });
+
+      if (!agent) {
+        agent = new Agent();
+        agent.agent_id = inputAgent.agent_id;
+      }
+
+      // Update info from RetellAI if available
+      const retailAgent = retailMap.get(inputAgent.agent_id);
+      if (retailAgent) {
+        agent.agent_name = retailAgent.agent_name;
+        // agent.webhook_url = retailAgent.webhook_url;
+      }
+
+      // ✅ Update is_active based on input
+      agent.is_active = inputAgent.is_active;
+
+      // Save agent
+      await agent.save();
+      savedAgents.push(agent);
+    }
+
+    return {
+      result: true,
+      statuscode: 200,
+      message: "Agents saved successfully",
+      data: savedAgents,
+    };
+
+  } catch (error: any) {
+    console.error("Error saving agents:", error.message);
+    return {
+      result: false,
+      statuscode: 500,
+      message: "Failed to save agents",
+      data: [],
+    };
   }
+}
+
+//  static async saveAgents(agents: any[]): Promise<any> {
+//     const savedAgents = [];
+
+//     try {
+//       // Fetch all agents from RetellAI
+//       const url = "https://api.retellai.com/list-agents";
+//       const headers = {
+//         Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
+//         "Content-Type": "application/json",
+//       };
+
+//       const response = await axios.get(url, { headers });
+//       const retailAgents: any[] = response.data || [];
+//       console.log("RetellAI raw response:", retailAgents);
+
+//       // Deduplicate agents by agent_id and take the latest version
+//       const retailMap = new Map<string, any>();
+//       for (const a of retailAgents) {
+//         const existing = retailMap.get(a.agent_id);
+//         if (!existing || a.last_modification_timestamp > existing.last_modification_timestamp) {
+//           retailMap.set(a.agent_id, a);
+//         }
+//       }
+
+//       // Loop through input agents
+//       for (const a of agents) {
+//         let agent = await Agent.findOne({ where: { agent_id: a.agent_id } });
+
+//         if (!agent) {
+//           agent = new Agent();
+//           agent.agent_id = a.agent_id;
+//         }
+
+//         // Lookup latest agent info from RetellAI
+//         const retailAgent = retailMap.get(a.agent_id);
+//         if (retailAgent) {
+//           agent.agent_name = retailAgent.agent_name; // now it will update
+//           agent.is_active = true;
+//           // Optionally, update other fields
+//           // agent.channel = retailAgent.channel;
+//           // agent.webhook_url = retailAgent.webhook_url;
+//         } else {
+//           console.warn(`Agent not found in RetellAI: ${a.agent_id}`);
+//         }
+
+//         await agent.save();
+//         savedAgents.push(agent);
+//       }
+
+//       return {
+//         result: true,
+//         statuscode: 200,
+//         message: "Agents saved successfully",
+//         data: savedAgents,
+//       };
+//     } catch (error: any) {
+//       console.error("Error saving agents:", error.message);
+//       return {
+//         result: false,
+//         statuscode: 500,
+//         message: "Failed to save agents",
+//         data: [],
+//       };
+//     }
+//   }
 static async getAgentsActive(): Promise<any> {
   const url = "https://api.retellai.com/list-agents";
   const headers = {
