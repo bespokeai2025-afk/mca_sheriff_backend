@@ -233,6 +233,7 @@ export class CRMDataService {
             name: crmdataoutput.name,
             toNumber: crmdataoutput.mobile_number,
             email: crmdataoutput.email,
+             
             // callStatus: "Yet to call",
         });
 

@@ -126,8 +126,7 @@ export const createCRMData = async (req: Request, res: Response): Promise<any> =
 export const createCRMDataWithoutAuth = async (req: Request, res: Response): Promise<any> => {
     try {
         const data = {
-            ...req.body,
-            image: (req.file as Express.Multer.File & { location: string })?.location || null
+            ...req.body
         };
 
         const response = await crmdataservice.createCRMDataWithoutAuth(data);
@@ -137,5 +136,6 @@ export const createCRMDataWithoutAuth = async (req: Request, res: Response): Pro
         return res.status(500).json(response);
     }
 };
+
 
 
