@@ -62,10 +62,10 @@ export class CRMDataService {
                     to_number: crm.mobile_number,
                     retell_llm_dynamic_variables: {
                     name: crm.name ?? "",           
-                    lead_id: crm.lead_id ? String(crm.lead_id) : "",
+                    // lead_id: crm.lead_id ? String(crm.lead_id) : "",
                     unique_id: crm.unique_id ? String(crm.unique_id) : "",
-                      campaign: "Fall Promotion 2025",
-                        greeting: `Hello, ${crm.name}, ${crm.lead_id}, ${crm.unique_id},${crm.campaign}, this is a test call from Retell!`
+                      lead_id: "Fall Promotion 2025",
+                        greeting: `Hello, ${crm.name}, ${crm.lead_id}, ${crm.unique_id} this is a test call from Retell!`
                     }
                 }));
             if (tasks.length > 0) {
