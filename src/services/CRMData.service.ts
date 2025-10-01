@@ -224,25 +224,43 @@ export class CRMDataService {
         }
     }
 
-  public async createCRMDataWithoutAuth(Data: object) {
+//   public async createCRMDataWithoutAuth(Data: object) {
+//     try {
+//         // Save CRM record only
+//         const newCRMData = this.CRMDataRepository.create(Data);
+//         const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
+
+//         if (!crmdataoutput) {
+//             return errorWithoutData('CRM Data not created');
+//         }
+
+//         // Return the CRM data inside an array
+//         return successWithData("CRM data created successfully", [crmdataoutput]);
+
+//     } catch (error) {
+//         console.error("Error creating CRM data:", error);
+//         return errorWithData("Something went wrong", error);
+//     }
+// }
+
+public async createCRMDataWithoutAuth(DataArray: object[]) {
     try {
-        // Save CRM record only
-        const newCRMData = this.CRMDataRepository.create(Data);
+        // Use .create() with an array to handle multiple records
+        const newCRMData = this.CRMDataRepository.create(DataArray);
         const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
 
-        if (!crmdataoutput) {
+        if (!crmdataoutput || crmdataoutput.length === 0) {
             return errorWithoutData('CRM Data not created');
         }
 
-        // Return the CRM data inside an array
-        return successWithData("CRM data created successfully", [crmdataoutput]);
+        // Return the CRM data array
+        return successWithData("CRM data created successfully", crmdataoutput);
 
     } catch (error) {
         console.error("Error creating CRM data:", error);
         return errorWithData("Something went wrong", error);
     }
 }
-
 
 
 }

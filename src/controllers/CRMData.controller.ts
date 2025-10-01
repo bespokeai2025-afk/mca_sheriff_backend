@@ -76,19 +76,36 @@ export const createCRMData = async (req: Request, res: Response): Promise<any> =
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+// export const createCRMDataWithoutAuth = async (req: Request, res: Response): Promise<any> => {
+//     try {
+//         const data = {
+//             ...req.body
+//         };
+
+//         const response = await crmdataservice.createCRMDataWithoutAuth(data);
+//         return res.status(response.result ? 200 : 500).json(response);
+//     } catch (error) {
+//         const response = errorWithData("Something went wrong", error);
+//         return res.status(500).json(response);
+//     }
+// };
+
 export const createCRMDataWithoutAuth = async (req: Request, res: Response): Promise<any> => {
     try {
-        const data = {
-            ...req.body
-        };
+        const dataArray = req.body; // Expecting an array of objects
 
-        const response = await crmdataservice.createCRMDataWithoutAuth(data);
+        if (!Array.isArray(dataArray) || dataArray.length === 0) {
+            return res.status(400).json({ result: false, message: "Request body must be a non-empty array" });
+        }
+
+        const response = await crmdataservice.createCRMDataWithoutAuth(dataArray);
         return res.status(response.result ? 200 : 500).json(response);
     } catch (error) {
         const response = errorWithData("Something went wrong", error);
         return res.status(500).json(response);
     }
 };
+
 
 
 
