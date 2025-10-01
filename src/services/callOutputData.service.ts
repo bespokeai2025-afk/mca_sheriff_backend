@@ -208,62 +208,56 @@ public async getUsercallingHistory(
 
 
   // To get Count Of User Call
+
+
+
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
-    try {
-      let whereCondition: any = {};
-      if (verifyUser.user_exist) {
-        whereCondition = { isActive: true, isDeleted: false };
-      }
-      if (verifyUser.admin_exist) {
-        whereCondition = { isDeleted: false };
-      }
-
-      // Count total items
-      const totalCall = await this.callOutputRepository.count({ where: whereCondition });
-
-
-      // Count only positive & neutral sentimentAnalysis
-      const successCounts = await this.callOutputRepository
-        .createQueryBuilder("call")
-        .select("call.sentimentAnalysis", "sentimentAnalysis")
-        .addSelect("COUNT(*)", "count")
-        .where(whereCondition)
-        .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Positive", "Neutral"] })
-        .groupBy("call.sentimentAnalysis")
-        .getRawMany();
-
-      const failureCounts = await this.callOutputRepository
-        .createQueryBuilder("call")
-        .select("call.sentimentAnalysis", "sentimentAnalysis")
-        .addSelect("COUNT(*)", "count")
-        .where(whereCondition)
-        .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Negative"] })
-        .groupBy("call.sentimentAnalysis")
-        .getRawMany();
-
-      // Count callStatus distribution
-      const notConnectedCounts = await this.callOutputRepository
-        .createQueryBuilder("call")
-        .select("call.callStatus", "callStatus")
-        .addSelect("COUNT(*)", "count")
-        .where(whereCondition)
-        .andWhere("call.callStatus IN (:...allowed)", { allowed: ["not_connected"] })
-        .groupBy("call.callStatus")
-        .getRawMany();
-
-      // Return only counts
-      return successWithData("User call detail Count fetched successfully", {
-        totalCall,
-        successCounts,
-        failureCounts,
-        notConnectedCounts
-      } as any);
-
-    } catch (error) {
-      console.error("Error in getUserCallDataCount:", error);
-      return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
+  try {
+    let whereCondition: any = {};
+    if (verifyUser.user_exist) {
+      whereCondition = { isActive: true, isDeleted: false };
     }
+    if (verifyUser.admin_exist) {
+      whereCondition = { isDeleted: false };
+    }
+
+    // Total calls
+    const totalCall = await this.callOutputRepository.count({ where: whereCondition });
+
+    // Success count (Positive + Neutral)
+    const successCounts = await this.callOutputRepository
+      .createQueryBuilder("call")
+      .where(whereCondition)
+      .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Positive", "Neutral"] })
+      .getCount();
+
+    // Failure count (Negative)
+    const failureCounts = await this.callOutputRepository
+      .createQueryBuilder("call")
+      .where(whereCondition)
+      .andWhere("call.sentimentAnalysis = :neg", { neg: "Negative" })
+      .getCount();
+
+    // Not connected count
+    const notConnectedCounts = await this.callOutputRepository
+      .createQueryBuilder("call")
+      .where(whereCondition)
+      .andWhere("call.callStatus = :status", { status: "not_connected" })
+      .getCount();
+
+    // Return only counts
+    return successWithData("User call detail Count fetched successfully", {
+      totalCall,
+      successCounts,
+      failureCounts,
+      notConnectedCounts,
+    });
+
+  } catch (error) {
+    console.error("Error in getUserCallDataCount:", error);
+    return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
   }
+}
 
 
 
