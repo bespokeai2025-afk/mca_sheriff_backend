@@ -334,11 +334,17 @@ public async getUsercallingHistory(
       await this.historyRepository.save(historyRecord);
       console.log("📝 History record saved");
 
-      if (crmRecord && mappedData.callStatus === "call_started") {
+      if (crmRecord) {
         crmRecord.need_to_call = false;
         await this.CRMDataRepository.save(crmRecord);
-        console.log(" CRM record updated (need_to_call=false after call_started)");
-      }
+        console.log("CRM record updated (need_to_call=false)");
+    }
+
+      // if (crmRecord && mappedData.callStatus === "call_started") {
+      //   crmRecord.need_to_call = false;
+      //   await this.CRMDataRepository.save(crmRecord);
+      //   console.log(" CRM record updated (need_to_call=false after call_started)");
+      // }
 
       // 10️⃣ Return response based on sentiment
       if (mappedData.sentimentAnalysis === "negative") {
