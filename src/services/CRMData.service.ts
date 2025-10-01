@@ -12,6 +12,8 @@ interface RetellTask {
     to_number: string;
     retell_llm_dynamic_variables?: {
         name?: string;
+        lead_id?: string;
+        unique_id?: string;
         greeting?: string;
         [key: string]: any;
     };
@@ -60,7 +62,9 @@ export class CRMDataService {
                     to_number: crm.mobile_number,
                     retell_llm_dynamic_variables: {
                         name: crm.name,
-                        greeting: `Hello, ${crm.name}, this is a test call from Retell!`
+                        lead_id: crm.lead_id,
+                        unique_id: crm.unique_id,
+                        greeting: `Hello, ${crm.name}, ${crm.lead_id}, ${crm.unique_id}, this is a test call from Retell!`
                     }
                 }));
 
@@ -232,8 +236,8 @@ export class CRMDataService {
             crmData: crmdataoutput, 
             name: crmdataoutput.name,
             toNumber: crmdataoutput.mobile_number,
-            email: crmdataoutput.email,
-             
+            // lead_id: crmdataoutput.lead_id,
+            // unique_id: crmdataoutput.unique_id,
             // callStatus: "Yet to call",
         });
 
