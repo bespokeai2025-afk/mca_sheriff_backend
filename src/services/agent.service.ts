@@ -90,8 +90,7 @@ export class AgentService {
       };
     }
   }
-
-  static async getAgentsActive(): Promise<any> {
+static async getAgentsActive(): Promise<any> {
   const url = "https://api.retellai.com/list-agents";
   const headers = {
     Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
@@ -99,21 +98,34 @@ export class AgentService {
   };
 
   try {
-    // ✅ Fetch all agents without extra params
+    // 1️⃣ Fetch all agents from RetellAI
     const response = await axios.get(url, { headers });
     const retailAgents: RetailAgent[] = response.data || [];
 
-    // ✅ Fetch all active agents from DB
+    // 2️⃣ Fetch all active agents from DB
     const dbAgents = await Agent.find({ where: { is_active: true } });
     const dbAgentIds = new Set(dbAgents.map(a => a.agent_id));
 
-    // ✅ Merge
-    const mergedAgents = retailAgents.map(agent => ({
-      agent_id: agent.agent_id,
-      agent_name: agent.agent_name,
-      webhook_url: agent.webhook_url,
-      is_active: dbAgentIds.has(agent.agent_id),
-    }));
+    // 3️⃣ Merge and group by agent_id
+    const agentMap = new Map<string, any>();
+
+    retailAgents.forEach(agent => {
+      if (!agentMap.has(agent.agent_id)) {
+        agentMap.set(agent.agent_id, {
+          agent_id: agent.agent_id,
+          agent_name: agent.agent_name,
+          webhook_url: agent.webhook_url,
+          is_active: dbAgentIds.has(agent.agent_id)
+        });
+      } else {
+        // Optional: merge webhook_url if empty
+        const existing = agentMap.get(agent.agent_id);
+        if (!existing.webhook_url) existing.webhook_url = agent.webhook_url;
+        agentMap.set(agent.agent_id, existing);
+      }
+    });
+
+    const mergedAgents = Array.from(agentMap.values());
 
     return {
       result: true,
@@ -126,7 +138,44 @@ export class AgentService {
     console.error("Error fetching agents from RetellAI:", error.response?.data || error.message);
     throw new Error("Failed to fetch agents from RetellAI");
   }
-  }
+}
+
+  // static async getAgentsActive(): Promise<any> {
+  // const url = "https://api.retellai.com/list-agents";
+  // const headers = {
+  //   Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
+  //   "Content-Type": "application/json",
+  // };
+
+  // try {
+  //   // ✅ Fetch all agents without extra params
+  //   const response = await axios.get(url, { headers });
+  //   const retailAgents: RetailAgent[] = response.data || [];
+
+  //   // ✅ Fetch all active agents from DB
+  //   const dbAgents = await Agent.find({ where: { is_active: true } });
+  //   const dbAgentIds = new Set(dbAgents.map(a => a.agent_id));
+
+  //   // ✅ Merge
+  //   const mergedAgents = retailAgents.map(agent => ({
+  //     agent_id: agent.agent_id,
+  //     agent_name: agent.agent_name,
+  //     webhook_url: agent.webhook_url,
+  //     is_active: dbAgentIds.has(agent.agent_id),
+  //   }));
+
+  //   return {
+  //     result: true,
+  //     statuscode: 200,
+  //     message: "All agents fetched successfully with selected fields",
+  //     data: mergedAgents,
+  //   };
+
+  // } catch (error: any) {
+  //   console.error("Error fetching agents from RetellAI:", error.response?.data || error.message);
+  //   throw new Error("Failed to fetch agents from RetellAI");
+  // }
+  // }
 
 // static async getAgentsActive(payload: any): Promise<any> {
 //   const url = "https://api.retellai.com/list-agents";
