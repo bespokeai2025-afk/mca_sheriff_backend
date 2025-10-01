@@ -120,6 +120,8 @@ export class CRMDataService {
                     );
 
                     retellResponse = response.data;
+
+                    
                     console.log(" RetellAI response:", response.data);
 
                 } catch (error: any) {
