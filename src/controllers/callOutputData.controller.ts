@@ -110,29 +110,33 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
 
 
 //count of user call 
+
 export const getUserCallDataCount = async (req: Request, res: Response): Promise<any> => {
   try {
     const verifyUser = req.user; // assume auth middleware sets this
     if (!verifyUser) {
-      return res.status(401).json(errorWithoutData("Unauthorized"));
+      const response = errorWithoutData("Unauthorized");
+      return res.status(401).json(response);
     }
 
-    // Parse pagination query params
-    const pageSize = parseInt(req.query.pageSize as string) || 10;
-    const currentPage = parseInt(req.query.currentPage as string) || 1;
+    // Pagination (even if not really needed for counts)
+    const pageSize = Number(req.query.pageSize) || 10;
+    const currentPage = Number(req.query.currentPage) || 1;
 
     // Call service
-    const result = await calloutputdataservice.getUserCallDataCount(verifyUser, pageSize, currentPage);
+    const response = await calloutputdataservice.getUserCallDataCount(
+      verifyUser,
+      pageSize,
+      currentPage
+    );
 
-    // Send the service response directly
-    return res.status(200).json(result);
+    return res.status(response.result ? 200 : 400).json(response);
 
   } catch (error) {
-    console.error(" Error in getUserCallData controller:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      data: { error: (error as Error).message }
-    });
+    console.error("Error in getUserCallDataCount controller:", error);
+    return res.status(500).json(
+      errorWithData("Internal server error", { error: (error as Error).message })
+    );
   }
 };
 
@@ -140,21 +144,21 @@ export const getUserCallDataCount = async (req: Request, res: Response): Promise
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
     // 🔍 Log the full request body
-    console.log("👉 Incoming Request Body:", req.body, null, 2);
+    console.log(" Incoming Request Body:", req.body, null, 2);
 
     // 🔍 If you only care about raw_data
     if (req.body.raw_data) {
-      console.log("👉 Raw Data Payload:", req.body.raw_data);
+      console.log(" Raw Data Payload:", req.body.raw_data);
     }
 
     const response = await calloutputdataservice.createCallOutputData(req.body);
 
     // 🔍 Log service response before sending
-    console.log("✅ Service Response:", response);
+    console.log(" Service Response:", response);
 
     res.status(response.result ? 200 : 400).json(response);
   } catch (error) {
-    console.error("❌ Error creating call output data:", error);
+    console.error("Error creating call output data:", error);
 
     const response = errorWithData("Something went wrong", { error });
     res.status(400).json(response);
