@@ -27,8 +27,10 @@ export class CRMData /* extends Common */ {
     email: string;
 
     @Column({ type: 'text', nullable: true })
-    email_id: string;
+    unique_id: string;
 
+    @Column({ type: 'text', nullable: true })
+    lead_id: string;
 
     @Column({ type: "boolean", default: true})
     need_to_call: boolean;
