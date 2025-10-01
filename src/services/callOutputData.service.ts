@@ -317,10 +317,12 @@ public async getUsercallingHistory(
           ...existingCall,
           ...mappedData,
         });
-        console.log("🔄 Existing call updated");
+        // console.log("🔄 Existing call updated");
       } else {
         // 🆕 Insert new call
         const newCall = this.callOutputRepository.create(mappedData);
+        console.log(mappedData, "savitaaaaaaaa");
+        
         savedCall = await this.callOutputRepository.save(newCall);
         console.log("🆕 New call created");
       }
