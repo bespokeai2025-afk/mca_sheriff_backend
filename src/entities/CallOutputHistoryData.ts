@@ -81,7 +81,8 @@ export class CallOutputHistoryData {
 
   @Column({ name: "email", type: "varchar", nullable: true })
   email: string;
-  
+  @Column({ name: "lead_id", type: "text", nullable: true })
+  lead_id: string;
   // @Column({ name: "appointment_date", type: "varchar", nullable: true })
   // appointment_date: string;
 
