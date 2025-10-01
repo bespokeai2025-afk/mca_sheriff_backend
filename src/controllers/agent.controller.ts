@@ -14,18 +14,18 @@ export class AgentController {
    * GET /agent
    * Fetch all agents from RetellAI API (raw data)
    */
-  static async getAgent(req: Request, res: Response): Promise<void> {
-    try {
-      const payload = req.body || {}; // Optional query/filter payload
-      const data = await AgentService.getAgents(payload);
+  // static async getAgent(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     const payload = req.body || {}; // Optional query/filter payload
+  //     const data = await AgentService.getAgents(payload);
 
-      // Send response (no return, matches Promise<void>)
-      res.status(200).json(successWithData("All agents fetched successfully", data));
-    } catch (error) {
-      console.error("Controller error in getAgent:", error);
-      res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
-    }
-  }
+  //     // Send response (no return, matches Promise<void>)
+  //     res.status(200).json(successWithData("All agents fetched successfully", data));
+  //   } catch (error) {
+  //     console.error("Controller error in getAgent:", error);
+  //     res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
+  //   }
+  // }
 
   /**
    * POST /agent/save
@@ -50,16 +50,16 @@ export class AgentController {
     }
   } 
   static async getAgentsActive(req: Request, res: Response): Promise<void> {
-    try {
-      const payload = req.body || {}; // Optional query/filter payload
-      const data = await AgentService.getAgentsActive(payload);
+  try {
+    // No need to take body for GET
+    const data = await AgentService.getAgentsActive();
 
-      // Send the service response directly
-      res.status(200).json(data);
-    } catch (error) {
-      console.error("Controller error in getAgent:", error);
-      res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
-    }
+    res.status(200).json(data);
+  } catch (error: any) {
+    console.error("Controller error in getAgentsActive:", error.response?.data || error.message);
+    res.status(500).json(errorWithData("Failed to fetch agents", error.message, 500));
   }
+}
+
 
 }

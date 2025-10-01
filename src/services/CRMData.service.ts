@@ -8,6 +8,7 @@ import { CRMData } from "../entities/CRMData";
 import axios from "axios";
 import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
+import { mapIncomingCRMData } from "../utils/mappercrm";
 interface RetellTask {
     to_number: string;
     retell_llm_dynamic_variables?: {
@@ -243,18 +244,43 @@ export class CRMDataService {
 //     }
 // }
 
+// public async createCRMDataWithoutAuth(DataArray: object[]) {
+//     try {
+//         // Use .create() with an array to handle multiple records
+//         const newCRMData = this.CRMDataRepository.create(DataArray);
+//         const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
+
+//         if (!crmdataoutput || crmdataoutput.length === 0) {
+//             return errorWithoutData('CRM Data not created');
+//         }
+
+//         // Return the CRM data array
+//         return successWithData("CRM data created successfully", crmdataoutput);
+
+//     } catch (error) {
+//         console.error("Error creating CRM data:", error);
+//         return errorWithData("Something went wrong", error);
+//     }
+// }
+
 public async createCRMDataWithoutAuth(DataArray: object[]) {
     try {
-        // Use .create() with an array to handle multiple records
-        const newCRMData = this.CRMDataRepository.create(DataArray);
-        const crmdataoutput = await this.CRMDataRepository.save(newCRMData);
+        const insertedRecords: any[] = [];
 
-        if (!crmdataoutput || crmdataoutput.length === 0) {
-            return errorWithoutData('CRM Data not created');
+        for (const rawData of DataArray) {
+            // 🔹 map input object into CRMData entity shape
+            const mappedData = mapIncomingCRMData(rawData);
+
+            const newCRMData = this.CRMDataRepository.create(mappedData);
+            const savedRecord = await this.CRMDataRepository.save(newCRMData);
+            insertedRecords.push(savedRecord);
         }
 
-        // Return the CRM data array
-        return successWithData("CRM data created successfully", crmdataoutput);
+        if (insertedRecords.length === 0) {
+            return errorWithoutData("CRM Data not created");
+        }
+
+        return successWithData("CRM data created successfully", insertedRecords);
 
     } catch (error) {
         console.error("Error creating CRM data:", error);
