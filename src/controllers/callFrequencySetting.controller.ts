@@ -1,82 +1,37 @@
 import { Request, Response } from "express";
-import { CallFrequencySettingService,  CallFrequencyInput } from "../services/callFrequencySetting.service";
+import { CallFrequencySettingService } from "../services/callFrequencySetting.service";
 import { successWithData, errorWithData } from "../config/ApiResponse";
 
 const service = new CallFrequencySettingService();
 
 export class CallFrequencySettingController {
   // Create a new call frequency setting
-  //   static async create(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     const { number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
+    static async create(req: Request, res: Response): Promise<void> {
+    try {
+      const { number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
 
-  //     // Validate that at least selected_days exists
-  //     if (!selected_days || selected_days.length === 0) {
-  //       res.status(400).json(
-  //         errorWithData("selected_days is required", null, 400)
-  //       );
-  //       return;
-  //     }
+      // Validate that at least selected_days exists
+      // if (!selected_days || selected_days.length === 0) {
+      //   res.status(400).json(
+      //     errorWithData("selected_days is required", null, 400)
+      //   );
+      //   return;
+      // }
 
-  //     // Prepare payload
-  //     const payload = { number_count, selected_days, selected_weeks, call_frequency_setting };
-  //     const result = await service.create(payload);
+      // Prepare payload
+      const payload = { number_count, selected_days, selected_weeks, call_frequency_setting };
+      const result = await service.create(payload);
 
-  //     res.status(200).json(
-  //       successWithData("Call frequency setting created successfully", result, undefined, 200)
-  //     );
-  //   } catch (err: any) {
-  //     console.error(err);
-  //     res.status(500).json(
-  //       errorWithData("Failed to create call frequency setting", err.message, 500)
-  //     );
-  //   }
-  // }
-static async create(req: Request, res: Response): Promise<void> {
-  try {
-    const {
-      number_count,
-      selected_days,
-      selected_weeks,
-      call_frequency_setting,
-      selected_hour,
-      selected_minute,
-      day_of_month,
-      month
-    } = req.body;
-
-    // Validate selected_days
-    // if (!selected_days || selected_days.length === 0) {
-    //   res.status(400).json(
-    //     errorWithData("selected_days is required", null, 400)
-    //   );
-    //   return;
-    // }
-
-    // Prepare full payload for service
-    const payload: CallFrequencyInput = {
-      number_count,
-      selected_days,
-      selected_weeks,
-      call_frequency_setting,
-      selected_hour,
-      selected_minute,
-      day_of_month,
-      month
-    };
-
-    const result = await service.create(payload);
-
-    res.status(200).json(
-      successWithData("Call frequency setting created successfully", result, undefined, 200)
-    );
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json(
-      errorWithData("Failed to create call frequency setting", err.message, 500)
-    );
+      res.status(200).json(
+        successWithData("Call frequency setting created successfully", result, undefined, 200)
+      );
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json(
+        errorWithData("Failed to create call frequency setting", err.message, 500)
+      );
+    }
   }
-}
 
   // Get all call frequency settings
   static async getAll(req: Request, res: Response): Promise<void> {
@@ -103,10 +58,10 @@ static async create(req: Request, res: Response): Promise<void> {
     }
 
     // Validate selected_days
-    if (!selected_days || selected_days.length === 0) {
-      res.status(400).json(errorWithData("selected_days is required", null, 400));
-      return;
-    }
+    // if (!selected_days || selected_days.length === 0) {
+    //   res.status(400).json(errorWithData("selected_days is required", null, 400));
+    //   return;
+    // }
 
     // Validate call_frequency_setting
     if (!call_frequency_setting) {

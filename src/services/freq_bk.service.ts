@@ -2,12 +2,24 @@ import { AppDataSource } from "../config/database";
 import { CallFrequencySetting } from "../entities/CallFrequencySetting";
 import { Repository } from "typeorm";
 
-interface CallFrequencyInput {
-  // number_count?: number;
-  // selected_days?: string[];
-  // selected_weeks?: string[];
-  call_frequency_setting: string;
+// interface CallFrequencyInput {
+//   number_count?: number;
+//   selected_days?: string[];
+//   selected_weeks?: string[];
+//   call_frequency_setting: string;
+// }
+
+export interface CallFrequencyInput {
+  selected_days?: string[];
+  number_count?: number;
+  selected_weeks?: string[];
+  selected_hour?: number;   // 0-23
+  selected_minute?: number; // 0-59
+  day_of_month?: number | string; // allow "*" as string
+  month?: number | string;
+  call_frequency_setting?: string; // make optional, since service generates it
 }
+
 
 export class CallFrequencySettingService {
   private repo: Repository<CallFrequencySetting>;
@@ -36,14 +48,40 @@ export class CallFrequencySettingService {
   //   const cron = `30 5 * * ${dayNumbers || "*"}`; // runs at 05:30 on selected days
   //   return cron;
   // }
+// Generate cron string
+private generateCron(input: CallFrequencyInput): string {
+  const dayMap: Record<string, number> = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+  };
+
+  const dayNumbers = (input.selected_days || []).map(d => dayMap[d]).join(",");
+
+const minute = input.selected_minute !== undefined ? Number(input.selected_minute) : "*";
+const hour = input.selected_hour !== undefined ? Number(input.selected_hour) : "*";
+const dayOfMonth = input.day_of_month !== undefined ? input.day_of_month : "*";
+const month = input.month !== undefined ? input.month : "*";
+const dayOfWeek = dayNumbers || "*";
+
+
+  return `${minute} ${hour} ${dayOfMonth} ${month} ${dayOfWeek}`;
+}
 
   // Create new frequency setting
   async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
+     const cronExp = this.generateCron(data);
+     console.log("Generated cron:", cronExp);
     const entity = this.repo.create({
       // number_count: data.number_count,
       // selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
       // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
-      call_frequency_setting: data.call_frequency_setting, // use user input directly
+      // call_frequency_setting: data.call_frequency_setting, // use user input directly
+     call_frequency_setting: cronExp,
     });
 
     return await this.repo.save(entity);
@@ -66,7 +104,7 @@ export class CallFrequencySettingService {
     // existing.number_count = data.number_count ?? existing.number_count;
     // existing.selected_days = data.selected_days ? JSON.stringify(data.selected_days) : existing.selected_days;
     // existing.selected_weeks = data.selected_weeks ? JSON.stringify(data.selected_weeks) : existing.selected_weeks;
-    existing.call_frequency_setting = data.call_frequency_setting;
+    // existing.call_frequency_setting = data.call_frequency_setting;
 
     return await this.repo.save(existing);
   }
