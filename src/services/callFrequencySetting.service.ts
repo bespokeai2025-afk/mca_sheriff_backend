@@ -62,11 +62,12 @@ private generateCron(input: CallFrequencyInput): string {
 
   const dayNumbers = (input.selected_days || []).map(d => dayMap[d]).join(",");
 
-  const minute = input.selected_minute !== undefined ? Number(input.selected_minute) : 0;
-  const hour = input.selected_hour !== undefined ? Number(input.selected_hour) : 5;
-  const dayOfMonth = input.day_of_month ? input.day_of_month : "*";
-  const month = input.month ? input.month : "*";
-  const dayOfWeek = dayNumbers || "*";
+const minute = input.selected_minute !== undefined ? Number(input.selected_minute) : "*";
+const hour = input.selected_hour !== undefined ? Number(input.selected_hour) : "*";
+const dayOfMonth = input.day_of_month !== undefined ? input.day_of_month : "*";
+const month = input.month !== undefined ? input.month : "*";
+const dayOfWeek = dayNumbers || "*";
+
 
   return `${minute} ${hour} ${dayOfMonth} ${month} ${dayOfWeek}`;
 }

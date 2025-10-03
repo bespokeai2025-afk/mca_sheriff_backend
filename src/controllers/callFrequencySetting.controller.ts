@@ -46,12 +46,12 @@ static async create(req: Request, res: Response): Promise<void> {
     } = req.body;
 
     // Validate selected_days
-    if (!selected_days || selected_days.length === 0) {
-      res.status(400).json(
-        errorWithData("selected_days is required", null, 400)
-      );
-      return;
-    }
+    // if (!selected_days || selected_days.length === 0) {
+    //   res.status(400).json(
+    //     errorWithData("selected_days is required", null, 400)
+    //   );
+    //   return;
+    // }
 
     // Prepare full payload for service
     const payload: CallFrequencyInput = {
