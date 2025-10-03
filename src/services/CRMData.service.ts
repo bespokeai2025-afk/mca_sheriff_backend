@@ -100,8 +100,8 @@ export class CRMDataService {
                 const payload = {
                     from_number: "+18559566219",
                     tasks: tasks,
-                    llm_id: "default",
-                    voice_id: "voice-1",
+                    // llm_id: "default",
+                    // voice_id: "voice-1",
                     retell_llm_dynamic_variables: {
                         greeting: "Hello, this is a test call from Retell!"
                     }
