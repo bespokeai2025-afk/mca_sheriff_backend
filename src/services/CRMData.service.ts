@@ -98,7 +98,7 @@ export class CRMDataService {
 
             if (tasks.length > 0) {
                 const payload = {
-                    from_number: "+18559566219",
+                    from_number: `${process.env.RETELL_FROM_NUMBER}`,
                     tasks: tasks,
                     // llm_id: "default",
                     // voice_id: "voice-1",
@@ -113,7 +113,7 @@ export class CRMDataService {
                         payload,
                         {
                             headers: {
-                                Authorization: "Bearer key_a4523fdb9feeb6f6c37e5e888aa9",
+                                Authorization:  `Bearer ${process.env.API_KEY_RETELL}`,
                                 "Content-Type": "application/json"
                             }
                         }

@@ -9,7 +9,7 @@ import { validateCallOutputData, validateUserID } from "../middlewares/calloutpu
 const router = express.Router();
 router.get("/get-all-calldata", verifyAccessToken, getUsercallingData);
 router.get("/get-call-count", verifyAccessToken, getUserCallDataCount );
-router.get("/get-user-history", verifyAccessToken, getUsercallingHistory );
+router.post("/get-user-history", verifyAccessToken, getUsercallingHistory );
 router.get("/get-userCall-lead",verifyAccessToken,getUsercallingDataLead);
 // router.get("/get-userCall-status",verifyAccessToken,getCallDropdownList);
 // router.get("/user-yet-tocall",verifyAccessToken,getUserYetToCall);
