@@ -39,11 +39,13 @@ export class CallFrequencySettingService {
 
   // Create new frequency setting
   async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
+     const cronExp = this.generateCron(data);
     const entity = this.repo.create({
-      number_count: data.number_count,
-      selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
-      selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
-      call_frequency_setting: data.call_frequency_setting, // use user input directly
+      // number_count: data.number_count,
+      // selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
+      // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
+      // call_frequency_setting: data.call_frequency_setting, // use user input directly
+     call_frequency_setting: cronExp,
     });
 
     return await this.repo.save(entity);
@@ -63,9 +65,9 @@ export class CallFrequencySettingService {
     const existing = await this.repo.findOne({ where: { id } });
     if (!existing) return null;
 
-    existing.number_count = data.number_count ?? existing.number_count;
-    existing.selected_days = data.selected_days ? JSON.stringify(data.selected_days) : existing.selected_days;
-    existing.selected_weeks = data.selected_weeks ? JSON.stringify(data.selected_weeks) : existing.selected_weeks;
+    // existing.number_count = data.number_count ?? existing.number_count;
+    // existing.selected_days = data.selected_days ? JSON.stringify(data.selected_days) : existing.selected_days;
+    // existing.selected_weeks = data.selected_weeks ? JSON.stringify(data.selected_weeks) : existing.selected_weeks;
     existing.call_frequency_setting = data.call_frequency_setting;
 
     return await this.repo.save(existing);

@@ -69,9 +69,6 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
   }
 };
 
-
-
-
 export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
   try {
     if (!req.user) {

@@ -9,16 +9,16 @@ export class CallFrequencySetting {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: "int", nullable: true })
-  number_count: number | null;
+  // @Column({ type: "int", nullable: true })
+  // number_count: number | null;
+
+  // @Column({ type: "text", nullable: true })
+  // selected_days: string | null;
+
+  // @Column({ type: "text", nullable: true })
+  // selected_weeks: string | null;
 
   @Column({ type: "text", nullable: true })
-  selected_days: string | null;
-
-  @Column({ type: "text", nullable: true })
-  selected_weeks: string | null;
-
-  @Column({ type: "text", nullable: false })
   call_frequency_setting: string;
 
   @Column({ type: "boolean", default: true })

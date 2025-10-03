@@ -1,19 +1,8 @@
 import { Request, Response } from "express";
 import { AgentService } from "../services/agent.service";
 import { successWithData, errorWithData } from "../config/ApiResponse";
-
-/**
- * AgentController handles all agent-related API endpoints:
- * - Fetch all agents from RetellAI
- * - Save selected agents and mark them as active
- * - Fetch all agents with active status merged from DB
- */
 export class AgentController {
 
-  /**
-   * GET /agent
-   * Fetch all agents from RetellAI API (raw data)
-   */
   // static async getAgent(req: Request, res: Response): Promise<void> {
   //   try {
   //     const payload = req.body || {}; // Optional query/filter payload
@@ -26,11 +15,6 @@ export class AgentController {
   //     res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
   //   }
   // }
-
-  /**
-   * POST /agent/save
-   * Save selected agents into DB and mark them as active
-   */
   static async saveSelectedAgents(req: Request, res: Response): Promise<void> {
     try {
       const { agents } = req.body;
