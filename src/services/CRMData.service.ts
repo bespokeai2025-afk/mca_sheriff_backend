@@ -45,7 +45,6 @@ export class CRMDataService {
         if (totalItems >= 1 && totalPages < currentPage) {
             return errorWithoutData("Page limit exceeded");
         }
-
         let retellResponse: any = null;
 
         //  RetellAI API Integration (using tasks array)
