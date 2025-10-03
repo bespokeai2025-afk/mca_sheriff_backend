@@ -311,7 +311,7 @@ public async getUsercallingHistory(
           ...existingCall,
           ...mappedData,
         });
-        // console.log("🔄 Existing call updated");
+      
       } else {
         // 🆕 Insert new call
         const newCall = this.callOutputRepository.create(mappedData);
@@ -330,10 +330,10 @@ public async getUsercallingHistory(
       await this.historyRepository.save(historyRecord);
       console.log("📝 History record saved");
 
-      if (crmRecord) {
-        crmRecord.need_to_call = false;
-        await this.CRMDataRepository.save(crmRecord);
-        console.log("CRM record updated (need_to_call=false)");
+       if (crmRecord && savedCall.callStatus !== "not_connected") {
+      crmRecord.need_to_call = false;
+      await this.CRMDataRepository.save(crmRecord);
+      console.log("CRM record updated (need_to_call=false)");
     }
     console.log(savedCall, "savitaaaaaaaaaaaaaaa");
     
