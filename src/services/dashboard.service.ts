@@ -83,11 +83,6 @@ export class DashboardService {
   //   total,
   //   months: chartData,
   // };
-
-  // const changePercent =
-  //   previousTotalMinutes === 0
-  //     ? null
-  //     : ((previousTotalMinutes - currentTotalMinutes) / currentTotalMinutes) * 100;
 const changePercent =
   currentTotalMinutes === 0
     ? 0
@@ -102,9 +97,14 @@ const changePercentRounded = Math.round(changePercent);
 }
 
 // Number of Calls month-wise with total count
-static async getNumberOfCalls(months: number): Promise<{ total: number; months: { month: string; totalCalls: number }[] }> {
+static async getNumberOfCalls(months: number): Promise<{ total: number; months: { month: string; totalCalls: number }[];  previousTotalCalls: number;
+  changePercent: number; }> {
   const today = new Date();
   const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+
+  // 2️⃣ Previous 6 months start & end dates
+  const previousStartDate = new Date(today.getFullYear(), today.getMonth() - (2 * months - 1), 1);
+  const previousEndDate = new Date(today.getFullYear(), today.getMonth() - months + 1, 0); // last day of previous 6 months
 
   // Query database grouped by month number
   const rawResult: { month_number: number; totalCalls: number }[] = await AppDataSource.getRepository(CallOutputData)
@@ -112,12 +112,25 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
     .select('EXTRACT(MONTH FROM call."updatedAt")::int', 'month_number')
     .addSelect('COUNT(1)::int', 'totalCalls')
     .where('call."updatedAt" >= :startDate', { startDate })
+   .andWhere('call."call_status" = :status', { status: 'ended' })
     .andWhere('call."isActive" = TRUE')
     .andWhere('call."isDeleted" = FALSE')
     .groupBy('month_number')
     .orderBy('month_number')
     .getRawMany();
+    
 
+     // 4️⃣ Query previous 6 months total calls
+  const previousRaw: { totalCalls: number }[] = await AppDataSource.getRepository(CallOutputData)
+    .createQueryBuilder("call")
+    .select('COUNT(1)::int', 'totalCalls')
+    .where('call."updatedAt" >= :previousStartDate', { previousStartDate })
+    .andWhere('call."updatedAt" <= :previousEndDate', { previousEndDate })
+    .andWhere('call."isActive" = TRUE')
+    .andWhere('call."isDeleted" = FALSE')
+    .getRawMany();
+
+  const previousTotalCalls = previousRaw[0]?.totalCalls || 0;
   // Map last N months to month names
   const monthList = this.getLastMonths(months);
   const monthsData = monthList.map(m => {
@@ -130,11 +143,24 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
 
   // Calculate total calls
   const totalCount = monthsData.reduce((sum, m) => sum + m.totalCalls, 0);
+  // 7️⃣ Calculate change percentage vs previous 6 months
+  const changePercent =
+    totalCount === 0
+      ? previousTotalCalls === 0
+        ? 0
+        : -100
+      : ((previousTotalCalls - totalCount) / totalCount) * 100;
 
   return {
     total: totalCount,
-    months: monthsData
+    months: monthsData,
+    previousTotalCalls,
+    changePercent: Math.round(changePercent) // integer
   };
+  // return {
+  //   total: totalCount,
+  //   months: monthsData
+  // };
 }
 
 // Leads (positive sentiment only) month-wise with total count
@@ -142,6 +168,8 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
 static async getLeads(months: number): Promise<{
   total: number;
   months: { month: string; totalLeads: number }[];
+   previousTotalLeads: number;
+  changePercent: number;
 }> {
   const today = new Date();
 
@@ -149,6 +177,10 @@ static async getLeads(months: number): Promise<{
   const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
   // End date = end of current month
   const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+
+   // Previous 6 months range
+  const previousStartDate = new Date(today.getFullYear(), today.getMonth() - (2 * months - 1), 1);
+  const previousEndDate = new Date(today.getFullYear(), today.getMonth() - months + 1, 0, 23, 59, 59, 999);
 
   // Query database grouped by month number, counting only positive sentiment
   const rawResult: { month_number: number; totalLeads: number }[] = await AppDataSource.getRepository(CallOutputData)
@@ -161,6 +193,18 @@ static async getLeads(months: number): Promise<{
     .groupBy('month_number')
     .orderBy('month_number')
     .getRawMany();
+
+      // Query previous 6 months total leads
+  const previousRaw: { totalLeads: number }[] = await AppDataSource.getRepository(CallOutputData)
+    .createQueryBuilder("call")
+    .select('COUNT(1)::int', 'totalLeads')
+    .where('call."updatedAt" >= :previousStartDate AND call."updatedAt" <= :previousEndDate', { previousStartDate, previousEndDate })
+    .andWhere('call.sentiment_analysis IN (:...sentiments)', { sentiments: ["Positive", "Neutral"] })
+    .andWhere('call."isActive" = TRUE')
+    .andWhere('call."isDeleted" = FALSE')
+    .getRawMany();
+
+    const previousTotalLeads = previousRaw[0]?.totalLeads || 0;
 
   // Build last N months list
   const monthList = this.getLastMonths(months); // [{month, month_number, year}, ...]
@@ -175,11 +219,29 @@ static async getLeads(months: number): Promise<{
   });
 
   // Total positive leads
+  // const total = monthsData.reduce((sum, m) => sum + m.totalLeads, 0);
+
+  // return {
+  //   total,
+  //   months: monthsData
+  // };
+
+    // Total leads for current 6 months
   const total = monthsData.reduce((sum, m) => sum + m.totalLeads, 0);
+
+  // Calculate change percentage vs previous 6 months
+  const changePercent =
+    total === 0
+      ? previousTotalLeads === 0
+        ? 0
+        : -100
+      : ((previousTotalLeads - total) / total) * 100;
 
   return {
     total,
-    months: monthsData
+    months: monthsData,
+    previousTotalLeads,
+    changePercent: Math.round(changePercent) // integer
   };
 }
 static async getCallPerformance(months: number): Promise<{
