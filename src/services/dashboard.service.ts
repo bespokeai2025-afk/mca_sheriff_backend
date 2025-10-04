@@ -31,6 +31,20 @@ export class DashboardService {
       ORDER BY year, month_number
     `);
 
+    // Step 2: Query previous 6 months
+  const previousRaw: { total_ms: number }[] = await AppDataSource.query(`
+    SELECT COALESCE(SUM("duration_ms"), 0) AS total_ms
+    FROM "call_output_data"
+    WHERE "updatedAt" >= date_trunc('month', NOW()) - INTERVAL '${2 * months - 1} MONTH'
+      AND "updatedAt" < date_trunc('month', NOW()) - INTERVAL '${months} MONTH'
+      AND "isActive" = TRUE
+      AND "isDeleted" = FALSE
+  `);
+
+  const previousTotalMinutes = previousRaw[0]?.total_ms
+    ? previousRaw[0].total_ms / 1000 / 60
+    : 0;
+
   // Step 2: Build last N months list
   const monthList = this.getLastMonths(months);
 
@@ -63,11 +77,23 @@ export class DashboardService {
   });
 
   // Step 4: Calculate total across all months (sum of formatted minutes)
-  const total = chartData.reduce((sum, m) => sum + m.totalMinutes, 0);
+  const currentTotalMinutes  = chartData.reduce((sum, m) => sum + m.totalMinutes, 0);
+
+  // return {
+  //   total,
+  //   months: chartData,
+  // };
+
+  const changePercent =
+    previousTotalMinutes === 0
+      ? null
+      : ((previousTotalMinutes - currentTotalMinutes) / currentTotalMinutes) * 100;
 
   return {
-    total,
+    total: currentTotalMinutes,
     months: chartData,
+    previousTotalMinutes,
+    changePercent: changePercent !== null ? changePercent.toFixed(2) : null, // e.g., +12.00
   };
 }
 

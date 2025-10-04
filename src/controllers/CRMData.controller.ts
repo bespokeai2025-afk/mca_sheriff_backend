@@ -27,18 +27,19 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
 };
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
     try {
+        // Authentication check
         if (!req.user) {
             const response = errorWithoutData("Authentication failed");
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        const { pageSize, currentPage, mobile_number } = req.query;
+        // Optional mobile number filter
+        const mobile_number = req.query.mobile_number as string | undefined;
 
+        // Call service
         const response = await crmdataservice.getUsercrmData(
             req.verifyUser,
-            parseInt(pageSize as string) || 50,
-            parseInt(currentPage as string) || 1,
-            mobile_number as string // optional filter
+            mobile_number
         );
 
         return res.status(response.result ? 200 : 400).json(response);

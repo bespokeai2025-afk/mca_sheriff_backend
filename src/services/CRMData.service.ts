@@ -157,50 +157,45 @@ export class CRMDataService {
         });
     }
 
-    public async getUsercrmData(
-        verifyUser: any,
-        pageSize: number,
-        currentPage: number,
-        mobile_number?: string // optional
-    ) {
-        try {
-            let whereCondition: any = {};
+  public async getUsercrmData(
+    verifyUser: any,
+    mobile_number?: string // optional
+) {
+    try {
+        let whereCondition: any = {};
 
-            if (verifyUser.user_exist) {
-                whereCondition = { isActive: true, isDeleted: false };
-            }
-            if (verifyUser.admin_exist) {
-                whereCondition = { isDeleted: false };
-            }
-
-            if (mobile_number) {
-                whereCondition.mobile_number = ILike(`%${mobile_number.replace(/\s+/g, '')}%`);
-            }
-
-            const [crmData, totalItems] = await this.CRMDataRepository.findAndCount({
-                where: whereCondition,
-                order: { createdAt: 'DESC' },
-                skip: mobile_number ? 0 : (currentPage - 1) * pageSize,
-                take: mobile_number ? undefined : pageSize,
-            });
-
-            const totalPages = mobile_number ? 1 : Math.ceil(totalItems / pageSize);
-
-            return successWithData(
-                "User CRM data fetched successfully!",
-                crmData,
-                {
-                    totalItems,
-                    totalPages,
-                    currentPage: mobile_number ? 1 : currentPage,
-                    pageSize: mobile_number ? totalItems : pageSize,
-                }
-            );
-
-        } catch (error) {
-            return errorWithData("Something went wrong", { error });
+        if (verifyUser.user_exist) {
+            whereCondition = { isActive: true, isDeleted: false };
         }
-    }    
+        if (verifyUser.admin_exist) {
+            whereCondition = { isDeleted: false };
+        }
+
+        if (mobile_number) {
+            whereCondition.mobile_number = ILike(`%${mobile_number.replace(/\s+/g, '')}%`);
+        }
+
+        const crmData = await this.CRMDataRepository.find({
+            where: whereCondition,
+            order: { createdAt: 'DESC' },
+        });
+
+        // Return only name and mobile_number
+        const simplifiedData = crmData.map(item => ({
+            name: item.name,
+            mobile_number: item.mobile_number
+        }));
+
+        return successWithData(
+            "User CRM data fetched successfully!",
+            simplifiedData
+        );
+
+    } catch (error) {
+        return errorWithData("Something went wrong", { error });
+    }
+}
+
      public async createCRMData(Data: object, verifyUser: any) {
         try {
             // Only admin allowed
@@ -292,7 +287,7 @@ public async createCRMDataWithoutAuth(DataArray: object[]) {
                 name: savedRecord.name,
                 toNumber: savedRecord.mobile_number,
                 lead_id: savedRecord.lead_id,
-                callStatus: "Yet to call",
+                callStatus: "net_to_call",
             });
             await callOutputRepository.save(callOutput);
         }

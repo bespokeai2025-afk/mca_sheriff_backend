@@ -129,37 +129,6 @@ export class callOutputDataService {
         end: endTimestamp,
       });
     }
-
-    // ✅ Status filter
-    // if (status === "completed") {
-    //   query.andWhere(
-    //     'call."event" = :eventCompleted AND call."call_status" = :ended',
-    //     { eventCompleted: "call_analyzed", ended: "ended" }
-    //   );
-    // } else if (status === "ongoing") {
-    //   query.andWhere(
-    //     'call."event" = :eventOngoing AND call."call_status" = :ongoing',
-    //     { eventOngoing: "call_started", ongoing: "ongoing" }
-    //   );
-    // } else if (status === "not_connected") {
-    //   query.andWhere(
-    //     'call."event" = :eventOngoing AND call."call_status" = :ongoing',
-    //     { eventOngoing: "call_started", ongoing: "ongoing" }
-    //   );
-    // }
-    // else {
-    //   // both completed + ongoing
-    //   query.andWhere(
-    //     `( (call."event" = :eventCompleted AND call."call_status" = :ended) OR 
-    //        (call."event" = :eventOngoing AND call."call_status" = :ongoing) )`,
-    //     {
-    //       eventCompleted: "call_analyzed",
-    //       ended: "ended",
-    //       eventOngoing: "call_started",
-    //       ongoing: "ongoing",
-    //     }
-    //   );
-    // }
 // ✅ Status filter
 if (status === "completed") {
   query.andWhere(
