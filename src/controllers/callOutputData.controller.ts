@@ -69,38 +69,38 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
   }
 };
 
-export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
-  try {
-    if (!req.user) {
-      const response = errorWithoutData("Authentication failed");
-      return res.status(response.result ? 200 : 400).json(response);
-    }
+// export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
+//   try {
+//     if (!req.user) {
+//       const response = errorWithoutData("Authentication failed");
+//       return res.status(response.result ? 200 : 400).json(response);
+//     }
 
-    const { pageSize, currentPage, toNumber, status } = req.query;
+//     const { pageSize, currentPage, toNumber, status } = req.query;
 
-    // Normalize and validate status
-    let normalizedStatus: "completed" | "ongoing" | undefined;
-    if (typeof status === "string") {
-      const lower = status.toLowerCase();
-      if (lower === "completed" || lower === "ongoing") {
-        normalizedStatus = lower as "completed" | "ongoing";
-      }
-    }
+//     // Normalize and validate status
+//     let normalizedStatus: "completed" | "ongoing" | undefined;
+//     if (typeof status === "string") {
+//       const lower = status.toLowerCase();
+//       if (lower === "completed" || lower === "ongoing") {
+//         normalizedStatus = lower as "completed" | "ongoing";
+//       }
+//     }
 
-    const response = await calloutputdataservice.getUsercallingHistory(
-      req.verifyUser,
-      parseInt(pageSize as string, 10) || 50,
-      parseInt(currentPage as string, 10) || 1,
-      toNumber as string,       // optional filter
-      normalizedStatus          // optional filter
-    );
+//     const response = await calloutputdataservice.getUsercallingHistory(
+//       req.verifyUser,
+//       parseInt(pageSize as string, 10) || 50,
+//       parseInt(currentPage as string, 10) || 1,
+//       toNumber as string,       // optional filter
+//       normalizedStatus          // optional filter
+//     );
 
-    return res.status(response.result ? 200 : 400).json(response);
-  } catch (error) {
-    const response = errorWithData("Something went wrong", { error });
-    return res.status(response.result ? 200 : 400).json(response);
-  }
-};
+//     return res.status(response.result ? 200 : 400).json(response);
+//   } catch (error) {
+//     const response = errorWithData("Something went wrong", { error });
+//     return res.status(response.result ? 200 : 400).json(response);
+//   }
+// };
 
 //count of user call 
 
@@ -111,7 +111,7 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
 //       to_date,
 //       from_time,
 //       to_time,
-//       page,
+//       currentPage,
 //       pageSize,
 //       toNumber,
 //       status
@@ -130,7 +130,7 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
 //       to_date,
 //       from_time,
 //       to_time,
-//       page,
+//       currentPage,
 //       pageSize,
 //       toNumber,
 //       status
@@ -148,7 +148,46 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
 //     });
 //   }
 // };
+export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const verifyUser = req.user;
+    if (!verifyUser) {
+      const response = errorWithoutData("Unauthorized");
+      return res.status(401).json(response);
+    }
 
+    const {
+      from_date,
+      to_date,
+      from_time = "00:00:00",
+      to_time = "23:59:59",
+      page = 1,
+      pageSize = 10,
+      toNumber,
+      status
+    } = req.body;
+
+    // ✅ Call static method
+    const response = await callOutputDataService.getUsercallingHistory(
+      from_date,
+      to_date,
+      from_time,
+      to_time,
+      page,
+      pageSize,
+      toNumber,
+      status
+    );
+
+    return res.status(response.result ? 200 : 400).json(response);
+
+  } catch (error) {
+    console.error("Error in getUserCallHistory controller:", error);
+    return res.status(500).json(
+      errorWithData("Internal server error", { error: (error as Error).message })
+    );
+  }
+};
 export const getUserCallDataCount = async (req: Request, res: Response): Promise<any> => {
   try {
     const verifyUser = req.user; // assume auth middleware sets this
