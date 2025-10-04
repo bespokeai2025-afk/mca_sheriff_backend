@@ -84,16 +84,20 @@ export class DashboardService {
   //   months: chartData,
   // };
 
-  const changePercent =
-    previousTotalMinutes === 0
-      ? null
-      : ((previousTotalMinutes - currentTotalMinutes) / currentTotalMinutes) * 100;
-
+  // const changePercent =
+  //   previousTotalMinutes === 0
+  //     ? null
+  //     : ((previousTotalMinutes - currentTotalMinutes) / currentTotalMinutes) * 100;
+const changePercent =
+  currentTotalMinutes === 0
+    ? 0
+    : ((previousTotalMinutes - currentTotalMinutes) / currentTotalMinutes) * 100;
+const changePercentRounded = Math.round(changePercent);
   return {
     total: currentTotalMinutes,
     months: chartData,
     previousTotalMinutes,
-    changePercent: changePercent !== null ? changePercent.toFixed(2) : null, // e.g., +12.00
+    changePercent: changePercentRounded
   };
 }
 
