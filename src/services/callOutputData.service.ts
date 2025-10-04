@@ -215,6 +215,9 @@ if (status === "completed") {
         'call.recording_url',
         'call.duration_ms',
         'call."disconnection_reason" AS disconnection_reason',
+         'call."transcript"',
+        'call."end_reason"',
+        'call."disconnection_reason"',
         'call."updatedAt" AS call_updatedAt',
         'call.event AS event',
       ])

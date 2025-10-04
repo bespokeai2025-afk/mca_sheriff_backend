@@ -126,7 +126,7 @@ static async getLeads(months: number): Promise<{
     .select('EXTRACT(MONTH FROM call."updatedAt")::int', 'month_number')
     .addSelect('COUNT(1)::int', 'totalLeads')
     .where('call."updatedAt" >= :startDate AND call."updatedAt" <= :endDate', { startDate, endDate })
-    .andWhere('call.sentiment_analysis = :sentiment', { sentiment: "Positive" })
+    .andWhere('call.sentiment_analysis = :sentiment', { sentiment: ["Positive", "Neutral"] })
     .andWhere('call."isActive" = TRUE')
     .andWhere('call."isDeleted" = FALSE')
     .groupBy('month_number')
