@@ -1,183 +1,17 @@
-// import { errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
-// import { AppDataSource } from "../config/database";
-// import { Admin } from "../entities/Admin";
-// import { User } from "../entities/User";
-// import { deleteUserToken, generateTokens } from "../utils/jwtUtils";
-
-// export class AdminService {
-
-//     private userRepository = AppDataSource.getRepository(User);
-//     private adminRepository = AppDataSource.getRepository(Admin);
-//     public async findAdmin( verifyUser: any) {
-
-//         if (verifyUser.user_exist) {
-//             return errorWithoutData('only admin can use this service.');
-//         }
-
-//         const admins = await this.adminRepository.find({ order: { "createdAt": "desc" } })
-
-//         return successWithData("all Admin user Data", admins);
-//     }
-
-//     public async findAdminById(id: string, verifyUser: { [key: string]: any }) {
-
-//         if (verifyUser.user_exist) {
-//             return errorWithoutData('only admin can use this service.');
-//         }
-
-//         const admin = await this.adminRepository.findOneBy({ id })
-
-//         if (!admin) {
-//             return errorWithoutData('admin user not found')
-//         }
-
-//         if (!admin.is_otp_verified) {
-//             return errorWithoutData('admin OTP not verified')
-//         }
-
-//         return successWithData("Admin user found", admin);
-//     }
-
-
-
-//     public async createAdmin(data: { [key: string]: any  }) {
-
-//         // if (verifyUser.user_exist) {
-//         //     return errorWithoutData('only admin can use this service.');
-//         // }
-
-//         if (data.mobile) {
-//             const user_exist = await this.adminRepository.findOneBy({ mobile: data.mobile });
-//             if (user_exist) return errorWithoutData("mobile number is already registered")
-//         }
-//         const newAdminUser = await this.adminRepository.create(data);
-//         const adminUser = await this.adminRepository.save(newAdminUser)
-//         return successWithData('admin Created successfully', adminUser);
-
-//     }
-
-//     public async updateAdmin(id: string, data: { [key: string]: any; }, verifyUser: { [key: string]: any }) {
-
-//         if (verifyUser.user_exist) {
-//             return errorWithoutData('only admin can use this service.');
-//         }
-
-//         const admin = await this.adminRepository.findOneBy({ id, isActive: true, isDeleted: false });
-//         if (!admin) {
-//             return errorWithoutData('admin not found')
-//         }
-
-//         if (data.mobile) {
-//             const user_exist = await this.adminRepository.findOneBy({ mobile: data.mobile });
-//             if (user_exist) return errorWithoutData("can't update mobile number")
-//         }
-
-//         await this.adminRepository.update(id.toString(), data);
-
-//         return successWithoutData('admin updated successfully');
-//     }
-
-//     public async deleteAdmin(id: string, verifyUser: { [key: string]: any }) {
-
-
-//         if (verifyUser.user_exist) {
-//             return errorWithoutData('only admin can use this service.');
-//         }
-//         const user = await this.adminRepository.findOneBy({ id, isActive: true, isDeleted: false })
-
-//         if (!user) {
-//             return errorWithoutData('admin not found')
-//         }
-//         user.isDeleted = true;
-//         user.isActive = false;
-
-//         deleteUserToken(user.id);
-//         await this.adminRepository.save(user);
-
-//         return successWithoutData("admin deleted Successfully")
-
-//     }
-
-//     public async logoutAdmin(id: string, verifyUser: any) {
-
-//         if (verifyUser.user_exist) {
-//             return errorWithoutData('only admin can use this service')
-//         }
-
-//         let user = null;
-//         if (verifyUser.admin_exist) {
-//             user = await this.adminRepository.findOneBy({ id })
-//         }
-
-//         if (!user) {
-//             return errorWithoutData('admin user not found')
-//         }
-
-//         if (verifyUser.admin_exist.id != user.id) {
-//             return errorWithoutData('invalid admin user')
-//         }
-
-
-//         deleteUserToken(user.id);
-
-//         await this.adminRepository.save(user);
-
-//         return successWithoutData("admin Logout Successfully")
-
-//     }
-    
-// public async loginAdminWithEmailPassword(data: { email?: string; password?: string }) {
-//   // Validate input
-//   if (!data.email || !data.password) {
-//     return errorWithoutData("Email and password are required");
-//   }
-
-//   // Check if user exists
-//   const user = await this.adminRepository.findOneBy({ email: data.email });
-//   if (!user) {
-//     return errorWithoutData("Invalid email or password");
-//   }
-
-//   // Check if active and not deleted
-//   if (!user.isActive || user.isDeleted) {
-//     return errorWithoutData("User is not allowed to login");
-//   }
-
-//   // Compare plain text passwords
-//   if (user.password !== data.password) {
-//     return errorWithoutData("Invalid email or password");
-//   }
-
-//   // Generate tokens
-//   const { accessToken, refreshToken } = await generateTokens(user);
-
-//   const responseData = {
-//     id: user.id,
-//     email: user.email,
-//     mobile: user.mobile,
-//     accessToken,
-//     refreshToken,
-//   };
-
-//   return successWithData("Login successful", responseData);
-// }
-
-// }
-
-
-
 import { errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
 import { User } from "../entities/User";
 import { deleteUserToken, generateTokens } from "../utils/jwtUtils";
+import bcrypt from "bcryptjs";
+
 
 export class AdminService {
 
     private userRepository = AppDataSource.getRepository(User);
     private adminRepository = AppDataSource.getRepository(Admin);
 
-    public async findAdmin( verifyUser: any) {
+    public async findAdmin(verifyUser: any) {
 
         if (verifyUser.user_exist) {
             return errorWithoutData('only admin can use this service.');
@@ -207,21 +41,33 @@ export class AdminService {
         return successWithData("Admin user found", admin);
     }
 
-    public async createAdmin(data: { [key: string]: any  }) {
 
-        // if (verifyUser.user_exist) {
-        //     return errorWithoutData('only admin can use this service.');
-        // }
-
+    public async createAdmin(data: { [key: string]: any }) {
+        // Check if email already exists
         if (data.email) {
             const user_exist = await this.adminRepository.findOneBy({ email: data.email });
-            if (user_exist) return errorWithoutData("email is already registered")
+            if (user_exist) return errorWithoutData("Email is already registered");
         }
-        const newAdminUser = await this.adminRepository.create(data);
-        const adminUser = await this.adminRepository.save(newAdminUser)
-        return successWithData('admin Created successfully', adminUser);
 
+        // Validate password strength
+        if (data.password) {
+            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!strongPasswordRegex.test(data.password)) {
+                return errorWithoutData("Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.");
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            data.password = await bcrypt.hash(data.password, salt);
+        } else {
+            return errorWithoutData("Password is required");
+        }
+
+        const newAdminUser = await this.adminRepository.create(data);
+        const adminUser = await this.adminRepository.save(newAdminUser);
+
+        return successWithData('Admin created successfully', adminUser);
     }
+
 
     public async updateAdmin(id: string, data: { [key: string]: any; }, verifyUser: { [key: string]: any }) {
 
@@ -290,41 +136,91 @@ export class AdminService {
         return successWithoutData("admin Logout Successfully")
 
     }
-    
+
+
     public async loginAdminWithEmailPassword(data: { email?: string; password?: string }) {
-        // Validate input
         if (!data.email || !data.password) {
             return errorWithoutData("Email and password are required");
         }
 
-        // Check if user exists
         const user = await this.adminRepository.findOneBy({ email: data.email });
         if (!user) {
             return errorWithoutData("Invalid email or password");
         }
 
-        // Check if active and not deleted
         if (!user.isActive || user.isDeleted) {
             return errorWithoutData("User is not allowed to login");
         }
 
-        // Compare plain text passwords
-        if (user.password !== data.password) {
+        //  compare hashed password
+        const isMatch = await bcrypt.compare(data.password, user.password);
+        if (!isMatch) {
             return errorWithoutData("Invalid email or password");
         }
 
-        // Generate tokens
         const { accessToken, refreshToken } = await generateTokens(user);
 
-        const responseData = {
+        return successWithData("Login successful", {
             id: user.id,
             email: user.email,
             mobile: user.mobile,
             accessToken,
             refreshToken,
-        };
-
-        return successWithData("Login successful", responseData);
+        });
     }
+
+
+
+
+    public async changePassword(
+        id: string,
+        data: { oldPassword: string; newPassword: string; confirmPassword: string },
+        verifyUser: any
+    ) {
+        try {
+            if (verifyUser.user_exist) {
+                return errorWithoutData("Only admin can use this service.");
+            }
+
+            const admin = await this.adminRepository.findOneBy({ id, isActive: true, isDeleted: false });
+
+            if (!admin) {
+                return errorWithoutData("Admin not found");
+            }
+
+            // Compare old password
+            const isMatch = await bcrypt.compare(data.oldPassword, admin.password);
+            if (!isMatch) {
+                return errorWithoutData("Old password is incorrect");
+            }
+
+            if (data.newPassword !== data.confirmPassword) {
+                return errorWithoutData("New password and confirm password do not match");
+            }
+
+            // Validate new password strength
+            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!strongPasswordRegex.test(data.newPassword)) {
+                return errorWithoutData(
+                    "New password must be at least 8 characters long, include uppercase, lowercase, number, and special character."
+                );
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+            admin.password = hashedPassword;
+            await this.adminRepository.save(admin);
+
+            return successWithoutData("Password changed successfully");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return errorWithoutData(errorMessage);
+        }
+
+    }
+
+
+
+
 
 }

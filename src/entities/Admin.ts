@@ -10,6 +10,12 @@ export class Admin {
     @Column({ type: "varchar", length: 255, nullable: true })
     name: string
 
+     @Column({ type: "varchar", length: 255, nullable: true })
+    lastName: string
+
+     @Column({ type: "varchar", length: 255, nullable: true })
+    organization: string
+
     @Column({ type: "varchar", length: 15, unique: true })
     mobile: string
 
