@@ -1,43 +1,55 @@
-import { Entity, Column, Check, OneToMany, JoinColumn, BeforeUpdate, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  BeforeUpdate,
+  CreateDateColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { CRMData } from "./CRMData"; // import your main CRMData entity
 
+@Entity({ name: "excel_history_save" })
+export class ExcelHistory {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-@Entity({ name: 'excel_history_save' })
-// @Check('priority >= 0') // Ensure priority is non-negative
-// export class CRMData extends Common {
-export class CRMData /* extends Common */ {
-    @PrimaryGeneratedColumn("uuid")
-    id: string
-    // Name of the main category
-    @Column({ type: 'text' })
-    file_name: string;
+  @Column({ type: "text" })
+  file_name: string;
 
-    
-    // Description of the main category
-    @Column({ type: 'text' })
-    fail_count: string;
+  @Column({ type: "int", default: 0 })
+  fail_count: number;
 
-    @Column({ type: 'text', nullable: true })
-    lead_id: string;
+  // New column to store number of successfully inserted CRM records
+  @Column({ type: "int", default: 0 })
+  correct_count: number;
 
-    @Column({ type: "boolean", default: true })
-    isActive: boolean
+  @Column({ type: "text", nullable: true })
+  lead_id?: string;
 
-    @Column({ type: "boolean", default: false })
-    isDeleted: boolean
+  @ManyToOne(() => CRMData, { nullable: true })
+  @JoinColumn({ name: "crm_data_id" })
+  crm_data?: CRMData;
 
-    @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
-    createdAt: Date
+  @Column({ type: "boolean", default: true })
+  isActive: boolean;
 
-    // Timestamp for when the entity was last updated
-    @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
-    updatedAt: Date
+  @Column({ type: "boolean", default: false })
+  isDeleted: boolean;
 
-    // Update the updatedAt timestamp before the entity is updated
-    @BeforeUpdate()
-    updateTimestamp() {
-        this.updatedAt = new Date();
-    }
+  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
 
- 
-   
+  @UpdateDateColumn({
+    type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
+
+  @BeforeUpdate()
+  updateTimestamp() {
+    this.updatedAt = new Date();
+  }
 }

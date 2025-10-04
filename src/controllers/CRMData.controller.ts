@@ -131,12 +131,18 @@ export const createCRMDataWithoutAuth = async (req: Request, res: Response): Pro
 };
 export const uploadCRMExcel = async (req: Request, res: Response): Promise<void> => {
   try {
-    const workbook = XLSX.read(req.file!.buffer, { type: "buffer" });
+    if (!req.file) {
+      res.status(400).json({ result: false, message: "No file uploaded" });
+      return;
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-    const result = await CRMDataService.insertCRMData(data);
+    // Pass file name as second argument
+    const result = await CRMDataService.insertCRMData(data, req.file.originalname);
 
     res.status(200).json({
       result: true,
@@ -163,6 +169,7 @@ export const uploadCRMExcel = async (req: Request, res: Response): Promise<void>
     });
   }
 };
+
 
 
 
