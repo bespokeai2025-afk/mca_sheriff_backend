@@ -140,6 +140,11 @@ if (status === "completed") {
     'call."event" = :eventOngoing AND call."call_status" = :ongoing',
     { eventOngoing: "call_started", ongoing: "ongoing" }
   );
+} else if (status === "yet_to_call") {
+  query.andWhere(
+    'call."event" = :eventCompleted AND call."call_status" = :yetToCall',
+    { eventCompleted: "call_analyzed", yetToCall: "yet_to_call" }
+  );
 } else if (status === "not_connected") {
   query.andWhere(
     'call."event" = :eventCompleted AND call."call_status" = :notConnected',

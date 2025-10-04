@@ -9,6 +9,10 @@ import axios from "axios";
 import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
+import XLSX from "xlsx";
+import { v4 as uuidv4 } from "uuid";
+
+
 interface RetellTask {
     to_number: string;
     retell_llm_dynamic_variables?: {
@@ -312,6 +316,91 @@ public async createCRMDataWithoutAuth(DataArray: object[]) {
         return errorWithData("Something went wrong", error);
     }
 }
+
+
+
+  /**
+   * Insert parsed CRM data and create CallOutputData
+   */
+ public static async insertCRMData(dataArray: any[]) {
+  const crmRepository = AppDataSource.getRepository(CRMData);
+  const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+  const insertedRecords: CRMData[] = [];
+  const skippedLeadIds: string[] = [];
+
+  for (const item of dataArray) {
+    const now = new Date();
+    const email = (item.emailaddress1 || "").toLowerCase();
+    const mobile = item.mobilephone || "";
+
+    // Skip empty rows
+    if (!email && !mobile) continue;
+
+    // Generate leadId (timestamp + random UUID part)
+    const timestampPart = `${now.getFullYear()}${(now.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}${now
+      .getHours()
+      .toString()
+      .padStart(2, "0")}${now.getMinutes().toString().padStart(2, "0")}${now
+      .getSeconds()
+      .toString()
+      .padStart(2, "0")}${now.getMilliseconds().toString().padStart(3, "0")}`;
+    const randomPart = uuidv4().split("-")[0]; // first 8 chars of UUID
+    const leadId = item.leadid || `${timestampPart}-${randomPart}`;
+
+    // Check if lead_id already exists (rare because of timestamp + random)
+    const existing = await crmRepository.findOne({
+      where: { lead_id: leadId },
+    });
+    if (existing) {
+      skippedLeadIds.push(existing.lead_id);
+      continue;
+    }
+
+    // Map incoming data
+    const mappedData = mapIncomingCRMData({
+      ...item,
+      email,
+      mobile_number: mobile,
+      lead_id: leadId,
+      unique_id: uuidv4(),
+      isActive: true,
+      isDeleted: false,
+      need_to_call: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Save CRMData
+    const savedRecord = await crmRepository.save(crmRepository.create(mappedData));
+    insertedRecords.push(savedRecord);
+
+    // Create CallOutputData
+    const callOutput = callOutputRepository.create({
+      crmData: savedRecord,
+      name: savedRecord.name,
+      toNumber: savedRecord.mobile_number,
+      lead_id: savedRecord.lead_id,
+      callStatus: "need_to_call",
+    });
+    await callOutputRepository.save(callOutput);
+  }
+
+  return {
+    result: true,
+    statuscode: 200,
+    message:
+      insertedRecords.length > 0
+        ? "CRM data created successfully"
+        : "No new CRM data created (all lead_id already exist)",
+    data: {
+      insertedRecords,
+      skippedLeadIds,
+    },
+  };
+}
+
 
 
 
