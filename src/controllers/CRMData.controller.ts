@@ -1,10 +1,16 @@
 import { Request, Response } from "express";
+import multer from 'multer';
+import XLSX from "xlsx";
+import path from "path";
+import fs from 'fs';
+import { Multer } from "multer";
+
 // Import utilities and services
 import { errorWithData, errorWithoutData } from "../config/ApiResponse";
 import { CRMDataService } from "../services/CRMData.service";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
-
+const upload = multer({ dest: 'uploads/' });
 // Initialize services and repositories
 const crmdataservice = new CRMDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
@@ -13,7 +19,8 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
     try {
         if (!req.user) {
             const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
+                 res.status(response.result ? 200 : 400).json(response);
+                 return; // ✅ exit without returning Response
         }
         const { pageSize, currentPage } = req.query;
 
@@ -25,21 +32,21 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
-
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
     try {
+        // Authentication check
         if (!req.user) {
             const response = errorWithoutData("Authentication failed");
             return res.status(response.result ? 200 : 400).json(response);
         }
 
-        const { pageSize, currentPage, mobile_number } = req.query;
+        // Optional mobile number filter
+        const mobile_number = req.query.mobile_number as string | undefined;
 
+        // Call service
         const response = await crmdataservice.getUsercrmData(
             req.verifyUser,
-            parseInt(pageSize as string) || 50,
-            parseInt(currentPage as string) || 1,
-            mobile_number as string // optional filter
+            mobile_number
         );
 
         return res.status(response.result ? 200 : 400).json(response);
@@ -105,6 +112,7 @@ export const createCRMData = async (req: Request, res: Response): Promise<any> =
 //         return res.status(500).json(response);
 //     }
 // };
+
 export const createCRMDataWithoutAuth = async (req: Request, res: Response): Promise<any> => {
     try {
         const dataArray = req.body; // Expecting an array of objects
@@ -121,6 +129,41 @@ export const createCRMDataWithoutAuth = async (req: Request, res: Response): Pro
         return res.status(500).json(response);
     }
 };
+export const uploadCRMExcel = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const workbook = XLSX.read(req.file!.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+    const result = await CRMDataService.insertCRMData(data);
+
+    res.status(200).json({
+      result: true,
+      statuscode: 200,
+      message: result.message,
+      data: result.data.insertedRecords.map((record: any) => ({
+        name: record.name,
+        mobile_number: record.mobile_number,
+        email: record.email,
+        lead_id: record.lead_id,
+        need_to_call: record.need_to_call,
+      })),
+      skippedLeadIds: result.data.skippedLeadIds,
+      insertedCount: result.data.insertedRecords.length,
+    });
+  } catch (error: unknown) {
+    console.error("Upload error:", error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    res.status(500).json({
+      result: false,
+      statuscode: 500,
+      message: "Failed to process Excel file",
+      error: errMsg,
+    });
+  }
+};
+
 
 
 

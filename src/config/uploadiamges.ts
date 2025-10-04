@@ -17,7 +17,7 @@ const uploadImageToS3 = (eventFolder: string,fileSizeLimit = 5* 1024* 1024) => {
       },
       key: (req, file, cb) => {
         // Store image in the appropriate folder
-        const folderPath = `${eventFolder}/images`;
+        const folderPath = `${eventFolder}/s`;
 
         cb(null, `${folderPath}/${Date.now()}-${file.originalname.replace(/\s+/g, "_")}`);
       },

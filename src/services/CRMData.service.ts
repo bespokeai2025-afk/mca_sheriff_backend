@@ -9,6 +9,10 @@ import axios from "axios";
 import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
+import XLSX from "xlsx";
+import { v4 as uuidv4 } from "uuid";
+
+
 interface RetellTask {
     to_number: string;
     retell_llm_dynamic_variables?: {
@@ -45,7 +49,6 @@ export class CRMDataService {
         if (totalItems >= 1 && totalPages < currentPage) {
             return errorWithoutData("Page limit exceeded");
         }
-
         let retellResponse: any = null;
 
         //  RetellAI API Integration (using tasks array)
@@ -99,10 +102,10 @@ export class CRMDataService {
 
             if (tasks.length > 0) {
                 const payload = {
-                    from_number: "+18326624593",
+                    from_number: `${process.env.RETELL_FROM_NUMBER}`,
                     tasks: tasks,
-                    llm_id: "default",
-                    voice_id: "voice-1",
+                    // llm_id: "default",
+                    // voice_id: "voice-1",
                     retell_llm_dynamic_variables: {
                         greeting: "Hello, this is a test call from Retell!"
                     }
@@ -114,7 +117,7 @@ export class CRMDataService {
                         payload,
                         {
                             headers: {
-                                Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
+                                Authorization:  `Bearer ${process.env.API_KEY_RETELL}`,
                                 "Content-Type": "application/json"
                             }
                         }
@@ -158,50 +161,45 @@ export class CRMDataService {
         });
     }
 
-    public async getUsercrmData(
-        verifyUser: any,
-        pageSize: number,
-        currentPage: number,
-        mobile_number?: string // optional
-    ) {
-        try {
-            let whereCondition: any = {};
+  public async getUsercrmData(
+    verifyUser: any,
+    mobile_number?: string // optional
+) {
+    try {
+        let whereCondition: any = {};
 
-            if (verifyUser.user_exist) {
-                whereCondition = { isActive: true, isDeleted: false };
-            }
-            if (verifyUser.admin_exist) {
-                whereCondition = { isDeleted: false };
-            }
-
-            if (mobile_number) {
-                whereCondition.mobile_number = ILike(`%${mobile_number.replace(/\s+/g, '')}%`);
-            }
-
-            const [crmData, totalItems] = await this.CRMDataRepository.findAndCount({
-                where: whereCondition,
-                order: { createdAt: 'DESC' },
-                skip: mobile_number ? 0 : (currentPage - 1) * pageSize,
-                take: mobile_number ? undefined : pageSize,
-            });
-
-            const totalPages = mobile_number ? 1 : Math.ceil(totalItems / pageSize);
-
-            return successWithData(
-                "User CRM data fetched successfully!",
-                crmData,
-                {
-                    totalItems,
-                    totalPages,
-                    currentPage: mobile_number ? 1 : currentPage,
-                    pageSize: mobile_number ? totalItems : pageSize,
-                }
-            );
-
-        } catch (error) {
-            return errorWithData("Something went wrong", { error });
+        if (verifyUser.user_exist) {
+            whereCondition = { isActive: true, isDeleted: false };
         }
-    }    
+        if (verifyUser.admin_exist) {
+            whereCondition = { isDeleted: false };
+        }
+
+        if (mobile_number) {
+            whereCondition.mobile_number = ILike(`%${mobile_number.replace(/\s+/g, '')}%`);
+        }
+
+        const crmData = await this.CRMDataRepository.find({
+            where: whereCondition,
+            order: { createdAt: 'DESC' },
+        });
+
+        // Return only name and mobile_number
+        const simplifiedData = crmData.map(item => ({
+            name: item.name,
+            mobile_number: item.mobile_number
+        }));
+
+        return successWithData(
+            "User CRM data fetched successfully!",
+            simplifiedData
+        );
+
+    } catch (error) {
+        return errorWithData("Something went wrong", { error });
+    }
+}
+
      public async createCRMData(Data: object, verifyUser: any) {
         try {
             // Only admin allowed
@@ -293,7 +291,7 @@ public async createCRMDataWithoutAuth(DataArray: object[]) {
                 name: savedRecord.name,
                 toNumber: savedRecord.mobile_number,
                 lead_id: savedRecord.lead_id,
-                callStatus: "Yet to call",
+                callStatus: "net_to_call",
             });
             await callOutputRepository.save(callOutput);
         }
@@ -318,6 +316,91 @@ public async createCRMDataWithoutAuth(DataArray: object[]) {
         return errorWithData("Something went wrong", error);
     }
 }
+
+
+
+  /**
+   * Insert parsed CRM data and create CallOutputData
+   */
+ public static async insertCRMData(dataArray: any[]) {
+  const crmRepository = AppDataSource.getRepository(CRMData);
+  const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+  const insertedRecords: CRMData[] = [];
+  const skippedLeadIds: string[] = [];
+
+  for (const item of dataArray) {
+    const now = new Date();
+    const email = (item.emailaddress1 || "").toLowerCase();
+    const mobile = item.mobilephone || "";
+
+    // Skip empty rows
+    if (!email && !mobile) continue;
+
+    // Generate leadId (timestamp + random UUID part)
+    const timestampPart = `${now.getFullYear()}${(now.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}${now
+      .getHours()
+      .toString()
+      .padStart(2, "0")}${now.getMinutes().toString().padStart(2, "0")}${now
+      .getSeconds()
+      .toString()
+      .padStart(2, "0")}${now.getMilliseconds().toString().padStart(3, "0")}`;
+    const randomPart = uuidv4().split("-")[0]; // first 8 chars of UUID
+    const leadId = item.leadid || `${timestampPart}-${randomPart}`;
+
+    // Check if lead_id already exists (rare because of timestamp + random)
+    const existing = await crmRepository.findOne({
+      where: { lead_id: leadId },
+    });
+    if (existing) {
+      skippedLeadIds.push(existing.lead_id);
+      continue;
+    }
+
+    // Map incoming data
+    const mappedData = mapIncomingCRMData({
+      ...item,
+      email,
+      mobile_number: mobile,
+      lead_id: leadId,
+      unique_id: uuidv4(),
+      isActive: true,
+      isDeleted: false,
+      need_to_call: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Save CRMData
+    const savedRecord = await crmRepository.save(crmRepository.create(mappedData));
+    insertedRecords.push(savedRecord);
+
+    // Create CallOutputData
+    const callOutput = callOutputRepository.create({
+      crmData: savedRecord,
+      name: savedRecord.name,
+      toNumber: savedRecord.mobile_number,
+      lead_id: savedRecord.lead_id,
+      callStatus: "need_to_call",
+    });
+    await callOutputRepository.save(callOutput);
+  }
+
+  return {
+    result: true,
+    statuscode: 200,
+    message:
+      insertedRecords.length > 0
+        ? "CRM data created successfully"
+        : "No new CRM data created (all lead_id already exist)",
+    data: {
+      insertedRecords,
+      skippedLeadIds,
+    },
+  };
+}
+
 
 
 

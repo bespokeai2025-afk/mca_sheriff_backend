@@ -11,12 +11,12 @@ export class CallFrequencySettingController {
       const { number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
 
       // Validate that at least selected_days exists
-      if (!selected_days || selected_days.length === 0) {
-        res.status(400).json(
-          errorWithData("selected_days is required", null, 400)
-        );
-        return;
-      }
+      // if (!selected_days || selected_days.length === 0) {
+      //   res.status(400).json(
+      //     errorWithData("selected_days is required", null, 400)
+      //   );
+      //   return;
+      // }
 
       // Prepare payload
       const payload = { number_count, selected_days, selected_weeks, call_frequency_setting };
@@ -58,10 +58,10 @@ export class CallFrequencySettingController {
     }
 
     // Validate selected_days
-    if (!selected_days || selected_days.length === 0) {
-      res.status(400).json(errorWithData("selected_days is required", null, 400));
-      return;
-    }
+    // if (!selected_days || selected_days.length === 0) {
+    //   res.status(400).json(errorWithData("selected_days is required", null, 400));
+    //   return;
+    // }
 
     // Validate call_frequency_setting
     if (!call_frequency_setting) {
