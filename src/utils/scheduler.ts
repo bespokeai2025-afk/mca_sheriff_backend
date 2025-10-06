@@ -6,17 +6,16 @@ import { CRMData } from "../entities/CRMData";
 import { CRMDataService, RetellTask } from "../services/CRMData.service";
 
 export class CallScheduler {
-  // Keep track of all scheduled cron jobs
+  // Track scheduled jobs
   private static scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
 
   /**
-   * Initialize scheduler: load all cron expressions from DB and schedule them
+   * Initialize all cron jobs from DB
    */
   static async initialize() {
     const freqRepo = AppDataSource.getRepository(CallFrequencySetting);
-
-    // Fetch all active call frequency settings
     const settings = await freqRepo.find({ where: { isDeleted: false } });
+
     console.log(`🔁 Found ${settings.length} call frequency settings`);
 
     for (const setting of settings) {
@@ -27,9 +26,7 @@ export class CallScheduler {
   }
 
   /**
-   * Schedule a single cron job from DB
-   * @param id - Frequency setting ID
-   * @param cronExpression - Cron expression string
+   * Schedule a single cron job
    */
   static scheduleFromDB(id: string, cronExpression: string) {
     if (!cron.validate(cronExpression)) {
@@ -37,13 +34,12 @@ export class CallScheduler {
       return;
     }
 
-    // Stop existing job if already scheduled
+    // Stop existing job if exists
     if (this.scheduledJobs.has(id)) {
       this.scheduledJobs.get(id)?.stop();
       this.scheduledJobs.delete(id);
     }
 
-    // Schedule new cron job in IST timezone
     const job = cron.schedule(
       cronExpression,
       async () => {
@@ -53,48 +49,51 @@ export class CallScheduler {
         try {
           const crmRepo = AppDataSource.getRepository(CRMData);
 
-          // Fetch only leads that still need to be called
+          // Fetch leads that need to be called
           const leads = await crmRepo.find({ where: { need_to_call: true } });
 
-          // Map leads to RetellTask format
+          if (leads.length === 0) {
+            console.log("No leads to call at this time.");
+            return;
+          }
+
+          // Map to RetellTask format
           const tasks: RetellTask[] = leads
             .filter((lead) => lead.mobile_number)
             .map((lead) => ({
-              to_number: lead.mobile_number,
+              to_number: lead.mobile_number.startsWith("+") ? lead.mobile_number : `+${lead.mobile_number}`,
               retell_llm_dynamic_variables: {
-                name: lead.name,
-                lead_id: lead.lead_id,
-                unique_id: lead.unique_id,
-                greeting: `Hello ${lead.name}, this is a test call from Retell!`,
+                name: lead.name || "",
+                lead_id: lead.lead_id || "",
+                unique_id: lead.unique_id || "",
+                greeting: `Hello ${lead.name || "there"}, this is a test call from Retell!`,
               },
             }));
 
-          if (tasks.length > 0) {
-            // Call the RetellAI API
-            const retellResponse = await CRMDataService.createBatchCall(tasks);
-            console.log("✅ RetellAI batch call response:", retellResponse);
+          console.log(`📞 Sending ${tasks.length} tasks to RetellAI...`);
+          const retellResponse = await CRMDataService.createBatchCall(tasks);
 
-            // Mark all called leads as done
+          console.log("✅ RetellAI batch call response:", retellResponse);
+
+          // Mark leads as called only if RetellAPI responded
+          if (retellResponse) {
             for (const lead of leads) {
               lead.need_to_call = false;
               await crmRepo.save(lead);
             }
+            console.log(`✅ Marked ${leads.length} leads as called`);
           } else {
-            console.log("No leads to call at this time.");
+            console.warn("⚠️ RetellAI response null – leads not updated");
           }
         } catch (error: any) {
-          console.error(
-            "❌ Error running scheduled calls:",
-            error?.response?.data || error.message
-          );
+          console.error("❌ Error running scheduled calls:", error?.response?.data || error.message);
         }
 
         console.log(`✅ Completed calls for frequency ID ${id}`);
       },
-      { timezone: "Asia/Kolkata" } // Ensure cron runs in IST
+      { timezone: "Asia/Kolkata" }
     );
 
-    // Save the scheduled job in the map
     this.scheduledJobs.set(id, job);
     console.log(`✅ Scheduled frequency ID ${id} with cron: ${cronExpression} (IST)`);
   }
