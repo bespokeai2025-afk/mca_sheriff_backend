@@ -1,62 +1,59 @@
 import cron from "node-cron";
-import axios from "axios";
 import { AppDataSource } from "../config/database";
 import { CallFrequencySetting } from "../entities/CallFrequencySetting";
+import { CRMData } from "../entities/CRMData";
 
 export class CallScheduler {
   private static scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
 
-  /**
-   * Load all call frequency settings from DB and schedule them
-   */
+  // Initialize scheduler: read frequency settings from DB
   static async initialize() {
-    try {
-      const repo = AppDataSource.getRepository(CallFrequencySetting);
-      const settings = await repo.find({ where: { isDeleted: false } });
+    const freqRepo = AppDataSource.getRepository(CallFrequencySetting);
+    const settings = await freqRepo.find({ where: { isDeleted: false } });
 
-      console.log(`🔁 Found ${settings.length} frequency settings in DB`);
+    console.log(`🔁 Found ${settings.length} call frequency settings`);
 
-      for (const setting of settings) {
-        if (setting.call_frequency_setting) {
-          this.scheduleFromDB(setting.id, setting.call_frequency_setting);
-        }
+    for (const setting of settings) {
+      if (setting.call_frequency_setting) {
+        this.scheduleFromDB(setting.id, setting.call_frequency_setting);
       }
-    } catch (err: any) {
-      console.error("❌ Failed to initialize call schedulers:", err.message);
     }
   }
 
-  /**
-   * Schedule job using cron expression from DB
-   */
+  // Schedule job based on DB cron expression
   static scheduleFromDB(id: string, cronExpression: string) {
-    try {
-      if (!cron.validate(cronExpression)) {
-        console.warn(`⚠️ Invalid cron expression for ID ${id}: ${cronExpression}`);
-        return;
-      }
-
-      // If a job already exists, cancel and replace
-      if (this.scheduledJobs.has(id)) {
-        this.scheduledJobs.get(id)?.stop();
-        this.scheduledJobs.delete(id);
-      }
-
-      const job = cron.schedule(cronExpression, async () => {
-        console.log(`[${new Date().toLocaleString()}] 🔔 Triggering API for ID ${id}`);
-
-        try {
-          await axios.get("https://api.trakify.in/crm-data/call/start-batch-calling");
-          console.log("✅ API called successfully for ID:", id);
-        } catch (err: any) {
-          console.error(`❌ Failed API call for ID ${id}:`, err.message);
-        }
-      });
-
-      this.scheduledJobs.set(id, job);
-      console.log(`✅ Scheduled ID ${id} with cron: ${cronExpression}`);
-    } catch (err: any) {
-      console.error(`❌ Failed to schedule job ${id}:`, err.message);
+    if (!cron.validate(cronExpression)) {
+      console.warn(`⚠️ Invalid cron expression for ID ${id}: ${cronExpression}`);
+      return;
     }
+
+    // Stop existing job if any
+    if (this.scheduledJobs.has(id)) {
+      this.scheduledJobs.get(id)?.stop();
+      this.scheduledJobs.delete(id);
+    }
+
+    // Schedule new job
+    const job = cron.schedule(cronExpression, async () => {
+      console.log(`[${new Date().toLocaleString()}] 🔔 Triggering calls for frequency ID ${id}`);
+
+      const crmRepo = AppDataSource.getRepository(CRMData);
+      const leads = await crmRepo.find({ where: { need_to_call: true } });
+
+      for (const lead of leads) {
+        console.log(`Calling lead: ${lead.name} - ${lead.mobile_number}`);
+
+        // TODO: integrate your actual call logic here
+
+        // After processing, mark as called
+        lead.need_to_call = false;
+        await crmRepo.save(lead);
+      }
+
+      console.log(`✅ Completed calls for frequency ID ${id}`);
+    });
+
+    this.scheduledJobs.set(id, job);
+    console.log(`✅ Scheduled frequency ID ${id} with cron: ${cronExpression}`);
   }
 }
