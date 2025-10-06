@@ -1,13 +1,8 @@
 import { DeepPartial } from "typeorm";
 import { errorWithData, errorWithoutData, successWithData, successWithoutData } from "../config/ApiResponse";
 import { AppDataSource } from "../config/database";
-import path from "path";
-import fs from 'fs';
-import s3 from "../config/s3Bucket";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import { CallOutputData } from "../entities/CallOutputData";
-import { ILike } from "typeorm";
 import { In } from "typeorm";
 import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
 import { mapCallOutputData } from "../utils/mapper";
@@ -18,10 +13,6 @@ export class callOutputDataService {
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
   private callOutputRepository = AppDataSource.getRepository(CallOutputData);
   private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
-
-
-
-
 
   //Yet to Call
   public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
@@ -59,11 +50,6 @@ export class callOutputDataService {
     });
   }
 
-
-  
-
-
-  // Call data Response Lead 
   public async getUsercallingDataLead(verifyUser: any, pageSize: number, currentPage: number) {
     let whereCondition: any = {};
 
@@ -100,7 +86,7 @@ export class callOutputDataService {
       pageSize
     });
   }
-   static async getUsercallingHistory(
+  static async getUsercallingHistory(
   from_date?: string,
   to_date?: string,
   from_time: string = "00:00:00",
@@ -240,10 +226,8 @@ if (status === "completed") {
       error: error.message,
     };
   }
-}
-
-
-//Call Status and history
+  }
+  //Call Status and history
 // public async getUsercallingHistory(
 //   verifyUser: any,
 //   pageSize: number,
@@ -350,9 +334,6 @@ if (status === "completed") {
 
 
   // To get Count Of User Call
-
-
-
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
   try {
     let whereCondition: any = {};
@@ -400,9 +381,6 @@ if (status === "completed") {
     return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
   }
 }
-
-
-
   public async createCallOutputData(reqBody: any) {
     try {
       // Extract raw data
@@ -502,5 +480,4 @@ if (status === "completed") {
 
     return successWithoutData(" faq soft deleted successfully");
   }
-
 }

@@ -8,8 +8,6 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 export class AuthService {
-
-
     public async refreshToken(refreshToken: string): Promise<any> {
 
         if (!refreshToken) return errorWithoutData('Refresh token required');
@@ -45,7 +43,6 @@ export class AuthService {
 
         return successWithData("Refresh token created successfully", { accessToken: newTokens.accessToken, refreshToken: newTokens.refreshToken })
     }
-
 }
 
 
