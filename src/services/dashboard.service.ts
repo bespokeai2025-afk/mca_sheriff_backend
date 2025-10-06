@@ -162,9 +162,6 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
   //   months: monthsData
   // };
 }
-
-// Leads (positive sentiment only) month-wise with total count
-// Leads (positive sentiment only) month-wise with total count
 static async getLeads(months: number): Promise<{
   total: number;
   months: { month: string; totalLeads: number }[];

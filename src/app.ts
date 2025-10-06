@@ -24,6 +24,7 @@ import DashboardRoutes from './routes/dashboard.routes'
 import CenterStage from './routes/centerstagedcall.routes'
 import CallFrequency from './routes/callFrequencySetting.routes'
 import Agent from './routes/agent.routes'
+import { CallScheduler } from "./utils/scheduler";
 // Load environment variables
 dotenv.config()
 import { logRequest, logResponse, logError } from "./logger";
@@ -88,7 +89,7 @@ const istDateTimeString = new Date(`${fromDate}T${fromTime}+05:30`);
 console.log("UTC time:", istDateTimeString.toISOString()); // shows UTC
 // Initialize database connection and start server
 AppDataSource.initialize()
-    .then(() => {
+   .then(async () => { 
         app.listen(parseInt(PORT), "0.0.0.0", () => {
             console.log(`Server running on port ${PORT}`);
             console.log(new Date())
@@ -97,6 +98,10 @@ AppDataSource.initialize()
         });
         // const cronJobManager = new CronJobManager(AppDataSource);
         // cronJobManager.startAllCronJobs();
+
+           // ✅ This now works fine
+        await CallScheduler.initialize();
+        console.log("✅ All call frequency schedulers initialized!");
     })
     .catch((err) => {
         console.error("Error Connecting Database", err);
