@@ -72,7 +72,9 @@ export const validateAdmin = [
     body("organization")
         .optional()
         .isString()
-        .trim()
+        .matches(/^[A-Za-z\s]+$/)
+        .withMessage("Organization name must only contain alphabets and spaces.")
+        .trim()        
         .escape(),
 
     body("email")

@@ -17,8 +17,7 @@ router.delete("/delete/:id", verifyAccessToken, validateUserID, validateRequest,
 router.post("/send-otp", validateOtpRequest, validateRequest, sendOtpToAdmin);
 router.post("/verify-otp", validateOTP, validateRequest, verifyOTPForAdmin);
 
-router.post('/logout/:id', verifyAccessToken, validateUserID, validateRequest, logoutAdmin)
 router.post('/login',  loginAdminWithEmailPassword)
-
+router.post('/logout/:id', verifyAccessToken, validateUserID, validateRequest, logoutAdmin)
 router.post("/change-password/:id",verifyAccessToken,validateUserID,validateRequest,changePassword);
 export default router;
