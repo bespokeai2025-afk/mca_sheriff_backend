@@ -11,9 +11,7 @@ import { ILike } from "typeorm";
 export class LeadFilterMasterService {
   private leadFilterRepository = AppDataSource.getRepository(LeadFilterMaster);
 
-  /**
-   * Get all LeadFilterMaster data with pagination
-   */
+
   public async getLeadFilters(
     pageSize: number,
     currentPage: number,
@@ -51,9 +49,7 @@ export class LeadFilterMasterService {
     }
   }
 
-  /**
-   * Get single LeadFilterMaster by ID
-   */
+
   public async getLeadFilterById(id: string) {
     try {
       const filter = await this.leadFilterRepository.findOne({
@@ -70,9 +66,7 @@ export class LeadFilterMasterService {
     }
   }
 
-  /**
-   * Create new LeadFilterMaster
-   */
+ 
   public async createLeadFilter(data: Partial<LeadFilterMaster>) {
     try {
       const newFilter = this.leadFilterRepository.create(data);
@@ -87,9 +81,7 @@ export class LeadFilterMasterService {
     }
   }
 
-  /**
-   * Update existing LeadFilterMaster
-   */
+
   public async updateLeadFilter(id: string, data: Partial<LeadFilterMaster>) {
     try {
       const filter = await this.leadFilterRepository.findOne({
@@ -112,9 +104,7 @@ export class LeadFilterMasterService {
     }
   }
 
-  /**
-   * Soft delete LeadFilterMaster
-   */
+ 
   public async deleteLeadFilter(id: string) {
     try {
       const filter = await this.leadFilterRepository.findOne({

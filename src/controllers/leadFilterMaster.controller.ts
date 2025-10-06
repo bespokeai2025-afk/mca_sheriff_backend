@@ -4,9 +4,6 @@ import { LeadFilterMasterService } from "../services/leadFilterMaster.service";
 
 const leadFilterService = new LeadFilterMasterService();
 
-/**
- * Get all lead filters with pagination and optional search
- */
 export const getLeadFilters = async (req: Request, res: Response): Promise<any> => {
   try {
     const pageSize = parseInt(req.query.pageSize as string) || 50;
@@ -21,9 +18,7 @@ export const getLeadFilters = async (req: Request, res: Response): Promise<any> 
   }
 };
 
-/**
- * Get single lead filter by ID
- */
+
 export const getLeadFilterById = async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id;
@@ -35,9 +30,7 @@ export const getLeadFilterById = async (req: Request, res: Response): Promise<an
   }
 };
 
-/**
- * Create new lead filter
- */
+
 export const createLeadFilter = async (req: Request, res: Response): Promise<any> => {
   try {
     const data = req.body;
@@ -49,9 +42,7 @@ export const createLeadFilter = async (req: Request, res: Response): Promise<any
   }
 };
 
-/**
- * Update lead filter by ID
- */
+
 export const updateLeadFilter = async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id;
@@ -64,9 +55,7 @@ export const updateLeadFilter = async (req: Request, res: Response): Promise<any
   }
 };
 
-/**
- * Soft delete lead filter by ID
- */
+
 export const deleteLeadFilter = async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id;
