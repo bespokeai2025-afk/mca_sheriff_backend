@@ -12,8 +12,9 @@ export class ScheduledCallHistory {
   @Column({ type: "timestamp" })
   executedAt: Date;
 
-  @Column({ default: "pending" })
-  status: "pending" | "success" | "failed";
+  // ✅ Added "skipped" to allowed statuses
+  @Column({ type: "enum", enum: ["pending", "success", "failed", "skipped"], default: "pending" })
+  status: "pending" | "success" | "failed" | "skipped";
 
   @Column({ type: "text", nullable: true })
   responseData?: string; // store RetellAI response if needed
