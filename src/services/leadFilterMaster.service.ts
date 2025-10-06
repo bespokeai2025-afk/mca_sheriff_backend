@@ -1,126 +1,190 @@
 import {
-  errorWithData,
-  errorWithoutData,
-  successWithData,
-  successWithoutData,
+    errorWithData,
+    errorWithoutData,
+    successWithData,
+    successWithoutData,
 } from "../config/ApiResponse";
 import { AppDataSource } from "../config/database";
 import { LeadFilterMaster } from "../entities/LeadFilterMaster";
+import { LeadFilterStatus } from "../entities/LeadFilterStatus";
 import { ILike } from "typeorm";
 
 export class LeadFilterMasterService {
-  private leadFilterRepository = AppDataSource.getRepository(LeadFilterMaster);
+    private leadFilterRepository = AppDataSource.getRepository(LeadFilterMaster);
+    private leadFilterStatusRepository = AppDataSource.getRepository(LeadFilterStatus);
 
 
-  public async getLeadFilters(
-    pageSize: number,
-    currentPage: number,
-    search?: string
-  ) {
-    try {
-      const whereCondition: any = { isDeleted: false };
+    //   public async getLeadFilters(
+    //     pageSize: number,
+    //     currentPage: number,
+    //     search?: string
+    //   ) {
+    //     try {
+    //       const whereCondition: any = { isDeleted: false };
 
-      if (search) {
-        whereCondition.filterName = ILike(`%${search}%`);
+    //       if (search) {
+    //         whereCondition.filterName = ILike(`%${search}%`);
+    //       }
+
+    //       const [filters, totalItems] =
+    //         await this.leadFilterRepository.findAndCount({
+    //           where: whereCondition,
+    //           order: { createdAt: "DESC" },
+    //           skip: (currentPage - 1) * pageSize,
+    //           take: pageSize,
+    //         });
+
+    //       const totalPages = Math.ceil(totalItems / pageSize);
+
+    //       if (totalItems >= 1 && totalPages < currentPage) {
+    //         return errorWithoutData("Page limit exceeded");
+    //       }
+
+    //       return successWithData("Lead filters fetched successfully!", filters, {
+    //         totalItems,
+    //         totalPages,
+    //         currentPage,
+    //         pageSize,
+    //       });
+    //     } catch (error) {
+    //       return errorWithData("Error fetching lead filters", { error });
+    //     }
+    //   }
+
+
+    public async getLeadFilters(
+  pageSize: number,
+  currentPage: number,
+  search?: string
+) {
+  try {
+    const whereCondition: any = { isDeleted: false };
+
+    if (search) {
+      whereCondition.filterName = ILike(`%${search}%`);
+    }
+
+    const [filters, totalItems] = await this.leadFilterRepository.findAndCount({
+      where: whereCondition,
+      order: { createdAt: "DESC" },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+    });
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    if (totalItems >= 1 && totalPages < currentPage) {
+      return errorWithoutData("Page limit exceeded");
+    }
+
+    //  Fetch all LeadFilterStatus (only active + not deleted)
+    const statuses = await this.leadFilterStatusRepository.find({
+      where: { isDeleted: false, isActive: true },
+    });
+
+    //  Collect all multiple_selected values (which store filter IDs)
+    const selectedIds = new Set<string>();
+    statuses.forEach((status) => {
+      if (status.multiple_selected?.length) {
+        status.multiple_selected.forEach((id) => selectedIds.add(id));
       }
+    });
 
-      const [filters, totalItems] =
-        await this.leadFilterRepository.findAndCount({
-          where: whereCondition,
-          order: { createdAt: "DESC" },
-          skip: (currentPage - 1) * pageSize,
-          take: pageSize,
-        });
+    //  Attach a "selected" flag if filter.id is in multiple_selected
+    const filtersWithSelection = filters.map((filter) => ({
+      ...filter,
+      selected: selectedIds.has(filter.id),
+    }));
 
-      const totalPages = Math.ceil(totalItems / pageSize);
-
-      if (totalItems >= 1 && totalPages < currentPage) {
-        return errorWithoutData("Page limit exceeded");
-      }
-
-      return successWithData("Lead filters fetched successfully!", filters, {
+    return successWithData(
+      "Lead filters fetched successfully!",
+      filtersWithSelection,
+      {
         totalItems,
         totalPages,
         currentPage,
         pageSize,
-      });
-    } catch (error) {
-      return errorWithData("Error fetching lead filters", { error });
-    }
-  }
-
-
-  public async getLeadFilterById(id: string) {
-    try {
-      const filter = await this.leadFilterRepository.findOne({
-        where: { id, isDeleted: false },
-      });
-
-      if (!filter) {
-        return errorWithoutData("Lead filter not found");
       }
-
-      return successWithData("Lead filter fetched successfully!", filter);
-    } catch (error) {
-      return errorWithData("Error fetching lead filter", { error });
-    }
+    );
+  } catch (error) {
+    return errorWithData("Error fetching lead filters", { error });
   }
+}
 
- 
-  public async createLeadFilter(data: Partial<LeadFilterMaster>) {
-    try {
-      const newFilter = this.leadFilterRepository.create(data);
-      const savedFilter = await this.leadFilterRepository.save(newFilter);
 
-      return successWithData(
-        "Lead filter created successfully!",
-        savedFilter
-      );
-    } catch (error) {
-      return errorWithData("Error creating lead filter", { error });
+
+
+    public async getLeadFilterById(id: string) {
+        try {
+            const filter = await this.leadFilterRepository.findOne({
+                where: { id, isDeleted: false },
+            });
+
+            if (!filter) {
+                return errorWithoutData("Lead filter not found");
+            }
+
+            return successWithData("Lead filter fetched successfully!", filter);
+        } catch (error) {
+            return errorWithData("Error fetching lead filter", { error });
+        }
     }
-  }
 
 
-  public async updateLeadFilter(id: string, data: Partial<LeadFilterMaster>) {
-    try {
-      const filter = await this.leadFilterRepository.findOne({
-        where: { id, isDeleted: false },
-      });
+    public async createLeadFilter(data: Partial<LeadFilterMaster>) {
+        try {
+            const newFilter = this.leadFilterRepository.create(data);
+            const savedFilter = await this.leadFilterRepository.save(newFilter);
 
-      if (!filter) {
-        return errorWithoutData("Lead filter not found");
-      }
-
-      Object.assign(filter, data);
-      const updatedFilter = await this.leadFilterRepository.save(filter);
-
-      return successWithData(
-        "Lead filter updated successfully!",
-        updatedFilter
-      );
-    } catch (error) {
-      return errorWithData("Error updating lead filter", { error });
+            return successWithData(
+                "Lead filter created successfully!",
+                savedFilter
+            );
+        } catch (error) {
+            return errorWithData("Error creating lead filter", { error });
+        }
     }
-  }
 
- 
-  public async deleteLeadFilter(id: string) {
-    try {
-      const filter = await this.leadFilterRepository.findOne({
-        where: { id, isDeleted: false },
-      });
 
-      if (!filter) {
-        return errorWithoutData("Lead filter not found");
-      }
+    public async updateLeadFilter(id: string, data: Partial<LeadFilterMaster>) {
+        try {
+            const filter = await this.leadFilterRepository.findOne({
+                where: { id, isDeleted: false },
+            });
 
-      filter.isDeleted = true;
-      await this.leadFilterRepository.save(filter);
+            if (!filter) {
+                return errorWithoutData("Lead filter not found");
+            }
 
-      return successWithoutData("Lead filter deleted successfully!");
-    } catch (error) {
-      return errorWithData("Error deleting lead filter", { error });
+            Object.assign(filter, data);
+            const updatedFilter = await this.leadFilterRepository.save(filter);
+
+            return successWithData(
+                "Lead filter updated successfully!",
+                updatedFilter
+            );
+        } catch (error) {
+            return errorWithData("Error updating lead filter", { error });
+        }
     }
-  }
+
+
+    public async deleteLeadFilter(id: string) {
+        try {
+            const filter = await this.leadFilterRepository.findOne({
+                where: { id, isDeleted: false },
+            });
+
+            if (!filter) {
+                return errorWithoutData("Lead filter not found");
+            }
+
+            filter.isDeleted = true;
+            await this.leadFilterRepository.save(filter);
+
+            return successWithoutData("Lead filter deleted successfully!");
+        } catch (error) {
+            return errorWithData("Error deleting lead filter", { error });
+        }
+    }
 }
