@@ -24,6 +24,7 @@ import DashboardRoutes from './routes/dashboard.routes'
 import CenterStage from './routes/centerstagedcall.routes'
 import CallFrequency from './routes/callFrequencySetting.routes'
 import Agent from './routes/agent.routes'
+import LeadFiltermaster from './routes/leadFilterMaster.routes'
 import { CallScheduler } from "./utils/scheduler";
 // Load environment variables
 dotenv.config()
@@ -75,6 +76,7 @@ app.use('/admin', adminRoutes) // Admin routes
 
 app.use('/call-output-data', callOutputDataRoutes)
 app.use('/crm-data', CRMDataRoutes)
+app.use('/leadfiltermaster',LeadFiltermaster)
 
 app.use('/dashboard', DashboardRoutes)
 app.use('/center-stage', CenterStage)
