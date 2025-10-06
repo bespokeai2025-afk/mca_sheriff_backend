@@ -1,21 +1,9 @@
-/**
- * Controller for handling admin related operations
- * Handles CRUD operations for admin users
- */
-
 import { Request, Response } from "express";
 import { errorWithData, errorWithoutData } from "../config/ApiResponse";
 import { AdminService } from "../services/admin.service";
 
 const adminService = new AdminService();
 
-
-/**
- * Get all admin users
- * @param req - Express request object
- * @param res - Express response object
- * @returns JSON response with all admin users or error
- */
 export const getAdmin = async (req: Request, res: Response): Promise<any> => {
 
     try {
@@ -31,12 +19,6 @@ export const getAdmin = async (req: Request, res: Response): Promise<any> => {
     }
 };
 
-/**
- * Get an admin user by ID
- * @param req - Express request object with admin ID in params
- * @param res - Express response object
- * @returns JSON response with the admin user or error
- */
 export const getAdminById = async (req: Request, res: Response): Promise<any> => {
 
     try {
@@ -52,20 +34,7 @@ export const getAdminById = async (req: Request, res: Response): Promise<any> =>
     }
 };
 
-/**
- * Create a new admin user
- * @param req - Express request object with admin data in body
- * @param res - Express response object
- * @returns JSON response with the created admin user or error
- */
 
-
-/**
- * Update an existing admin user
- * @param req - Express request object with admin ID in params and updated data in body
- * @param res - Express response object
- * @returns JSON response with success message or error
- */
 export const updateAdmin = async (req: Request, res: Response): Promise<any> => {
 
     try {
@@ -81,12 +50,7 @@ export const updateAdmin = async (req: Request, res: Response): Promise<any> => 
     }
 };
 
-/**
- * Delete an admin user (soft delete)
- * @param req - Express request object with admin ID in params
- * @param res - Express response object
- * @returns JSON response with success message or error
- */
+
 export const deleteAdmin = async (req: Request, res: Response): Promise<any> => {
 
     try {
@@ -118,16 +82,7 @@ export const logoutAdmin = async (req: Request, res: Response): Promise<any> => 
     }
 };
 
-// export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
-//       try {
-        
-//         const response: any = await adminService.loginAdminWithEmailPassword(req.body);
-//         return res.status(response.result ? 200 : 400).json(response);
-//     } catch (error) {
-//         const response = errorWithData("something went wrong", { error: error });
-//         return res.status(response.result ? 200 : 400).json(response);
-//     }
-// };
+
 
 export const loginAdminWithEmailPassword = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -142,13 +97,40 @@ export const loginAdminWithEmailPassword = async (req: Request, res: Response): 
 
 
 export const createAdmin = async (req: Request, res: Response): Promise<any> => {
-
     try {
-        
         const response: any = await adminService.createAdmin(req.body);
         return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData("something went wrong", { error: error });
+    } catch (error: unknown) {
+        console.error("Create Admin Error:", error);
+
+        // Type guard to safely access error.message
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        const response = errorWithData("Something went wrong", { error: errorMessage });
+        return res.status(500).json(response);
+    }
+};
+
+
+
+export const changePassword = async (req: Request, res: Response): Promise<any> => {
+    try {
+        // Check authentication
+        if (!req.user || !req.verifyUser) {
+            const response = errorWithoutData("Authentication failed");
+            return res.status(401).json(response); // 401 Unauthorized
+        }
+
+        // Call service
+        const response = await adminService.changePassword(req.params.id, req.body, req.verifyUser);
+
+        // If validation fails or other handled errors, return 400
         return res.status(response.result ? 200 : 400).json(response);
+    } catch (error: unknown) {
+        // Type-safe error handling
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        const response = errorWithoutData(`Something went wrong: ${errorMessage}`);
+        return res.status(500).json(response); // 500 for server errors
     }
 };
