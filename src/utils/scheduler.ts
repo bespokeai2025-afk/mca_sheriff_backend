@@ -93,11 +93,11 @@ export class CallScheduler {
               historyRecord.responseData = JSON.stringify(retellResponse);
               await historyRepo.save(historyRecord);
 
-              if (retellResponse) {
-                lead.need_to_call = false;
-                await crmRepo.save(lead);
-                console.log(`✅ Lead ${lead.lead_id} marked as called`);
-              }
+              // if (retellResponse) {
+              //   lead.need_to_call = false;
+              //   await crmRepo.save(lead);
+              //   console.log(`✅ Lead ${lead.lead_id} marked as called`);
+              // }
 
             } catch (leadError: any) {
               console.error(`❌ Error processing lead ${lead.lead_id}:`, leadError.message);
