@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { AppDataSource } from "../config/database";
 import { CallFrequencySetting } from "../entities/CallFrequencySetting";
 import { CRMData } from "../entities/CRMData";
+import axios from "axios";
 
 export class CallScheduler {
   private static scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
@@ -31,7 +32,7 @@ export class CallScheduler {
       this.scheduledJobs.delete(id);
     }
 
-    // Schedule new job with timezone set to IST
+    // Schedule job with IST timezone
     const job = cron.schedule(
       cronExpression,
       async () => {
@@ -39,23 +40,57 @@ export class CallScheduler {
         console.log(`[${nowIST}] 🔔 Triggering calls for frequency ID ${id}`);
 
         const crmRepo = AppDataSource.getRepository(CRMData);
+        // Fetch only leads that need to be called
         const leads = await crmRepo.find({ where: { need_to_call: true } });
 
-        for (const lead of leads) {
-          console.log(`Calling lead: ${lead.name} - ${lead.mobile_number}`);
+        const tasks = leads
+          .filter(l => l.mobile_number)
+          .map(l => ({
+            to_number: l.mobile_number,
+            retell_llm_dynamic_variables: {
+              name: l.name,
+              lead_id: l.lead_id,
+              unique_id: l.unique_id,
+              greeting: `Hello ${l.name}, this is a test call from Retell!`,
+            },
+          }));
 
-          // TODO: integrate your actual call logic here
+        if (tasks.length > 0) {
+          const payload = {
+            from_number: process.env.RETELL_FROM_NUMBER,
+            tasks,
+            retell_llm_dynamic_variables: { greeting: "Hello, this is a test call from Retell!" },
+          };
 
-          // After processing, mark as called
-          lead.need_to_call = false;
-          await crmRepo.save(lead);
+          try {
+            const response = await axios.post(
+              "https://api.retellai.com/create-batch-call",
+              payload,
+              {
+                headers: {
+                  Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            console.log("✅ RetellAI batch call response:", response.data);
+
+            // Mark all leads as called
+            for (const lead of leads) {
+              lead.need_to_call = false;
+              await crmRepo.save(lead);
+            }
+          } catch (err: any) {
+            console.error("❌ RetellAI API error:", err.response?.data || err.message);
+          }
+        } else {
+          console.log("No leads to call at this time.");
         }
 
         console.log(`✅ Completed calls for frequency ID ${id}`);
       },
-      {
-        timezone: "Asia/Kolkata", // This makes cron trigger in IST
-      }
+      { timezone: "Asia/Kolkata" } // triggers cron job in IST
     );
 
     this.scheduledJobs.set(id, job);
