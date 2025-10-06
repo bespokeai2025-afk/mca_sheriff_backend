@@ -10,9 +10,9 @@ const router = express.Router();
 
 router.get("/all", verifyAccessToken, getAdmin);
 router.get("/", verifyAccessToken, getAdminById);
-router.post("/create",validateAdmin,validateRequest, createAdmin);
-router.put("/update/:id", verifyAccessToken,validateRequest, validateUserID, validateAdmin, validateRequest, updateAdmin);
-router.delete("/delete/:id", verifyAccessToken, validateUserID, validateRequest, deleteAdmin);
+router.post("/create-admin",validateAdmin,validateRequest, createAdmin);
+router.put("/update-admin/:id", verifyAccessToken,validateRequest, validateUserID, validateAdmin, validateRequest, updateAdmin);
+router.delete("/delete-admin/:id", verifyAccessToken, validateUserID, validateRequest, deleteAdmin);
 
 router.post("/send-otp", validateOtpRequest, validateRequest, sendOtpToAdmin);
 router.post("/verify-otp", validateOTP, validateRequest, verifyOTPForAdmin);
