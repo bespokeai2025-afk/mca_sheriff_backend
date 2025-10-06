@@ -6,7 +6,6 @@ import { CRMData } from "../entities/CRMData";
 export class CallScheduler {
   private static scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
 
-  // Initialize scheduler: read frequency settings from DB
   static async initialize() {
     const freqRepo = AppDataSource.getRepository(CallFrequencySetting);
     const settings = await freqRepo.find({ where: { isDeleted: false } });
@@ -20,7 +19,6 @@ export class CallScheduler {
     }
   }
 
-  // Schedule job based on DB cron expression
   static scheduleFromDB(id: string, cronExpression: string) {
     if (!cron.validate(cronExpression)) {
       console.warn(`⚠️ Invalid cron expression for ID ${id}: ${cronExpression}`);
@@ -33,27 +31,34 @@ export class CallScheduler {
       this.scheduledJobs.delete(id);
     }
 
-    // Schedule new job
-    const job = cron.schedule(cronExpression, async () => {
-      console.log(`[${new Date().toLocaleString()}] 🔔 Triggering calls for frequency ID ${id}`);
+    // Schedule new job with timezone set to IST
+    const job = cron.schedule(
+      cronExpression,
+      async () => {
+        const nowIST = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+        console.log(`[${nowIST}] 🔔 Triggering calls for frequency ID ${id}`);
 
-      const crmRepo = AppDataSource.getRepository(CRMData);
-      const leads = await crmRepo.find({ where: { need_to_call: true } });
+        const crmRepo = AppDataSource.getRepository(CRMData);
+        const leads = await crmRepo.find({ where: { need_to_call: true } });
 
-      for (const lead of leads) {
-        console.log(`Calling lead: ${lead.name} - ${lead.mobile_number}`);
+        for (const lead of leads) {
+          console.log(`Calling lead: ${lead.name} - ${lead.mobile_number}`);
 
-        // TODO: integrate your actual call logic here
+          // TODO: integrate your actual call logic here
 
-        // After processing, mark as called
-        lead.need_to_call = false;
-        await crmRepo.save(lead);
+          // After processing, mark as called
+          lead.need_to_call = false;
+          await crmRepo.save(lead);
+        }
+
+        console.log(`✅ Completed calls for frequency ID ${id}`);
+      },
+      {
+        timezone: "Asia/Kolkata", // This makes cron trigger in IST
       }
-
-      console.log(`✅ Completed calls for frequency ID ${id}`);
-    });
+    );
 
     this.scheduledJobs.set(id, job);
-    console.log(`✅ Scheduled frequency ID ${id} with cron: ${cronExpression}`);
+    console.log(`✅ Scheduled frequency ID ${id} with cron: ${cronExpression} (IST)`);
   }
 }
