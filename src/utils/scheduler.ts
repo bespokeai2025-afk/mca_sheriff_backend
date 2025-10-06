@@ -46,7 +46,7 @@ export class CallScheduler {
         console.log(`[${new Date().toLocaleString()}] 🔔 Triggering API for ID ${id}`);
 
         try {
-          await axios.post("https://api.trakify.in/crm-data/call/start-batch-calling");
+          await axios.get("https://api.trakify.in/crm-data/call/start-batch-calling");
           console.log("✅ API called successfully for ID:", id);
         } catch (err: any) {
           console.error(`❌ Failed API call for ID ${id}:`, err.message);
