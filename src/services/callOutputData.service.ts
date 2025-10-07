@@ -385,7 +385,7 @@ if (status === "completed") {
     try {
       // Extract raw data
       let raw = reqBody.raw_data;
-console.log(raw, "rawrawrawrawrawrawrawrawrawrawraw");
+console.log(raw.body.body, "rawrawrawrawrawrawrawrawrawrawraw");
 
       //  Parse if JSON string
       if (typeof raw === "string") {
