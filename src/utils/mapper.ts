@@ -22,8 +22,9 @@ export const mapCallOutputData = async (reqBody: any) => {
     endReason: call?.disconnection_reason || "",
     email: call?.email || "",
     lead_id: call?.retell_llm_dynamic_variables?.lead_id || "", 
-    // appointment_date: call?.appointment_date || "",
-    // appointment_end_date: call?.appointment_end_date || "",
+    appointment_date: call?.appointment_date || "",
+     appointment_time: call?.appointment_time || "",
+      booking_status: call?.booking_status || "",
     calendly_booking_url: call?.calendly_booking_url || "",
     crm_data_id: null as string | null,   // ✅ fix here
   };

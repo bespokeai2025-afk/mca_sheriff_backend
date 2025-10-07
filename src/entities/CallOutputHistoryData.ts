@@ -83,21 +83,27 @@ export class CallOutputHistoryData {
   email: string;
   @Column({ name: "lead_id", type: "text", nullable: true })
   lead_id: string;
-  // @Column({ name: "appointment_date", type: "varchar", nullable: true })
-  // appointment_date: string;
+  @Column({ name: "appointment_date", type: "varchar", nullable: true })
+  appointment_date: string;
 
   // @Column({ name: "appointment_end_date", type: "varchar", nullable: true })
   // appointment_end_date: string;
 
+  @Column({ name: "appointment_time", type: "varchar", nullable: true })
+  appointment_time: string;
+
   @Column({ name: "calendly_booking_url", type: "varchar", nullable: true })
   calendly_booking_url: string;
     
+  @Column({ name: "booking_status", type: "varchar", nullable: true })
+  booking_status: string;
+
   @Column({ type: "boolean", default: true })
   isActive: boolean
   
   @Column({ type: "boolean", default: false })
   isDeleted: boolean
-  
+
   @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date
 
