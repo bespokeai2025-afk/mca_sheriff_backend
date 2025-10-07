@@ -21,7 +21,7 @@ export class LeadFilterStatus {
 
   // Store multiple selected values (array of strings)
   @Column({ type: "simple-array", nullable: true })
-  multiple_selected?: string[];
+  new_currentstatus?: string[];
 
   @Column({ type: "boolean", default: true })
   isActive: boolean;

@@ -82,15 +82,15 @@ export class LeadFilterMasterService {
       where: { isDeleted: false, isActive: true },
     });
 
-    //  Collect all multiple_selected values (which store filter IDs)
+    //  Collect all new_currentstatus values (which store filter IDs)
     const selectedIds = new Set<string>();
     statuses.forEach((status) => {
-      if (status.multiple_selected?.length) {
-        status.multiple_selected.forEach((id) => selectedIds.add(id));
+      if (status.new_currentstatus?.length) {
+        status.new_currentstatus.forEach((id) => selectedIds.add(id));
       }
     });
 
-    //  Attach a "selected" flag if filter.id is in multiple_selected
+    //  Attach a "selected" flag if filter.id is in new_currentstatus
     const filtersWithSelection = filters.map((filter) => ({
       ...filter,
       selected: selectedIds.has(filter.id),

@@ -85,25 +85,25 @@ app.use('/agent', Agent)
 app.use(multerErrorHandler);
 
 app.use('/', viewsRoutes)
-const fromDate = "2025-04-30";
-const fromTime = "12:00:00"
-const istDateTimeString = new Date(`${fromDate}T${fromTime}+05:30`);
-console.log("UTC time:", istDateTimeString.toISOString()); // shows UTC
+const istDateTimeString = new Date();
+const currentUTC = new Date().toISOString();
+console.log("Current UTC:", istDateTimeString.toISOString());
+console.log("Current IST:", istDateTimeString.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }));
 // Initialize database connection and start server
 AppDataSource.initialize()
    .then(async () => { 
         app.listen(parseInt(PORT), "0.0.0.0", () => {
             console.log(`Server running on port ${PORT}`);
             console.log(new Date())
-            console.log(istDateTimeString)
+            console.log(currentUTC)
             console.log(`Environment: ${process.env.NODE_ENV}`);
         });
         // const cronJobManager = new CronJobManager(AppDataSource);
         // cronJobManager.startAllCronJobs();
 
-           // ✅ This now works fine
+           // This now works fine
         await CallScheduler.initialize();
-        console.log("✅ All call frequency schedulers initialized!");
+        console.log("All call frequency schedulers initialized!");
     })
     .catch((err) => {
         console.error("Error Connecting Database", err);
