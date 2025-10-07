@@ -28,6 +28,7 @@ export interface RetellTask {
   to_number: string;
   retell_llm_dynamic_variables?: {
     name?: string;
+    client_name?: string;
     lead_id?: string;
     unique_id?: string;
     greeting?: string;
@@ -37,6 +38,7 @@ export interface RetellTask {
 export class CRMDataService {
   // Repository for CMR Data database operations
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
+
   static async createBatchCall(tasks: RetellTask[]) {
     if (tasks.length === 0) return null;
 
@@ -111,6 +113,7 @@ export class CRMDataService {
     .filter((crm: any) => crm.mobile_number)
     .map((crm: any) => {
       const name = crm.name ?? "";
+      const client_name = crm.client_name ?? "";
       const leadId = crm.lead_id ? String(crm.lead_id) : "";
       const uniqueId = crm.unique_id ? String(crm.unique_id) : "";
 
@@ -125,6 +128,7 @@ export class CRMDataService {
         to_number: crm.mobile_number,
         retell_llm_dynamic_variables: {
           name,
+          client_name,
           lead_id: leadId,
           unique_id: uniqueId,
           greeting: `Hello, ${name}, ${leadId}, ${uniqueId} this is a test call from Retell!`,
