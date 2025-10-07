@@ -1,5 +1,5 @@
 export const mapCallOutputData = async (reqBody: any) => {
-  const { event, call } = reqBody;
+  const { event, call,appointment_date, appointment_time, booking_status, calendly_booking_url } = reqBody;
 
   return {
     event: event || "",
@@ -22,10 +22,10 @@ export const mapCallOutputData = async (reqBody: any) => {
     endReason: call?.disconnection_reason || "",
     email: call?.email || "",
     lead_id: call?.retell_llm_dynamic_variables?.lead_id || "", 
-    appointment_date: call?.appointment_date || "",
-     appointment_time: call?.appointment_time || "",
-      booking_status: call?.booking_status || "",
-    calendly_booking_url: call?.calendly_booking_url || "",
+      appointment_date: appointment_date || "",
+    appointment_time: appointment_time || "",
+    booking_status: booking_status || "",
+    calendly_booking_url: calendly_booking_url || "",
     crm_data_id: null as string | null,   // ✅ fix here
   };
 };

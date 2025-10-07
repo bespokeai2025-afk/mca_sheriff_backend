@@ -158,6 +158,7 @@ export class LeadFilterMasterService {
 
             Object.assign(filter, data);
             const updatedFilter = await this.leadFilterRepository.save(filter);
+            const updatedSelectedId = await this.leadFilterStatusRepository.save(filter);
 
             return successWithData(
                 "Lead filter updated successfully!",
@@ -187,4 +188,64 @@ export class LeadFilterMasterService {
             return errorWithData("Error deleting lead filter", { error });
         }
     }
+
+     public async updateLeadFilterStatus(id: string, data: any) {
+    try {
+      const { query, new_currentstatus, ...masterData } = data;
+
+      // ✅ 1. Find the lead filter master
+      const filter = await this.leadFilterRepository.findOne({
+        where: { id, isDeleted: false },
+      });
+
+      if (!filter) {
+        return errorWithoutData("Lead filter not found");
+      }
+
+      // ✅ 2. Update master fields (if any)
+      Object.assign(filter, masterData);
+      await this.leadFilterRepository.save(filter);
+
+      // ✅ 3. Check if there’s already a status entry for this master
+      let status = await this.leadFilterStatusRepository.findOne({
+        where: {
+          leadFilterMaster: { id: filter.id },
+          isDeleted: false,
+        },
+      });
+
+      // ✅ 4. If not found, create new
+      if (!status) {
+        status = this.leadFilterStatusRepository.create({
+          leadFilterMaster: filter,
+          query: query || null,
+          new_currentstatus: Array.isArray(new_currentstatus)
+            ? new_currentstatus
+            : new_currentstatus
+            ? String(new_currentstatus).split(",")
+            : [],
+          isActive: true,
+          isDeleted: false,
+        });
+      } else {
+        // ✅ 5. If exists, update
+        status.query = query || status.query;
+        status.new_currentstatus = Array.isArray(new_currentstatus)
+          ? new_currentstatus
+          : new_currentstatus
+          ? String(new_currentstatus).split(",")
+          : status.new_currentstatus;
+      }
+
+      const updatedStatus = await this.leadFilterStatusRepository.save(status);
+
+      return successWithData("Lead filter and status updated successfully", {
+        master: filter,
+        status: updatedStatus,
+      });
+    } catch (error) {
+      return errorWithData("Error updating lead filter status", { error });
+    }
+  }
+
 }
