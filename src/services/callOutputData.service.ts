@@ -384,8 +384,7 @@ if (status === "completed") {
   public async createCallOutputData(reqBody: any) {
     try {
       // Extract raw data
-      let raw = reqBody.raw_data;
-console.log(raw.body, "rawrawrawrawrawrawrawrawrawrawraw");
+      let raw = reqBody.raw_data.body;
 
       //  Parse if JSON string
       if (typeof raw === "string") {
