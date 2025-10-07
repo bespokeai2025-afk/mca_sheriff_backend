@@ -11,7 +11,6 @@ import axios from "axios";
 import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
-import { v4 as uuidv4 } from "uuid";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
 
 // interface RetellTask {
@@ -28,6 +27,7 @@ export interface RetellTask {
   to_number: string;
   retell_llm_dynamic_variables?: {
     name?: string;
+    client_name?: string;
     lead_id?: string;
     unique_id?: string;
     greeting?: string;
@@ -37,6 +37,7 @@ export interface RetellTask {
 export class CRMDataService {
   // Repository for CMR Data database operations
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
+
   static async createBatchCall(tasks: RetellTask[]) {
     if (tasks.length === 0) return null;
 
@@ -111,6 +112,7 @@ export class CRMDataService {
     .filter((crm: any) => crm.mobile_number)
     .map((crm: any) => {
       const name = crm.name ?? "";
+      const client_name = crm.client_name ?? "";
       const leadId = crm.lead_id ? String(crm.lead_id) : "";
       const uniqueId = crm.unique_id ? String(crm.unique_id) : "";
 
@@ -125,6 +127,7 @@ export class CRMDataService {
         to_number: crm.mobile_number,
         retell_llm_dynamic_variables: {
           name,
+          client_name,
           lead_id: leadId,
           unique_id: uniqueId,
           greeting: `Hello, ${name}, ${leadId}, ${uniqueId} this is a test call from Retell!`,
@@ -485,8 +488,8 @@ public static async insertCRMData(dataArray: any[], fileName: string) {
         .getSeconds()
         .toString()
         .padStart(2, "0")}${now.getMilliseconds().toString().padStart(3, "0")}`;
-      const randomPart = uuidv4().split("-")[0];
-      const leadId = item.leadid || `${timestampPart}-${randomPart}`;
+      
+      const leadId = item.leadid || `${timestampPart}`;
 
       // Check if lead_id already exists
       const existingRecord = await crmRepository.findOne({
@@ -517,7 +520,7 @@ public static async insertCRMData(dataArray: any[], fileName: string) {
           email,
           mobile_number: mobile,
           lead_id: leadId,
-          unique_id: uuidv4(),
+          unique_id: leadId,
         });
 
         const savedRecord = await crmRepository.save(
