@@ -8,8 +8,12 @@ import { ScheduledCallHistory } from "../entities/ScheduledCallHistory";
 import { CRMDataService, RetellTask } from "../services/CRMData.service";
 
 export class CallScheduler {
+  // Track all scheduled cron jobs
   private static scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
 
+  /**
+   * Initialize all active call frequency settings from DB
+   */
   static async initialize() {
     const freqRepo = AppDataSource.getRepository(CallFrequencySetting);
     const settings = await freqRepo.find({ where: { isDeleted: false, isActive: true } });
@@ -23,6 +27,9 @@ export class CallScheduler {
     }
   }
 
+  /**
+   * Schedule a single cron job from DB
+   */
   static scheduleFromDB(id: string, cronExpression: string) {
     if (!cron.validate(cronExpression)) {
       console.warn(`Invalid cron expression for ID ${id}: ${cronExpression}`);
@@ -38,46 +45,61 @@ export class CallScheduler {
     const job = cron.schedule(
       cronExpression,
       async () => {
-        const nowIST = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-        console.log(`[${nowIST}] Triggering calls for frequency ID ${id}`);
+        const nowUTC = new Date(); // UTC timestamp
+        console.log(`[${nowUTC.toISOString()}] Triggering calls for frequency ID ${id}`);
 
         const crmRepo = AppDataSource.getRepository(CRMData);
         const historyRepo = AppDataSource.getRepository(ScheduledCallHistory);
 
         try {
+          // Fetch only leads that still need to be called
           const leads = await crmRepo.find({ where: { need_to_call: true } });
+
           if (leads.length === 0) {
             console.log("No leads to call at this time.");
             return;
           }
 
           for (const lead of leads) {
-            let historyRecord = historyRepo.create({
-              frequencySetting: { id } as CallFrequencySetting,
-              executedAt: new Date(),
-              status: "pending",
-            });
-            await historyRepo.save(historyRecord);
+            // Step 1: Call webhook first
+            console.log(`Calling webhook for lead ${lead.lead_id}...`);
+            let webhookData: any;
 
             try {
-              // --- Call webhook ---
-              console.log(`Calling webhook for lead ${lead.lead_id}...`);
               const webhookResponse = await fetch("https://webhook.site/f7a7244b-700a-4bd2-861d-035937fd018c");
-              const webhookData = await webhookResponse.json();
+              webhookData = await webhookResponse.json();
               console.log("Webhook response:", webhookData);
+            } catch (webhookError: any) {
+              console.error(`❌ Webhook failed for lead ${lead.lead_id}:`, webhookError.message);
 
-              historyRecord.webhookResponse = JSON.stringify(webhookData);
-              await historyRepo.save(historyRecord);
+              // Save skipped history
+              const skippedHistory = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: "skipped",
+                webhookResponse: JSON.stringify({ error: webhookError.message }),
+                errorMessage: "Webhook call failed",
+              });
+              await historyRepo.save(skippedHistory);
+              continue; // Skip RetellAI call
+            }
 
-              if (!webhookData?.result) {
-                historyRecord.status = "skipped";
-                historyRecord.errorMessage = "Webhook returned false";
-                await historyRepo.save(historyRecord);
-                console.warn(`Webhook skipped for lead ${lead.lead_id}`);
-                continue;
-              }
+            // Step 2: Skip RetellAI if webhook result is false
+            if (!webhookData?.result) {
+              const skippedHistory = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: "skipped",
+                webhookResponse: JSON.stringify(webhookData),
+                errorMessage: "Webhook returned false",
+              });
+              await historyRepo.save(skippedHistory);
+              console.warn(`Webhook returned false for lead ${lead.lead_id}. Skipping RetellAI.`);
+              continue;
+            }
 
-              // --- Call RetellAI ---
+            // Step 3: Call RetellAI only if webhook succeeds
+            try {
               const task: RetellTask = {
                 to_number: lead.mobile_number.startsWith("+") ? lead.mobile_number : `+${lead.mobile_number}`,
                 retell_llm_dynamic_variables: {
@@ -89,49 +111,62 @@ export class CallScheduler {
               };
 
               const retellResponse = await CRMDataService.createBatchCall([task]);
-              historyRecord.status = retellResponse ? "success" : "failed";
-              historyRecord.responseData = JSON.stringify(retellResponse);
+
+              // Save history after RetellAI call
+              const historyRecord = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: retellResponse ? "success" : "failed",
+                webhookResponse: JSON.stringify(webhookData),
+                responseData: JSON.stringify(retellResponse),
+                errorMessage: retellResponse ? undefined : "RetellAI call failed", // ✅ use undefined
+              });
               await historyRepo.save(historyRecord);
 
-              // if (retellResponse) {
-              //   lead.need_to_call = false;
-              //   await crmRepo.save(lead);
-              //   console.log(`✅ Lead ${lead.lead_id} marked as called`);
-              // }
+              // Mark lead as called if successful
+              if (retellResponse) {
+                lead.need_to_call = false;
+                await crmRepo.save(lead);
+                console.log(`✅ Lead ${lead.lead_id} marked as called`);
+              }
 
-            } catch (leadError: any) {
-              console.error(`❌ Error processing lead ${lead.lead_id}:`, leadError.message);
-              historyRecord.status = "failed";
-              historyRecord.errorMessage = leadError?.message || "Unknown error";
+            } catch (retellError: any) {
+              console.error(`❌ RetellAI failed for lead ${lead.lead_id}:`, retellError.message);
+              const historyRecord = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: "failed",
+                webhookResponse: JSON.stringify(webhookData),
+                errorMessage: retellError.message,
+              });
               await historyRepo.save(historyRecord);
             }
           }
 
           console.log(`✅ Completed all leads for frequency ID ${id}`);
-
         } catch (error: any) {
           console.error("❌ Error fetching leads:", error.message);
         }
       },
-      { timezone: "Asia/Kolkata" }
+      { timezone: "UTC" } //  Run cron in UTC
     );
 
     this.scheduledJobs.set(id, job);
-    console.log(`✅ Scheduled frequency ID ${id} with cron: ${cronExpression} (IST)`);
+    console.log(`Scheduled frequency ID ${id} with cron: ${cronExpression} (UTC)`);
   }
 
   static stopJob(id: string) {
     if (this.scheduledJobs.has(id)) {
       this.scheduledJobs.get(id)?.stop();
       this.scheduledJobs.delete(id);
-      console.log(`🛑 Stopped scheduled job for frequency ID ${id}`);
+      console.log(`Stopped scheduled job for frequency ID ${id}`);
     }
   }
 
   static stopAllJobs() {
     for (const [id, job] of this.scheduledJobs) {
       job.stop();
-      console.log(`🛑 Stopped scheduled job for frequency ID ${id}`);
+      console.log(`Stopped scheduled job for frequency ID ${id}`);
     }
     this.scheduledJobs.clear();
   }
