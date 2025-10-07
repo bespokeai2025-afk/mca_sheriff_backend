@@ -79,8 +79,15 @@ export class CallOutputData {
 
 @Column({ name: "lead_id", type: "text", nullable: true })
   lead_id: string;
-  // @Column({ name: "appointment_date", type: "varchar", nullable: true })
-  // appointment_date: string;
+  
+  @Column({ name: "appointment_date", type: "varchar", nullable: true })
+  appointment_date: string;
+
+  @Column({ name: "appointment_time", type: "varchar", nullable: true })
+  appointment_time: string;
+
+  @Column({ name: "booking_status", type: "varchar", nullable: true })
+  booking_status: string;
 
   // @Column({ name: "appointment_end_date", type: "varchar", nullable: true })
   // appointment_end_date: string;
