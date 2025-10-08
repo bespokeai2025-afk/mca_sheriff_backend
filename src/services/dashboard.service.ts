@@ -65,12 +65,12 @@ export class DashboardService {
       );
 
       return {
-        month: m.month,
+        months: m.month,
         totalMinutes: totalMinutesFormatted,
       };
     } else {
       return {
-        month: m.month,
+        months: m.month,
         totalMinutes: 0,
       };
     }
