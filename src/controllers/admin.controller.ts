@@ -20,35 +20,60 @@ export const getAdmin = async (req: Request, res: Response): Promise<any> => {
 };
 
 export const getAdminById = async (req: Request, res: Response): Promise<any> => {
-
     try {
         if (!req.user || !req.verifyUser) {
             const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
+            return res.status(400).json(response);
         }
-        const response = await adminService.findAdminById(req.query.id as string, req.verifyUser);
+
+        const response = await adminService.findAdminById(
+            req.query.id as string,
+            req.verifyUser
+        );
+
         return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData("something went wrong", { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error: any) {
+        console.error("Error in getAdminById:", error);
+        const response = errorWithoutData("Something went wrong while fetching admin data.");
+        return res.status(500).json(response);
     }
 };
+
+
+
+// export const updateAdmin = async (req: Request, res: Response): Promise<any> => {
+
+//     try {
+//         if (!req.user || !req.verifyUser) {
+//             const response = errorWithoutData("Authentication failed");
+//             return res.status(response.result ? 200 : 400).json(response);
+//         }
+//         const response = await adminService.updateAdmin(req.params.id, req.body, req.verifyUser);
+//         return res.status(response.result ? 200 : 400).json(response);
+//     } catch (error) {
+//         const response = errorWithData("something went wrong", { error: error });
+//         return res.status(response.result ? 200 : 400).json(response);
+//     }
+// };
 
 
 export const updateAdmin = async (req: Request, res: Response): Promise<any> => {
-
     try {
         if (!req.user || !req.verifyUser) {
             const response = errorWithoutData("Authentication failed");
             return res.status(response.result ? 200 : 400).json(response);
         }
+
+        //  Service now only updates allowed fields (name, lastName, organization, mobile)
         const response = await adminService.updateAdmin(req.params.id, req.body, req.verifyUser);
+
         return res.status(response.result ? 200 : 400).json(response);
     } catch (error) {
         const response = errorWithData("something went wrong", { error: error });
         return res.status(response.result ? 200 : 400).json(response);
     }
 };
+
 
 
 export const deleteAdmin = async (req: Request, res: Response): Promise<any> => {

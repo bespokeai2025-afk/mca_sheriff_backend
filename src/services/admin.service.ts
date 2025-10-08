@@ -22,24 +22,25 @@ export class AdminService {
         return successWithData("all Admin user Data", admins);
     }
 
-    public async findAdminById(id: string, verifyUser: { [key: string]: any }) {
-
-        if (verifyUser.user_exist) {
-            return errorWithoutData('only admin can use this service.');
+  public async findAdminById(id: string, verifyUser: any) {
+    try {
+        // Ensure only admin can access
+        if (!verifyUser || verifyUser.user_exist) {
+            return errorWithoutData('Only admin can use this service.');
         }
 
-        const admin = await this.adminRepository.findOneBy({ id })
+        const admin = await this.adminRepository.findOneBy({ id });
 
         if (!admin) {
-            return errorWithoutData('admin user not found')
+            return errorWithoutData('Admin user not found.');
         }
 
-        if (!admin.is_otp_verified) {
-            return errorWithoutData('admin OTP not verified')
-        }
-
-        return successWithData("Admin user found", admin);
+        return successWithData('Admin user found successfully.', admin);
+    } catch (error: any) {
+        console.error('Error fetching admin by ID:', error);
+        return errorWithoutData('Failed to fetch admin user.');
     }
+}
 
 
     public async createAdmin(data: { [key: string]: any }) {
@@ -69,26 +70,60 @@ export class AdminService {
     }
 
 
-    public async updateAdmin(id: string, data: { [key: string]: any; }, verifyUser: { [key: string]: any }) {
+    // public async updateAdmin(id: string, data: { [key: string]: any; }, verifyUser: { [key: string]: any }) {
 
-        if (verifyUser.user_exist) {
-            return errorWithoutData('only admin can use this service.');
-        }
+    //     if (verifyUser.user_exist) {
+    //         return errorWithoutData('only admin can use this service.');
+    //     }
 
-        const admin = await this.adminRepository.findOneBy({ id, isActive: true, isDeleted: false });
-        if (!admin) {
-            return errorWithoutData('admin not found')
-        }
+    //     const admin = await this.adminRepository.findOneBy({ id, isActive: true, isDeleted: false });
+    //     if (!admin) {
+    //         return errorWithoutData('admin not found')
+    //     }
 
-        if (data.email) {
-            const user_exist = await this.adminRepository.findOneBy({ email: data.email });
-            if (user_exist) return errorWithoutData("can't update email")
-        }
+    //     if (data.email) {
+    //         const user_exist = await this.adminRepository.findOneBy({ email: data.email });
+    //         if (user_exist) return errorWithoutData("can't update email")
+    //     }
 
-        await this.adminRepository.update(id.toString(), data);
+    //     await this.adminRepository.update(id.toString(), data);
 
-        return successWithoutData('admin updated successfully');
+    //     return successWithoutData('admin updated successfully');
+    // }
+
+   public async updateAdmin(
+    id: string,
+    data: { [key: string]: any },
+    verifyUser: { [key: string]: any }
+) {
+    if (verifyUser.user_exist) {
+        return errorWithoutData('Only admin can use this service.');
     }
+
+    const admin = await this.adminRepository.findOneBy({ id, isActive: true, isDeleted: false });
+    if (!admin) {
+        return errorWithoutData('Admin not found.');
+    }
+
+    const allowedFields = ['name', 'lastName', 'organization', 'mobile'];
+    const updateData: any = {};
+
+    for (const field of allowedFields) {
+        if (data[field] !== undefined) {
+            updateData[field] = data[field];
+        }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+        return errorWithoutData('No valid fields to update.');
+    }
+
+    await this.adminRepository.update(id.toString(), updateData);
+
+    const updatedAdmin = await this.adminRepository.findOneBy({ id });
+
+    return successWithData('Admin updated successfully.', updatedAdmin);
+}
 
     public async deleteAdmin(id: string, verifyUser: { [key: string]: any }) {
 
