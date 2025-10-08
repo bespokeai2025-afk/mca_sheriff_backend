@@ -384,7 +384,9 @@ if (status === "completed") {
   public async createCallOutputData(reqBody: any) {
     try {
       // Extract raw data
-      let raw = reqBody.raw_data.body;
+      let raw = reqBody.raw_data;
+      console.log(raw, "rawrawrawrawraw");
+      
       //  Parse if JSON string
       if (typeof raw === "string") {
         try {
@@ -405,7 +407,7 @@ if (status === "completed") {
       }
 
       //  Map raw data to entity
-      const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw);
+      const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw, reqBody);
       console.log("📥 Mapped Data:", mappedData);
 
       //  Find related CRM record by toNumber
