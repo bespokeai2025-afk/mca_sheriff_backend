@@ -188,64 +188,95 @@ export class LeadFilterMasterService {
             return errorWithData("Error deleting lead filter", { error });
         }
     }
+// public async updateLeadFilterStatus(id: string, data: any) {
+//   try {
+//     const { query: rawQuery, new_currentstatus, ...masterData } = data;
 
-     public async updateLeadFilterStatus(id: string, data: any) {
-    try {
-      const { query, new_currentstatus, ...masterData } = data;
+//     // 1️⃣ Find the existing LeadFilterStatus record
+//     const status = await this.leadFilterStatusRepository.findOne({
+//       where: { id, isDeleted: false },
+//     });
 
-      // ✅ 1. Find the lead filter master
-      const filter = await this.leadFilterRepository.findOne({
-        where: { id, isDeleted: false },
-      });
+//     if (!status) {
+//       return errorWithoutData("Lead filter status not found");
+//     }
 
-      if (!filter) {
-        return errorWithoutData("Lead filter not found");
-      }
+//     // 2️⃣ Normalize new_currentstatus into array
+//     const parsedStatus: string[] = Array.isArray(new_currentstatus)
+//       ? new_currentstatus
+//       : new_currentstatus
+//       ? String(new_currentstatus).split(",").map((s) => s.trim()).filter(Boolean)
+//       : [];
 
-      // ✅ 2. Update master fields (if any)
-      Object.assign(filter, masterData);
-      await this.leadFilterRepository.save(filter);
+//     // 3️⃣ Update query dynamically
+//     let query = rawQuery || status.query || "";
+//     if (query && parsedStatus.length > 0) {
+//       const dynamicCondition = parsedStatus.map((s) => `new_currentstatus eq ${s}`).join(" or ");
+//       query = query.replace(/new_currentstatus\s+eq\s+[0-9']+/i, `(${dynamicCondition})`);
+//     }
 
-      // ✅ 3. Check if there’s already a status entry for this master
-      let status = await this.leadFilterStatusRepository.findOne({
-        where: {
-          leadFilterMaster: { id: filter.id },
-          isDeleted: false,
-        },
-      });
+//     // 4️⃣ Update the status record
+//     status.query = query;
+//     status.new_currentstatus = parsedStatus; // ✅ assign array, not string
+//     Object.assign(status, masterData);
 
-      // ✅ 4. If not found, create new
-      if (!status) {
-        status = this.leadFilterStatusRepository.create({
-          leadFilterMaster: filter,
-          query: query || null,
-          new_currentstatus: Array.isArray(new_currentstatus)
-            ? new_currentstatus
-            : new_currentstatus
-            ? String(new_currentstatus).split(",")
-            : [],
-          isActive: true,
-          isDeleted: false,
-        });
-      } else {
-        // ✅ 5. If exists, update
-        status.query = query || status.query;
-        status.new_currentstatus = Array.isArray(new_currentstatus)
-          ? new_currentstatus
-          : new_currentstatus
-          ? String(new_currentstatus).split(",")
-          : status.new_currentstatus;
-      }
+//     // 5️⃣ Save the updated record
+//     const updatedStatus = await this.leadFilterStatusRepository.save(status);
 
-      const updatedStatus = await this.leadFilterStatusRepository.save(status);
+//     return successWithData("Lead filter status updated successfully", {
+//       status: updatedStatus,
+//     });
+//   } catch (error) {
+//     console.error("Error updating lead filter status:", error);
+//     return errorWithData("Error updating lead filter status", { error });
+//   }
+// }
+public async updateLeadFilterStatus(id: string, data: any) {
+  try {
+    const { query: rawQuery, new_currentstatus, ...masterData } = data;
 
-      return successWithData("Lead filter and status updated successfully", {
-        master: filter,
-        status: updatedStatus,
-      });
-    } catch (error) {
-      return errorWithData("Error updating lead filter status", { error });
+    // 1️⃣ Find the existing LeadFilterStatus record
+    const status = await this.leadFilterStatusRepository.findOne({
+      where: { id, isDeleted: false },
+    });
+
+    if (!status) {
+      return errorWithoutData("Lead filter status not found");
     }
+
+    // 2️⃣ Ensure new_currentstatus is an array of strings
+    const parsedStatus: string[] = Array.isArray(new_currentstatus)
+      ? new_currentstatus
+      : new_currentstatus
+      ? String(new_currentstatus).split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    // 3️⃣ Build dynamic query with AND for master IDs
+    let query = rawQuery || status.query || "";
+    if (query && parsedStatus.length > 0) {
+      const dynamicCondition = parsedStatus.map((id) => `new_currentstatus eq '${id}'`).join(" and ");
+      query = query.replace(/new_currentstatus\s+eq\s+[0-9']+/i, `(${dynamicCondition})`);
+    }
+
+    // 4️⃣ Update the status record
+    status.query = query;
+    status.new_currentstatus = parsedStatus; // ✅ assign array of IDs
+    Object.assign(status, masterData);
+
+    // 5️⃣ Save the updated record
+    const updatedStatus = await this.leadFilterStatusRepository.save(status);
+
+    return successWithData("Lead filter status updated successfully", {
+      status: updatedStatus,
+    });
+  } catch (error) {
+    console.error("Error updating lead filter status:", error);
+    return errorWithData("Error updating lead filter status", { error });
   }
+}
+
+
+
+
 
 }
