@@ -95,3 +95,14 @@ export const updateLeadFilterStatus = async (req: Request, res: Response): Promi
     return res.status(500).json(response);
   }
 };
+
+
+export const getDataFromDynamicsQuery = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const response = await leadFilterService.getDataFromDynamicsQuery();
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    const response = errorWithData("Something went wrong while fetching the query", { error });
+    return res.status(500).json(response);
+  }
+};

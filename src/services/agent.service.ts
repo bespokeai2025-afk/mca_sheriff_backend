@@ -92,10 +92,9 @@ export class AgentService {
 static async getAgentsActive(): Promise<any> {
   const url = "https://api.retellai.com/list-agents";
   const headers = {
-    Authorization: "Bearer key_8a1db7d9cbae67fb1318855fdcd2",
+    Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
     "Content-Type": "application/json",
   };
-
   try {
     // 1️⃣ Fetch all agents from RetellAI
     const response = await axios.get(url, { headers });
