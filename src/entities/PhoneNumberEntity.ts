@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, PrimaryColumn } from "typeorm";
+import { Entity, Column, PrimaryColumn, BaseEntity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("phone_numbers")
 export class PhoneNumber extends BaseEntity {
@@ -12,14 +12,11 @@ export class PhoneNumber extends BaseEntity {
   phone_number: string;
 
   @Column({ nullable: true })
-  region: string;
-
-  @Column({ nullable: true })
-  inbound_agent_id: string;
-
-  @Column({ nullable: true })
   outbound_agent_id: string;
 
+  @Column({ nullable: true })
+  outbound_agent_name: string;
+  
   @Column({ nullable: true })
   is_active: boolean;
 }

@@ -12,6 +12,8 @@ import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
+import { PhoneNumber } from "../entities/PhoneNumberEntity";
+
 
 // interface RetellTask {
 //   to_number: string;
@@ -38,45 +40,114 @@ export class CRMDataService {
   // Repository for CMR Data database operations
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
 
-  static async createBatchCall(tasks: RetellTask[]) {
-    if (tasks.length === 0) return null;
+  // static async createBatchCall(tasks: RetellTask[]) {
+  //   if (tasks.length === 0) return null;
 
-    const payload = {
-      from_number: process.env.RETELL_FROM_NUMBER,
-      tasks: tasks,
-      retell_llm_dynamic_variables: {
-        greeting: "Hello, this is a test call from Retell!",
-      },
-    };
+  //   const payload = {
+  //     from_number: process.env.RETELL_FROM_NUMBER,
+  //     tasks: tasks,
+  //     retell_llm_dynamic_variables: {
+  //       greeting: "Hello, this is a test call from Retell!",
+  //     },
+  //   };
 
+  //   try {
+  //     const response = await axios.post(
+  //       "https://api.retellai.com/create-batch-call",
+  //       payload,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+
+  //     console.log(" RetellAI response:", response.data);
+  //     return response.data;
+  //   } catch (error: any) {
+  //     if (error.response) {
+  //       console.error(" RetellAI API Error:", {
+  //         status: error.response.status,
+  //         data: error.response.data,
+  //       });
+  //     } else if (error.request) {
+  //       console.error(" No response received from RetellAI:", error.request);
+  //     } else {
+  //       console.error(" Error creating batch call:", error.message);
+  //     }
+  //     return null;
+  //   }
+  // }
+
+  static async fetchRetellPhoneNumbers(): Promise<any[]> {
     try {
-      const response = await axios.post(
-        "https://api.retellai.com/create-batch-call",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const headers = {
+        Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
+        "Content-Type": "application/json",
+      };
 
-      console.log(" RetellAI response:", response.data);
-      return response.data;
+      const response = await axios.get("https://api.retellai.com/list-phone-numbers", { headers });
+      return response.data || [];
     } catch (error: any) {
-      if (error.response) {
-        console.error(" RetellAI API Error:", {
-          status: error.response.status,
-          data: error.response.data,
-        });
-      } else if (error.request) {
-        console.error(" No response received from RetellAI:", error.request);
-      } else {
-        console.error(" Error creating batch call:", error.message);
-      }
-      return null;
+      console.warn("Warning: Could not fetch phone numbers from RetellAI:", error.message);
+      return [];
     }
   }
+
+  static async startBatchCalling(tasks: RetellTask[]) {
+   if (tasks.length === 0) return null;
+
+    try {
+      const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+      if (!activeNumbers.length) {
+        return { result: false, message: "No active phone numbers found in DB" };
+      }
+
+      const retellNumbers = await this.fetchRetellPhoneNumbers();
+
+      const updatePromises: Promise<any>[] = [];
+      for (const dbNumber of activeNumbers) {
+        const retellMatch = retellNumbers.find((r: any) => r.phone_number === dbNumber.phone_number);
+        if (!retellMatch) continue;
+
+        const retellOutboundAgentId = retellMatch.outbound_agent_id;
+        if (dbNumber.outbound_agent_id !== retellOutboundAgentId) {
+          updatePromises.push(
+            axios.post(`http://localhost:3003/phoneNumber/update-phonenumbersfrom-retell`, {
+              phone_number: dbNumber.phone_number,
+              outbound_agent_id: retellOutboundAgentId,
+              outbound_agent_name: retellMatch.outbound_agent_name || null,
+              inbound_agent_id: retellMatch.inbound_agent_id || null,
+              inbound_agent_name: retellMatch.inbound_agent_name || null,
+              is_active: dbNumber.is_active,
+            })
+          );
+        }
+      }
+
+      await Promise.all(updatePromises);
+
+      const fromNumber = activeNumbers[0].phone_number;
+       tasks;
+      const headers = {
+        Authorization: "Bearer key_a4523fdb9feeb6f6c37e5e888aa9",
+        "Content-Type": "application/json",
+      };
+
+      const batchResponse = await axios.post(
+        "https://api.retellai.com/create-batch-call",
+        { from_number: fromNumber, tasks },
+        { headers }
+      );
+
+      return { result: true, message: "Batch calling started successfully", data: batchResponse.data };
+    } catch (error: any) {
+      console.error("Error starting batch calling:", error.response?.data || error.message);
+      return { result: false, message: "Failed to start batch calling", error: error.response?.data || error.message };
+    }
+  }
+
   public async getCRMData(
   verifyUser: any,
   pageSize: number,
@@ -137,7 +208,7 @@ export class CRMDataService {
 
   // 4️⃣ Call the static RetellAI batch function
   if (tasks.length > 0) {
-    retellResponse = await CRMDataService.createBatchCall(tasks);
+    retellResponse = await CRMDataService.startBatchCalling(tasks);
   }
 
   // 5️⃣ Attach RetellAI response into each CRM record (optional)

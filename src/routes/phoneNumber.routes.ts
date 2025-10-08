@@ -4,6 +4,9 @@ import { PhoneNumberController } from "../controllers/phoneNumber.controller";
 
 const router = express.Router();
 
-router.get("/get-allphonenumbers", verifyAccessToken, PhoneNumberController.getPhoneNumbers);
+router.post("/update-phonenumbersfrom-retell", verifyAccessToken, PhoneNumberController.saveSelectedPhoneNumber);
+
+
+router.get("/get-allphonenumbersfrom-retell", verifyAccessToken, PhoneNumberController.getPhoneNumbers);
 
 export default router;

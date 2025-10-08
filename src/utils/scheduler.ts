@@ -110,7 +110,7 @@ export class CallScheduler {
                 },
               };
 
-              const retellResponse = await CRMDataService.createBatchCall([task]);
+              const retellResponse = await CRMDataService.startBatchCalling([task]);
 
               // Save history after RetellAI call
               const historyRecord = historyRepo.create({
