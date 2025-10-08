@@ -44,6 +44,7 @@ app.use(cookieParser());
 
 const allowedOrigins = [
     'http://localhost:4173',
+    'http://localhost:5173',
     'https://admin.trakify.in',
     'https://devadmin.trakify.in',
     'http://localhost:3003',
