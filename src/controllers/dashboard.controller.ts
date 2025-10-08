@@ -27,7 +27,7 @@ export class DashboardController {
   // Number of calls
   static async numberOfCalls(req: Request, res: Response) {
     try {
-      const months = Number(req.body.month) || 6;
+      const months = Number(req.body.months) || 6;
       const data = await DashboardService.getNumberOfCalls(months);
       DashboardController.sendSuccess(res, "Number of calls fetched successfully", data, 200);
     } catch (error) {
@@ -37,7 +37,7 @@ export class DashboardController {
   // Leads
   static async leads(req: Request, res: Response) {
     try {
-      const months = Number(req.body.month) || 6;
+      const months = Number(req.body.months) || 6;
       const data = await DashboardService.getLeads(months);
       DashboardController.sendSuccess(res, "Leads fetched successfully", data, 200);
     } catch (error) {
