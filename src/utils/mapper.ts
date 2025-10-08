@@ -1,5 +1,6 @@
-export const mapCallOutputData = async (reqBody: any) => {
-  const { event, call,appointment_date, appointment_time, booking_status, calendly_booking_url } = reqBody;
+export const mapCallOutputData = async (raw: any,reqBody: any) => {
+  const { event, call} = raw;
+  const { appointment_date, appointment_time, booking_status, calendly_booking_url } = reqBody;
 
   return {
     event: event || "",
