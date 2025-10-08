@@ -95,7 +95,6 @@ static async getAgentsActive(): Promise<any> {
     Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
     "Content-Type": "application/json",
   };
-
   try {
     // 1️⃣ Fetch all agents from RetellAI
     const response = await axios.get(url, { headers });
