@@ -48,7 +48,7 @@ export class DashboardController {
   // Call performance
   static async callPerformance(req: Request, res: Response) {
     try {
-      const months = Number(req.body.month) || 6;
+      const months = Number(req.body.months) || 6;
       const data = await DashboardService.getCallPerformance(months);
       DashboardController.sendSuccess(res, "Call performance fetched successfully", data, 200);
     } catch (error) {

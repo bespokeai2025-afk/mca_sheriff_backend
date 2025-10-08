@@ -15,7 +15,7 @@ export class DashboardService {
     return monthList;
   }
  // Total Call Minutes month-wise
- static async getTotalCallMinutes(months: number = 6) {
+ static async getTotalCallMinutes(months: number) {
   // Step 1: Query total duration in milliseconds per month
   const rawResult: { month_number: number; year: number; total_ms: number }[] =
     await AppDataSource.query(`
