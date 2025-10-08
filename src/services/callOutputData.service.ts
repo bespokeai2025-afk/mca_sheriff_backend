@@ -86,7 +86,149 @@ export class callOutputDataService {
       pageSize
     });
   }
-  static async getUsercallingHistory(
+//   static async getUsercallingHistory(
+//   from_date?: string,
+//   to_date?: string,
+//   from_time: string = "00:00:00",
+//   to_time: string = "23:59:59",
+//   page: number = 1,
+//   pageSize: number = DEFAULT_PAGE_SIZE,
+//   toNumber?: string,
+//   status?: "completed" | "ongoing"
+// ) {
+//   try {
+//     let query = AppDataSource.getRepository(CallOutputData)
+//       .createQueryBuilder("call")
+//       .leftJoin(CRMData, "crm", "crm.id = call.crm_data_id")
+//       .andWhere('call."isActive" = TRUE')
+//       .andWhere('call."isDeleted" = FALSE')
+//       .andWhere('crm."isActive" = TRUE')
+//       .andWhere('crm."isDeleted" = FALSE');
+
+//     // ✅ Apply date filter only if provided
+//     if (from_date && to_date) {
+//       const startTimestamp = new Date(`${from_date}T${from_time}`);
+//       const endTimestamp = new Date(`${to_date}T${to_time}`);
+
+//       query.andWhere('call."updatedAt" BETWEEN :start AND :end', {
+//         start: startTimestamp,
+//         end: endTimestamp,
+//       });
+//     }
+// // ✅ Status filter
+// if (status === "completed") {
+//   query.andWhere(
+//     'call."event" = :eventCompleted AND call."call_status" = :ended',
+//     { eventCompleted: "call_analyzed", ended: "ended" }
+//   );
+// } else if (status === "ongoing") {
+//   query.andWhere(
+//     'call."event" = :eventOngoing AND call."call_status" = :ongoing',
+//     { eventOngoing: "call_started", ongoing: "ongoing" }
+//   );
+// } else if (status === "yet_to_call") {
+//   query.andWhere(
+//     'call."event" = :eventCompleted AND call."call_status" = :yetToCall',
+//     { eventCompleted: "call_analyzed", yetToCall: "yet_to_call" }
+//   );
+// } else if (status === "not_connected") {
+//   query.andWhere(
+//     'call."event" = :eventCompleted AND call."call_status" = :notConnected',
+//     { eventCompleted: "call_analyzed", notConnected: "not_connected" }
+//   );
+// } else {
+//   // ✅ All statuses
+//   query.andWhere(
+//     `( (call."event" = :eventCompleted AND call."call_status" = :ended) OR 
+//        (call."event" = :eventOngoing AND call."call_status" = :ongoing) OR
+//        (call."event" = :eventCompleted AND call."call_status" = :notConnected) OR
+//        (call."event" = :eventCompleted AND call."call_status" = :yetToCall) )`,
+//     {
+//       eventCompleted: "call_analyzed",
+//       ended: "ended",
+//       eventOngoing: "call_started",
+//       ongoing: "ongoing",
+//       notConnected: "not_connected",
+//       yetToCall: "yet_to_call",
+//     }
+//   );
+// }
+
+//     // ✅ ToNumber filter
+//     if (toNumber) {
+//       const normalizedNumber = toNumber.replace(/\s+/g, "");
+//       query.andWhere('call."to_number" ILIKE :toNumber', {
+//         toNumber: `%${normalizedNumber}%`,
+//       });
+//     }
+
+//     // ✅ Clone for count (without pagination)
+//     const totalQuery = query.clone();
+//     const totalItems = await totalQuery.getCount();
+
+//     query
+//       .select([
+//         'call.id AS call_id',
+//         'call."to_number" AS to_number',
+//         'crm.name AS customer_name',
+//         'call."call_status" AS call_status',
+//         'call.recording_url',
+//         'call.duration_ms',
+//         'call."disconnection_reason" AS disconnection_reason',
+//          'call."transcript"',
+//         'call."end_reason"',
+//         'call."disconnection_reason"',
+//         'call."updatedAt" AS call_updatedAt',
+//         'call.event AS event',
+//       ])
+//       // .distinct(true)
+//       .orderBy('call."updatedAt"', "DESC")
+//       .skip((page - 1) * pageSize)
+//       .take(pageSize);
+
+//     const calls = await query.getRawMany();
+
+//     const formattedCalls = calls.map((call) => {
+//       const ms = Number(call.duration_ms) || 0;
+//       const totalSeconds = Math.floor(ms / 1000);
+//       const minutes = Math.floor(totalSeconds / 60);
+//       const seconds = totalSeconds % 60;
+
+//       return {
+//         ...call,
+//         duration: `${minutes}:${seconds.toString().padStart(2, "0")}`,
+//         status:
+//           call.event === "call_analyzed" && call.call_status === "ended"
+//             ? "Completed"
+//             : call.event === "call_started" && call.call_status === "ongoing"
+//             ? "Ongoing"
+//             : "Unknown",
+//       };
+//     });
+
+//     return {
+//       result: true,
+//       statuscode: 200,
+//       message: "Filtered call data fetched successfully!",
+//       data: formattedCalls,
+//       pagination: {
+//         totalItems,
+//         totalPages: Math.ceil(totalItems / pageSize),
+//         currentPage: page,
+//         pageSize,
+//       },
+//     };
+//   } catch (error: any) {
+//     return {
+//       result: false,
+//       statuscode: 500,
+//       message: "Something went wrong while fetching call data.",
+//       error: error.message,
+//     };
+//   }
+//   }
+
+static async getUsercallingHistory(
   from_date?: string,
   to_date?: string,
   from_time: string = "00:00:00",
@@ -94,9 +236,10 @@ export class callOutputDataService {
   page: number = 1,
   pageSize: number = DEFAULT_PAGE_SIZE,
   toNumber?: string,
-  status?: "completed" | "ongoing"
+  status?: "completed" | "ongoing" | "yet_to_call" | "not_connected"
 ) {
   try {
+    // Step 1: Base query
     let query = AppDataSource.getRepository(CallOutputData)
       .createQueryBuilder("call")
       .leftJoin(CRMData, "crm", "crm.id = call.crm_data_id")
@@ -105,68 +248,87 @@ export class callOutputDataService {
       .andWhere('crm."isActive" = TRUE')
       .andWhere('crm."isDeleted" = FALSE');
 
-    // ✅ Apply date filter only if provided
+    // Step 2: Date filter
     if (from_date && to_date) {
       const startTimestamp = new Date(`${from_date}T${from_time}`);
       const endTimestamp = new Date(`${to_date}T${to_time}`);
-
       query.andWhere('call."updatedAt" BETWEEN :start AND :end', {
         start: startTimestamp,
         end: endTimestamp,
       });
     }
-// ✅ Status filter
-if (status === "completed") {
-  query.andWhere(
-    'call."event" = :eventCompleted AND call."call_status" = :ended',
-    { eventCompleted: "call_analyzed", ended: "ended" }
-  );
-} else if (status === "ongoing") {
-  query.andWhere(
-    'call."event" = :eventOngoing AND call."call_status" = :ongoing',
-    { eventOngoing: "call_started", ongoing: "ongoing" }
-  );
-} else if (status === "yet_to_call") {
-  query.andWhere(
-    'call."event" = :eventCompleted AND call."call_status" = :yetToCall',
-    { eventCompleted: "call_analyzed", yetToCall: "yet_to_call" }
-  );
-} else if (status === "not_connected") {
-  query.andWhere(
-    'call."event" = :eventCompleted AND call."call_status" = :notConnected',
-    { eventCompleted: "call_analyzed", notConnected: "not_connected" }
-  );
-} else {
-  // ✅ All statuses
-  query.andWhere(
-    `( (call."event" = :eventCompleted AND call."call_status" = :ended) OR 
-       (call."event" = :eventOngoing AND call."call_status" = :ongoing) OR
-       (call."event" = :eventCompleted AND call."call_status" = :notConnected) OR
-       (call."event" = :eventCompleted AND call."call_status" = :yetToCall) )`,
-    {
-      eventCompleted: "call_analyzed",
-      ended: "ended",
-      eventOngoing: "call_started",
-      ongoing: "ongoing",
-      notConnected: "not_connected",
-      yetToCall: "yet_to_call",
-    }
-  );
-}
 
-    // ✅ ToNumber filter
+    // Step 3: Status filter
+    if (status === "completed") {
+      query.andWhere('call."event" = :eventCompleted AND call."call_status" = :ended', {
+        eventCompleted: "call_analyzed",
+        ended: "ended",
+      });
+    } else if (status === "ongoing") {
+      query.andWhere('call."event" = :eventOngoing AND call."call_status" = :ongoing', {
+        eventOngoing: "call_started",
+        ongoing: "ongoing",
+      });
+    } else if (status === "yet_to_call") {
+      query.andWhere('call."event" = :eventCompleted AND call."call_status" = :yetToCall', {
+        eventCompleted: "call_analyzed",
+        yetToCall: "yet_to_call",
+      });
+    } else if (status === "not_connected") {
+      query.andWhere('call."event" = :eventCompleted AND call."call_status" = :notConnected', {
+        eventCompleted: "call_analyzed",
+        notConnected: "not_connected",
+      });
+    } else {
+      // All statuses
+      query.andWhere(
+        `( (call."event" = :eventCompleted AND call."call_status" = :ended) OR 
+           (call."event" = :eventOngoing AND call."call_status" = :ongoing) OR
+           (call."event" = :eventCompleted AND call."call_status" = :notConnected) OR
+           (call."event" = :eventCompleted AND call."call_status" = :yetToCall) )`,
+        {
+          eventCompleted: "call_analyzed",
+          ended: "ended",
+          eventOngoing: "call_started",
+          ongoing: "ongoing",
+          notConnected: "not_connected",
+          yetToCall: "yet_to_call",
+        }
+      );
+    }
+
+    // Step 4: ToNumber filter
     if (toNumber) {
       const normalizedNumber = toNumber.replace(/\s+/g, "");
-      query.andWhere('call."to_number" ILIKE :toNumber', {
-        toNumber: `%${normalizedNumber}%`,
-      });
+      query.andWhere('call."to_number" ILIKE :toNumber', { toNumber: `%${normalizedNumber}%` });
     }
 
-    // ✅ Clone for count (without pagination)
-    const totalQuery = query.clone();
-    const totalItems = await totalQuery.getCount();
+    // Step 5: Get all matching call IDs for correct pagination
+    const allCallIdsRaw = await query.clone().select('call.id AS call_id').getRawMany();
+    const allCallIds = allCallIdsRaw.map(r => r.call_id);
 
-    query
+    // Step 6: Slice for requested page
+    const paginatedIds = allCallIds.slice((page - 1) * pageSize, page * pageSize);
+
+    // Step 7: If no IDs, return empty response
+    if (paginatedIds.length === 0) {
+      return {
+        result: true,
+        statuscode: 200,
+        message: "Filtered call data fetched successfully!",
+        data: [],
+        pagination: {
+          totalItems: allCallIds.length,
+          totalPages: Math.ceil(allCallIds.length / pageSize),
+          currentPage: page,
+          pageSize,
+        },
+      };
+    }
+
+    // Step 8: Fetch full call data for these IDs
+    const callsRaw = await query
+      .andWhere('call.id IN (:...ids)', { ids: paginatedIds })
       .select([
         'call.id AS call_id',
         'call."to_number" AS to_number',
@@ -175,20 +337,16 @@ if (status === "completed") {
         'call.recording_url',
         'call.duration_ms',
         'call."disconnection_reason" AS disconnection_reason',
-         'call."transcript"',
+        'call."transcript"',
         'call."end_reason"',
-        'call."disconnection_reason"',
         'call."updatedAt" AS call_updatedAt',
         'call.event AS event',
       ])
-      // .distinct(true)
       .orderBy('call."updatedAt"', "DESC")
-      .skip((page - 1) * pageSize)
-      .take(pageSize);
+      .getRawMany();
 
-    const calls = await query.getRawMany();
-
-    const formattedCalls = calls.map((call) => {
+    // Step 9: Format duration and status
+    const formattedCalls = callsRaw.map(call => {
       const ms = Number(call.duration_ms) || 0;
       const totalSeconds = Math.floor(ms / 1000);
       const minutes = Math.floor(totalSeconds / 60);
@@ -202,18 +360,23 @@ if (status === "completed") {
             ? "Completed"
             : call.event === "call_started" && call.call_status === "ongoing"
             ? "Ongoing"
+            : call.event === "call_analyzed" && call.call_status === "not_connected"
+            ? "Not Connected"
+            : call.event === "call_analyzed" && call.call_status === "yet_to_call"
+            ? "Yet to Call"
             : "Unknown",
       };
     });
 
+    // Step 10: Return response
     return {
       result: true,
       statuscode: 200,
       message: "Filtered call data fetched successfully!",
       data: formattedCalls,
       pagination: {
-        totalItems,
-        totalPages: Math.ceil(totalItems / pageSize),
+        totalItems: allCallIds.length,
+        totalPages: Math.ceil(allCallIds.length / pageSize),
         currentPage: page,
         pageSize,
       },
@@ -226,7 +389,8 @@ if (status === "completed") {
       error: error.message,
     };
   }
-  }
+}
+
   //Call Status and history
 // public async getUsercallingHistory(
 //   verifyUser: any,
