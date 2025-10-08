@@ -10,7 +10,7 @@ const router = express.Router();
 router.get("/get-leadfiltermaster", verifyAccessToken, getLeadFilters);
 router.get("/get-leadfiltermasterByID/:id", verifyAccessToken, getLeadFilterById);
 
-router.get("/get-DataFromDynamicsQuery", getDataFromDynamicsQuery);
+router.post("/get-DataFromDynamicsQuery", getDataFromDynamicsQuery);
 
 router.post("/update-lead-filter-status/:id", updateLeadFilterStatus);
 export default router;
