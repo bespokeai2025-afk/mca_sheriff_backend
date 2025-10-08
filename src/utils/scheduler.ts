@@ -1,5 +1,6 @@
 // utils/CallScheduler.ts
 import cron from "node-cron";
+import fetch from "node-fetch"; // npm i node-fetch@2
 import { AppDataSource } from "../config/database";
 import { CallFrequencySetting } from "../entities/CallFrequencySetting";
 import { CRMData } from "../entities/CRMData";
@@ -7,11 +8,11 @@ import { ScheduledCallHistory } from "../entities/ScheduledCallHistory";
 import { CRMDataService, RetellTask } from "../services/CRMData.service";
 
 export class CallScheduler {
-  // Track scheduled cron jobs in memory
+  // Track all scheduled cron jobs
   private static scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
 
   /**
-   * Initialize all cron jobs from DB
+   * Initialize all active call frequency settings from DB
    */
   static async initialize() {
     const freqRepo = AppDataSource.getRepository(CallFrequencySetting);
@@ -31,11 +32,11 @@ export class CallScheduler {
    */
   static scheduleFromDB(id: string, cronExpression: string) {
     if (!cron.validate(cronExpression)) {
-      console.warn(`⚠️ Invalid cron expression for ID ${id}: ${cronExpression}`);
+      console.warn(`Invalid cron expression for ID ${id}: ${cronExpression}`);
       return;
     }
 
-    // Stop existing job if it exists
+    // Stop existing job if exists
     if (this.scheduledJobs.has(id)) {
       this.scheduledJobs.get(id)?.stop();
       this.scheduledJobs.delete(id);
@@ -44,15 +45,13 @@ export class CallScheduler {
     const job = cron.schedule(
       cronExpression,
       async () => {
-        const nowIST = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-        console.log(`[${nowIST}] 🔔 Triggering calls for frequency ID ${id}`);
+        const nowUTC = new Date(); // UTC timestamp
+        console.log(`[${nowUTC.toISOString()}] Triggering calls for frequency ID ${id}`);
 
+        const crmRepo = AppDataSource.getRepository(CRMData);
         const historyRepo = AppDataSource.getRepository(ScheduledCallHistory);
-        let historyRecord: ScheduledCallHistory | null = null;
 
         try {
-          const crmRepo = AppDataSource.getRepository(CRMData);
-
           // Fetch only leads that still need to be called
           const leads = await crmRepo.find({ where: { need_to_call: true } });
 
@@ -61,89 +60,113 @@ export class CallScheduler {
             return;
           }
 
-          // Map leads to RetellTask
-          const tasks: RetellTask[] = leads
-            .filter((lead) => lead.mobile_number)
-            .map((lead) => ({
-              to_number: lead.mobile_number.startsWith("+") ? lead.mobile_number : `+${lead.mobile_number}`,
-              retell_llm_dynamic_variables: {
-                name: lead.name || "",
-                lead_id: lead.lead_id || "",
-                unique_id: lead.unique_id || "",
-                greeting: `Hello ${lead.name || "there"}, this is a test call from Retell!`,
-              },
-            }));
+          for (const lead of leads) {
+            // Step 1: Call webhook first
+            console.log(`Calling webhook for lead ${lead.lead_id}...`);
+            let webhookData: any;
 
-          console.log(`📞 Sending ${tasks.length} tasks to RetellAI...`);
+            try {
+              const webhookResponse = await fetch("https://webhook.site/f7a7244b-700a-4bd2-861d-035937fd018c");
+              webhookData = await webhookResponse.json();
+              console.log("Webhook response:", webhookData);
+            } catch (webhookError: any) {
+              console.error(`❌ Webhook failed for lead ${lead.lead_id}:`, webhookError.message);
 
-          // Log history as pending
-          historyRecord = historyRepo.create({
-            frequencySetting: { id } as CallFrequencySetting,
-            executedAt: new Date(),
-            status: "pending",
-          });
-          await historyRepo.save(historyRecord);
-
-          // Call RetellAI
-          const retellResponse = await CRMDataService.createBatchCall(tasks);
-          console.log("✅ RetellAI batch call response:", retellResponse);
-
-          // Mark all called leads as done
-          if (retellResponse) {
-            for (const lead of leads) {
-              lead.need_to_call = false;
-              await crmRepo.save(lead);
+              // Save skipped history
+              const skippedHistory = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: "skipped",
+                webhookResponse: JSON.stringify({ error: webhookError.message }),
+                errorMessage: "Webhook call failed",
+              });
+              await historyRepo.save(skippedHistory);
+              continue; // Skip RetellAI call
             }
 
-            // Update history record
-            historyRecord.status = "success";
-            historyRecord.responseData = JSON.stringify(retellResponse);
-            await historyRepo.save(historyRecord);
+            // Step 2: Skip RetellAI if webhook result is false
+            if (!webhookData?.result) {
+              const skippedHistory = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: "skipped",
+                webhookResponse: JSON.stringify(webhookData),
+                errorMessage: "Webhook returned false",
+              });
+              await historyRepo.save(skippedHistory);
+              console.warn(`Webhook returned false for lead ${lead.lead_id}. Skipping RetellAI.`);
+              continue;
+            }
 
-            console.log(`✅ Marked ${leads.length} leads as called`);
-          } else {
-            console.warn("⚠️ RetellAI response null – leads not updated");
-            historyRecord.status = "failed";
-            historyRecord.errorMessage = "RetellAI returned null";
-            await historyRepo.save(historyRecord);
+            // Step 3: Call RetellAI only if webhook succeeds
+            try {
+              const task: RetellTask = {
+                to_number: lead.mobile_number.startsWith("+") ? lead.mobile_number : `+${lead.mobile_number}`,
+                retell_llm_dynamic_variables: {
+                  name: lead.name || "",
+                  lead_id: lead.lead_id || "",
+                  unique_id: lead.unique_id || "",
+                  greeting: `Hello ${lead.name || "there"}, this is a test call from Retell!`,
+                },
+              };
+
+              const retellResponse = await CRMDataService.createBatchCall([task]);
+
+              // Save history after RetellAI call
+              const historyRecord = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: retellResponse ? "success" : "failed",
+                webhookResponse: JSON.stringify(webhookData),
+                responseData: JSON.stringify(retellResponse),
+                errorMessage: retellResponse ? undefined : "RetellAI call failed", // ✅ use undefined
+              });
+              await historyRepo.save(historyRecord);
+
+              // Mark lead as called if successful
+              if (retellResponse) {
+                lead.need_to_call = false;
+                await crmRepo.save(lead);
+                console.log(`✅ Lead ${lead.lead_id} marked as called`);
+              }
+
+            } catch (retellError: any) {
+              console.error(`❌ RetellAI failed for lead ${lead.lead_id}:`, retellError.message);
+              const historyRecord = historyRepo.create({
+                frequencySetting: { id } as CallFrequencySetting,
+                executedAt: nowUTC,
+                status: "failed",
+                webhookResponse: JSON.stringify(webhookData),
+                errorMessage: retellError.message,
+              });
+              await historyRepo.save(historyRecord);
+            }
           }
+
+          console.log(`✅ Completed all leads for frequency ID ${id}`);
         } catch (error: any) {
-          console.error("❌ Error running scheduled calls:", error?.response?.data || error.message);
-          if (historyRecord) {
-            historyRecord.status = "failed";
-            historyRecord.errorMessage = error?.response?.data ? JSON.stringify(error.response.data) : error.message;
-            await historyRepo.save(historyRecord);
-          }
+          console.error("❌ Error fetching leads:", error.message);
         }
-
-        console.log(`✅ Completed calls for frequency ID ${id}`);
       },
-      { timezone: "Asia/Kolkata" }
+      { timezone: "UTC" } //  Run cron in UTC
     );
 
-    // Store the scheduled job
     this.scheduledJobs.set(id, job);
-    console.log(`✅ Scheduled frequency ID ${id} with cron: ${cronExpression} (IST)`);
+    console.log(`Scheduled frequency ID ${id} with cron: ${cronExpression} (UTC)`);
   }
 
-  /**
-   * Stop a scheduled job by ID
-   */
   static stopJob(id: string) {
     if (this.scheduledJobs.has(id)) {
       this.scheduledJobs.get(id)?.stop();
       this.scheduledJobs.delete(id);
-      console.log(`🛑 Stopped scheduled job for frequency ID ${id}`);
+      console.log(`Stopped scheduled job for frequency ID ${id}`);
     }
   }
 
-  /**
-   * Stop all scheduled jobs
-   */
   static stopAllJobs() {
     for (const [id, job] of this.scheduledJobs) {
       job.stop();
-      console.log(`🛑 Stopped scheduled job for frequency ID ${id}`);
+      console.log(`Stopped scheduled job for frequency ID ${id}`);
     }
     this.scheduledJobs.clear();
   }

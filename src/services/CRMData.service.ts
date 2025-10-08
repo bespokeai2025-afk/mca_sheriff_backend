@@ -11,7 +11,6 @@ import axios from "axios";
 import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
-import { v4 as uuidv4 } from "uuid";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
 
 // interface RetellTask {
@@ -28,6 +27,7 @@ export interface RetellTask {
   to_number: string;
   retell_llm_dynamic_variables?: {
     name?: string;
+    client_name?: string;
     lead_id?: string;
     unique_id?: string;
     greeting?: string;
@@ -37,6 +37,7 @@ export interface RetellTask {
 export class CRMDataService {
   // Repository for CMR Data database operations
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
+
   static async createBatchCall(tasks: RetellTask[]) {
     if (tasks.length === 0) return null;
 
@@ -111,6 +112,7 @@ export class CRMDataService {
     .filter((crm: any) => crm.mobile_number)
     .map((crm: any) => {
       const name = crm.name ?? "";
+      const client_name = crm.client_name ?? "";
       const leadId = crm.lead_id ? String(crm.lead_id) : "";
       const uniqueId = crm.unique_id ? String(crm.unique_id) : "";
 
@@ -125,6 +127,7 @@ export class CRMDataService {
         to_number: crm.mobile_number,
         retell_llm_dynamic_variables: {
           name,
+          client_name,
           lead_id: leadId,
           unique_id: uniqueId,
           greeting: `Hello, ${name}, ${leadId}, ${uniqueId} this is a test call from Retell!`,
@@ -331,68 +334,140 @@ export class CRMDataService {
       );
     }
   }
-  public async createCRMDataWithoutAuth(DataArray: object[]) {
-    try {
-      const insertedRecords: any[] = [];
-      const skippedLeadIds: string[] = [];
+  // public async createCRMDataWithoutAuth(DataArray: object[]) {
+  //   try {
+  //     const insertedRecords: any[] = [];
+  //     const skippedLeadIds: string[] = [];
 
-      for (const rawData of DataArray) {
+  //     for (const rawData of DataArray) {
+  //       const mappedData = mapIncomingCRMData(rawData);
+
+  //       const existingRecord = await this.CRMDataRepository.findOne({
+  //         where: { lead_id: mappedData.lead_id },
+  //       });
+
+  //       if (existingRecord) {
+  //         skippedLeadIds.push(mappedData.lead_id);
+  //         console.log(`Skipping existing lead_id: ${mappedData.lead_id}`);
+  //         continue;
+  //       }
+
+  //       const newCRMData = this.CRMDataRepository.create(mappedData);
+  //       const savedRecord = await this.CRMDataRepository.save(newCRMData);
+  //       insertedRecords.push(savedRecord);
+
+  //       const callOutputRepository =
+  //         AppDataSource.getRepository(CallOutputData);
+  //       const callOutput = callOutputRepository.create({
+  //         crmData: savedRecord,
+  //         name: savedRecord.name,
+  //         toNumber: savedRecord.mobile_number,
+  //         lead_id: savedRecord.lead_id,
+  //         callStatus: "net_to_call",
+  //       });
+  //       await callOutputRepository.save(callOutput);
+  //     }
+
+  //     // Always return result: true
+  //     return {
+  //       result: true,
+  //       statuscode: 200,
+  //       message:
+  //         insertedRecords.length > 0
+  //           ? "CRM data created successfully"
+  //           : "No new CRM data created (all lead_id already exist)",
+  //       data: {
+  //         insertedRecords,
+  //         skippedLeadIds,
+  //       },
+  //     };
+  //   } catch (error) {
+  //     console.error("Error creating CRM data:", error);
+  //     return errorWithData("Something went wrong", error);
+  //   }
+  // }
+public async createCRMDataWithoutAuth(DataArray: object[]) {
+  try {
+    const insertedRecords: any[] = [];
+    const updatedRecords: any[] = [];
+    const failedRecords: any[] = [];
+
+    const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+
+    for (const rawData of DataArray) {
+      try {
         const mappedData = mapIncomingCRMData(rawData);
 
+        // Check if lead_id already exists
         const existingRecord = await this.CRMDataRepository.findOne({
           where: { lead_id: mappedData.lead_id },
         });
 
         if (existingRecord) {
-          skippedLeadIds.push(mappedData.lead_id);
-          console.log(`Skipping existing lead_id: ${mappedData.lead_id}`);
-          continue;
+          // ✅ Update existing record
+          await this.CRMDataRepository.update(existingRecord.id, mappedData);
+          const updatedRecord = await this.CRMDataRepository.findOne({
+            where: { id: existingRecord.id },
+          });
+          if (updatedRecord) updatedRecords.push(updatedRecord);
+          console.log(`Updated existing lead_id: ${mappedData.lead_id}`);
+        } else {
+          // ✅ Insert new record
+          const newCRMData = this.CRMDataRepository.create(mappedData);
+          const savedRecord = await this.CRMDataRepository.save(newCRMData);
+          insertedRecords.push(savedRecord);
+
+          // Create call output entry
+          const callOutput = callOutputRepository.create({
+            crmData: savedRecord,
+            name: savedRecord.name,
+            toNumber: savedRecord.mobile_number,
+            lead_id: savedRecord.lead_id,
+            callStatus: "need_to_call",
+          });
+          await callOutputRepository.save(callOutput);
         }
-
-        const newCRMData = this.CRMDataRepository.create(mappedData);
-        const savedRecord = await this.CRMDataRepository.save(newCRMData);
-        insertedRecords.push(savedRecord);
-
-        const callOutputRepository =
-          AppDataSource.getRepository(CallOutputData);
-        const callOutput = callOutputRepository.create({
-          crmData: savedRecord,
-          name: savedRecord.name,
-          toNumber: savedRecord.mobile_number,
-          lead_id: savedRecord.lead_id,
-          callStatus: "net_to_call",
-        });
-        await callOutputRepository.save(callOutput);
+      } catch (innerError: unknown) {
+        // ✅ Safely handle unknown error type
+        const errorMessage =
+          innerError instanceof Error ? innerError.message : String(innerError);
+        console.error("Error processing record:", errorMessage);
+        failedRecords.push({ rawData, error: errorMessage });
       }
-
-      // Always return result: true
-      return {
-        result: true,
-        statuscode: 200,
-        message:
-          insertedRecords.length > 0
-            ? "CRM data created successfully"
-            : "No new CRM data created (all lead_id already exist)",
-        data: {
-          insertedRecords,
-          skippedLeadIds,
-        },
-      };
-    } catch (error) {
-      console.error("Error creating CRM data:", error);
-      return errorWithData("Something went wrong", error);
     }
+
+    return {
+      result: true,
+      statuscode: 200,
+      message: `CRM data processed successfully`,
+      data: {
+        insertedCount: insertedRecords.length,
+        updatedCount: updatedRecords.length,
+        failedCount: failedRecords.length,
+        insertedRecords,
+        updatedRecords,
+        failedRecords,
+      },
+    };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error creating/updating CRM data:", errorMessage);
+    return errorWithData("Something went wrong", errorMessage);
   }
-  public static async insertCRMData(dataArray: any[], fileName: string) {
-    const crmRepository = AppDataSource.getRepository(CRMData);
-    const callOutputRepository = AppDataSource.getRepository(CallOutputData);
-    const historyRepository = AppDataSource.getRepository(ExcelHistory);
+}
+public static async insertCRMData(dataArray: any[], fileName: string) {
+  const crmRepository = AppDataSource.getRepository(CRMData);
+  const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+  const historyRepository = AppDataSource.getRepository(ExcelHistory);
 
-    const insertedRecords: CRMData[] = [];
-    const skippedLeadIds: string[] = [];
-    let failCount = 0;
+  const insertedRecords: CRMData[] = [];
+  const updatedRecords: CRMData[] = [];
+  const failedRecords: any[] = [];
 
-    for (const item of dataArray) {
+  let failCount = 0;
+
+  for (const item of dataArray) {
+    try {
       const now = new Date();
       const email = (item.emailaddress1 || "").toLowerCase();
       const mobile = item.mobilephone || "";
@@ -413,73 +488,90 @@ export class CRMDataService {
         .getSeconds()
         .toString()
         .padStart(2, "0")}${now.getMilliseconds().toString().padStart(3, "0")}`;
-      const randomPart = uuidv4().split("-")[0];
-      const leadId = item.leadid || `${timestampPart}-${randomPart}`;
+      
+      const leadId = item.leadid || `${timestampPart}`;
 
-      // Skip if lead_id already exists
-      const existing = await crmRepository.findOne({
+      // Check if lead_id already exists
+      const existingRecord = await crmRepository.findOne({
         where: { lead_id: leadId },
       });
-      if (existing) {
-        skippedLeadIds.push(existing.lead_id);
-        continue;
+
+      if (existingRecord) {
+        // ✅ Update existing record
+        const updatedData = mapIncomingCRMData({
+          ...existingRecord,
+          ...item,
+          email,
+          mobile_number: mobile,
+        });
+
+        await crmRepository.update(existingRecord.id, updatedData);
+
+        const updatedRecord = await crmRepository.findOne({
+          where: { id: existingRecord.id },
+        });
+
+        if (updatedRecord) updatedRecords.push(updatedRecord);
+        console.log(`Updated existing lead_id: ${leadId}`);
+      } else {
+        // ✅ Insert new record
+        const mappedData = mapIncomingCRMData({
+          ...item,
+          email,
+          mobile_number: mobile,
+          lead_id: leadId,
+          unique_id: leadId,
+        });
+
+        const savedRecord = await crmRepository.save(
+          crmRepository.create(mappedData)
+        );
+        insertedRecords.push(savedRecord);
+
+        // Create CallOutputData for each new CRM record
+        const callOutput = callOutputRepository.create({
+          crmData: savedRecord,
+          name: savedRecord.name,
+          toNumber: savedRecord.mobile_number,
+          lead_id: savedRecord.lead_id,
+          callStatus: "need_to_call",
+        });
+        await callOutputRepository.save(callOutput);
+
+        console.log(`Inserted new lead_id: ${leadId}`);
       }
-
-      // Map data to CRMData entity
-      const mappedData = mapIncomingCRMData({
-        ...item,
-        email,
-        mobile_number: mobile,
-        lead_id: leadId,
-        unique_id: uuidv4(),
-        isActive: true,
-        isDeleted: false,
-        need_to_call: true,
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      // Save CRM record
-      const savedRecord = await crmRepository.save(
-        crmRepository.create(mappedData)
-      );
-      insertedRecords.push(savedRecord);
-
-      // Create CallOutputData for each CRM record
-      const callOutput = callOutputRepository.create({
-        crmData: savedRecord,
-        name: savedRecord.name,
-        toNumber: savedRecord.mobile_number,
-        lead_id: savedRecord.lead_id,
-        callStatus: "need_to_call",
-      });
-      await callOutputRepository.save(callOutput);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      failedRecords.push({ item, error: errMsg });
+      failCount++;
+      console.error("Error processing record:", errMsg);
     }
-    const correctCount = insertedRecords.length;
-    // Save Excel history (link to first CRM record if available)
-    const firstRecord = insertedRecords[0];
-    const historyRecord = historyRepository.create({
-      file_name: fileName, // matches entity
-      fail_count: failCount, // number, not string
-      correct_count: correctCount,
-      lead_id: firstRecord?.lead_id, // undefined if no record
-      crm_data: firstRecord, // assign entity or undefined
-      isActive: true,
-      isDeleted: false,
-    });
-    await historyRepository.save(historyRecord);
-
-    return {
-      result: true,
-      statuscode: 200,
-      message:
-        insertedRecords.length > 0
-          ? "CRM data created successfully"
-          : "No new CRM data created (all lead_id already exist)",
-      data: {
-        insertedRecords,
-        skippedLeadIds,
-      },
-    };
   }
+
+  // Save Excel history (link to first CRM record if available)
+  const firstRecord = insertedRecords[0] || updatedRecords[0];
+  const historyRecord = historyRepository.create({
+    file_name: fileName,
+    fail_count: failCount,
+    correct_count: insertedRecords.length + updatedRecords.length,
+    lead_id: firstRecord?.lead_id,
+    crm_data: firstRecord,
+  });
+  await historyRepository.save(historyRecord);
+
+  return {
+    result: true,
+    statuscode: 200,
+    message: "CRM data processed successfully",
+    data: {
+      insertedCount: insertedRecords.length,
+      updatedCount: updatedRecords.length,
+      failedCount: failCount,
+      insertedRecords,
+      updatedRecords,
+      failedRecords,
+    },
+  };
+}
+
 }

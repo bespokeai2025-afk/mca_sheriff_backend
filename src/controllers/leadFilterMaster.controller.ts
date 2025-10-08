@@ -81,3 +81,28 @@ export const deleteLeadFilter = async (req: Request, res: Response): Promise<any
     return res.status(500).json(response);
   }
 };
+
+export const updateLeadFilterStatus = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = req.params.id;
+    const data = req.body; // expected: { query, new_currentstatus, ...other master fields }
+
+    const response = await leadFilterService.updateLeadFilterStatus(id, data);
+
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    const response = errorWithData("Something went wrong while updating lead filter", { error });
+    return res.status(500).json(response);
+  }
+};
+
+
+export const getDataFromDynamicsQuery = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const response = await leadFilterService.getDataFromDynamicsQuery();
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    const response = errorWithData("Something went wrong while fetching the query", { error });
+    return res.status(500).json(response);
+  }
+};

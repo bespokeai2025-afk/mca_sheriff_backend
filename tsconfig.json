@@ -16,5 +16,5 @@
   "include": [
     "src/**/*.ts",
      "src/views"
-, "src/routes/callOutputDataUser.routes.ts"  ]
+, "src/routes/callOutputDataUser.routes.ts", "src/types/**/*"  ]
 }
