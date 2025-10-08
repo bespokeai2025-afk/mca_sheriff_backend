@@ -181,7 +181,7 @@ if (status === "completed") {
         'call."updatedAt" AS call_updatedAt',
         'call.event AS event',
       ])
-      .distinct(true)
+      // .distinct(true)
       .orderBy('call."updatedAt"', "DESC")
       .skip((page - 1) * pageSize)
       .take(pageSize);
