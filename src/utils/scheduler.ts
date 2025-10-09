@@ -26,6 +26,26 @@ export class CallScheduler {
       }
     }
   }
+
+  static getLocalTime(timeZone: string): string {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    return formatter.format(new Date());
+  } catch (error) {
+    console.warn(`Invalid timezone "${timeZone}", falling back to UTC`);
+    return new Date().toISOString();
+  }
+}
+
   
   /**
    * Schedule a single cron job from DB
@@ -38,12 +58,14 @@ export class CallScheduler {
     }
 
     const nowUTC = new Date(); // UTC timestamp
-    const nowLocal = nowUTC.toLocaleString(); // Local time string
+    // const nowLocal = nowUTC.toLocaleString(); // Local time string
+    const nowLocal = this.getLocalTime(timeZone);
+
 
     console.log(`\n⏰ Cron triggered for frequency ID ${id}`);
     console.log(`- Current UTC time  : ${nowUTC.toISOString()}`);
     console.log(`- Current Local time: ${nowLocal}`);
-    
+
     // Stop existing job if exists
     if (this.scheduledJobs.has(id)) {
       this.scheduledJobs.get(id)?.stop();
