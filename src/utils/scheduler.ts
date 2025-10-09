@@ -6,7 +6,7 @@ import { CallFrequencySetting } from "../entities/CallFrequencySetting";
 import { CRMData } from "../entities/CRMData";
 import { ScheduledCallHistory } from "../entities/ScheduledCallHistory";
 import { CRMDataService, RetellTask } from "../services/CRMData.service";
-
+import { CallOutputData } from "../entities/CallOutputData";
 export class CallScheduler {
   // Track all scheduled cron jobs
   private static scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
@@ -50,7 +50,7 @@ export class CallScheduler {
 
         const crmRepo = AppDataSource.getRepository(CRMData);
         const historyRepo = AppDataSource.getRepository(ScheduledCallHistory);
-
+        const callDataRepo = AppDataSource.getRepository(CallOutputData);
         try {
           // Fetch only leads that still need to be called
           const leads = await crmRepo.find({ where: { need_to_call: true } });
@@ -119,19 +119,34 @@ export class CallScheduler {
                 status: retellResponse ? "success" : "failed",
                 webhookResponse: JSON.stringify(webhookData),
                 responseData: JSON.stringify(retellResponse),
-                errorMessage: retellResponse ? undefined : "RetellAI call failed", // ✅ use undefined
+                errorMessage: retellResponse ? undefined : "RetellAI call failed", // use undefined
               });
               await historyRepo.save(historyRecord);
 
               // Mark lead as called if successful
+              // if (retellResponse) {
+              //   lead.need_to_call = false;
+              //   await crmRepo.save(lead);
+              //   console.log(`Lead ${lead.lead_id} marked as called`);
+              // }
               if (retellResponse) {
-                lead.need_to_call = false;
-                await crmRepo.save(lead);
-                console.log(`✅ Lead ${lead.lead_id} marked as called`);
+                const callData = await callDataRepo.findOne({
+                  where: { lead_id: lead.lead_id }, // use actual entity column
+                  order: { createdAt: "DESC" },
+                });
+                if (callData?.callStatus !== "not_connected") {
+                  lead.need_to_call = false;
+                  await crmRepo.save(lead);
+                  console.log(`Lead ${lead.lead_id} marked as called`);
+                } else {
+                  console.warn(
+                    `Lead ${lead.lead_id} call not connected (status: ${callData?.callStatus}), keeping need_to_call = true`
+                  );
+                }
               }
 
             } catch (retellError: any) {
-              console.error(`❌ RetellAI failed for lead ${lead.lead_id}:`, retellError.message);
+              console.error(`RetellAI failed for lead ${lead.lead_id}:`, retellError.message);
               const historyRecord = historyRepo.create({
                 frequencySetting: { id } as CallFrequencySetting,
                 executedAt: nowUTC,
