@@ -129,9 +129,9 @@ export class CRMDataService {
       await Promise.all(updatePromises);
 
       const fromNumber = activeNumbers[0].phone_number;
-       tasks;
+      tasks;
       const headers = {
-        Authorization: "Bearer key_a4523fdb9feeb6f6c37e5e888aa9",
+        Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
         "Content-Type": "application/json",
       };
 

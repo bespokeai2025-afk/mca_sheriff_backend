@@ -24,7 +24,7 @@ export class PhoneNumberService {
   static async getPhoneNumbers(): Promise<any> {
   const url = "https://api.retellai.com/list-phone-numbers";
   const headers = {
-    Authorization: "Bearer key_a4523fdb9feeb6f6c37e5e888aa9",
+    Authorization:  `Bearer ${process.env.API_KEY_RETELL}`,
     "Content-Type": "application/json",
   };
 
