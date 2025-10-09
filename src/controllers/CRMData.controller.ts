@@ -32,6 +32,9 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
+
+
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
   try {
     // Authentication check
