@@ -19,19 +19,21 @@ export class CallScheduler {
     const settings = await freqRepo.find({ where: { isDeleted: false, isActive: true } });
 
     console.log(`🔁 Found ${settings.length} active call frequency settings`);
-
+    
     for (const setting of settings) {
       if (setting.call_frequency_setting) {
         this.scheduleFromDB(setting.id, setting.call_frequency_setting, setting.timeZone);
       }
     }
   }
-
+  
   /**
    * Schedule a single cron job from DB
    */
   static scheduleFromDB(id: string, cronExpression: string, timeZone: string) {
     if (!cron.validate(cronExpression)) {
+    console.log("timeZone=====>", timeZone);
+
       console.warn(`Invalid cron expression for ID ${id}: ${cronExpression}`);
       return;
     }
