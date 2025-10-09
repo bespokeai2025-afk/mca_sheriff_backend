@@ -134,25 +134,16 @@ export class CallScheduler {
                   where: { lead_id: lead.lead_id }, // use actual entity column
                   order: { createdAt: "DESC" },
                 });
-                  if (callData && callData.updatedAt > lead.updatedAt) {
-                    // Latest call data is newer than lead record -> mark as called
-                    lead.need_to_call = false;
-                    await crmRepo.save(lead);
-                    console.log(`✅ Lead ${lead.lead_id} marked as called (updatedAt check)`);
-                  } else {
-                    console.warn(
-                      `❌ Lead ${lead.lead_id} not updated yet (callData.updatedAt: ${callData?.updatedAt}, lead.updatedAt: ${lead.updatedAt})`
-                    );
-                  }
-                // if (callData?.callStatus !== "not_connected") {
-                //   lead.need_to_call = false;
-                //   await crmRepo.save(lead);
-                //   console.log(`Lead ${lead.lead_id} marked as called`);
-                // } else {
-                //   console.warn(
-                //     `Lead ${lead.lead_id} call not connected (status: ${callData?.callStatus}), keeping need_to_call = true`
-                //   );
-                // }
+                
+                if (callData?.disconnectionReason !== "dial_no_answer") {
+                  lead.need_to_call = false;
+                  await crmRepo.save(lead);
+                  console.log(`Lead ${lead.lead_id} marked as called`);
+                } else {
+                  console.warn(
+                    `Lead ${lead.lead_id} call not connected (status: ${callData?.disconnectionReason}), keeping need_to_call = true`
+                  );
+                }
               }
 
             } catch (retellError: any) {
