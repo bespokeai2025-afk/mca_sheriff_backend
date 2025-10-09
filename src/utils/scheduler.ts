@@ -135,7 +135,7 @@ export class CallScheduler {
                   order: { createdAt: "DESC" },
                 });
                 
-                if (callData?.disconnectionReason !== "dial_no_answer") {
+                if (callData?.durationMs !== null) {
                   lead.need_to_call = false;
                   await crmRepo.save(lead);
                   console.log(`Lead ${lead.lead_id} marked as called`);
