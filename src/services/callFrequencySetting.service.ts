@@ -69,20 +69,37 @@ export class CallFrequencySettingService {
     const existing = await this.repo.findOne({ where: { id } });
 
 
-     const options = {
-        tz: data.timeZone,
-      };
+    //  const options = {
+    //     tz: data.timeZone,
+    //   };
 
-      // Parse the cron expression
-      const interval = parser.parseExpression(data.call_frequency_setting, options);
+    //   // Parse the cron expression
+    //   const interval = parser.parseExpression(data.call_frequency_setting, options);
 
-      // Get next run as Date
-      const nextDate = interval.next().toDate();
+    //   // Get next run as Date
+    //   const nextDate = interval.next().toDate();
 
-      // Convert to desired timezone using luxon
-      const nextInTZ = DateTime.fromJSDate(nextDate).setZone(data.timeZone);
+    //   // Convert to desired timezone using luxon
+    //   const nextInTZ = DateTime.fromJSDate(nextDate).setZone(data.timeZone);
 
-      const timeConvertedCronExpression =  nextInTZ.toFormat("yyyy-MM-dd HH:mm:ss ZZZZ");
+    //   const timeConvertedCronExpression =  nextInTZ.toFormat("yyyy-MM-dd HH:mm:ss ZZZZ");
+
+
+    const [min, hour, day, month, weekday] = data.call_frequency_setting.split(" ");
+
+    // Use an arbitrary date to perform conversion (the day/month/weekday don't matter)
+    const originalTime = DateTime.fromObject(
+      { hour: parseInt(hour), minute: parseInt(min) },
+      { zone: "UTC" }
+    );
+
+    const convertedTime = originalTime.setZone(data.timeZone);
+
+    const newMin = convertedTime.minute;
+    const newHour = convertedTime.hour;
+
+    const timeConvertedCronExpression =   `${newMin} ${newHour} ${day} ${month} ${weekday}`;
+
 
 
 
