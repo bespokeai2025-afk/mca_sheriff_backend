@@ -7,6 +7,7 @@ interface CallFrequencyInput {
   // selected_days?: string[];
   // selected_weeks?: string[];
   call_frequency_setting: string;
+  timeZone: string;
 }
 
 export class CallFrequencySettingService {
@@ -44,6 +45,7 @@ export class CallFrequencySettingService {
       // selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
       // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
       call_frequency_setting: data.call_frequency_setting, // use user input directly
+      timeZone: data.timeZone, // use user input directly
     });
 
     return await this.repo.save(entity);
@@ -67,6 +69,7 @@ export class CallFrequencySettingService {
     // existing.selected_days = data.selected_days ? JSON.stringify(data.selected_days) : existing.selected_days;
     // existing.selected_weeks = data.selected_weeks ? JSON.stringify(data.selected_weeks) : existing.selected_weeks;
     existing.call_frequency_setting = data.call_frequency_setting;
+    existing.timeZone = data.timeZone;
 
     return await this.repo.save(existing);
   }
