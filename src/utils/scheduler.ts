@@ -134,7 +134,7 @@ export class CallScheduler {
                   where: { lead_id: lead.lead_id }, // use actual entity column
                   order: { createdAt: "DESC" },
                 });
-                if (callData?.callStatus === "connected") {
+                if (callData?.callStatus !== "not_connected") {
                   lead.need_to_call = false;
                   await crmRepo.save(lead);
                   console.log(`Lead ${lead.lead_id} marked as called`);
