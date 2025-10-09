@@ -19,25 +19,23 @@ export class CallScheduler {
     const settings = await freqRepo.find({ where: { isDeleted: false, isActive: true } });
 
     console.log(`🔁 Found ${settings.length} active call frequency settings`);
-    
+
     for (const setting of settings) {
       if (setting.call_frequency_setting) {
-        this.scheduleFromDB(setting.id, setting.call_frequency_setting, setting.timeZone);
+        this.scheduleFromDB(setting.id, setting.call_frequency_setting);
       }
     }
   }
-  
+
   /**
    * Schedule a single cron job from DB
    */
-  static scheduleFromDB(id: string, cronExpression: string, timeZone: string) {
+  static scheduleFromDB(id: string, cronExpression: string) {
     if (!cron.validate(cronExpression)) {
-
       console.warn(`Invalid cron expression for ID ${id}: ${cronExpression}`);
       return;
     }
 
-    
     // Stop existing job if exists
     if (this.scheduledJobs.has(id)) {
       this.scheduledJobs.get(id)?.stop();
@@ -137,13 +135,11 @@ export class CallScheduler {
                   order: { createdAt: "DESC" },
                 });
                 
-                if (callData?.durationMs !== null) {
+                if (callData?.durationMs) {
                   lead.need_to_call = false;
                   await crmRepo.save(lead);
                   console.log(`Lead ${lead.lead_id} marked as called`);
                 } else {
-    console.log("timeZone=====>", timeZone);
-
                   console.warn(
                     `Lead ${lead.lead_id} call not connected (status: ${callData?.disconnectionReason}), keeping need_to_call = true`
                   );
@@ -168,11 +164,10 @@ export class CallScheduler {
           console.error("❌ Error fetching leads:", error.message);
         }
       },
-      { timezone: timeZone } //  Run cron in UTC
+      { timezone: "UTC" } //  Run cron in UTC
     );
 
     this.scheduledJobs.set(id, job);
-    console.log("timeZone=====>", timeZone);
     console.log(`Scheduled frequency ID ${id} with cron: ${cronExpression} (UTC)`);
   }
 
