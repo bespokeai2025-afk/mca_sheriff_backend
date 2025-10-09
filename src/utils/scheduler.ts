@@ -32,7 +32,6 @@ export class CallScheduler {
    */
   static scheduleFromDB(id: string, cronExpression: string, timeZone: string) {
     if (!cron.validate(cronExpression)) {
-    console.log("timeZone=====>", timeZone);
 
       console.warn(`Invalid cron expression for ID ${id}: ${cronExpression}`);
       return;
@@ -170,6 +169,7 @@ export class CallScheduler {
     );
 
     this.scheduledJobs.set(id, job);
+    console.log("timeZone=====>", timeZone);
     console.log(`Scheduled frequency ID ${id} with cron: ${cronExpression} (UTC)`);
   }
 
