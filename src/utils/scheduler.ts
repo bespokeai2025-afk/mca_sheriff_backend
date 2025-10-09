@@ -141,6 +141,8 @@ export class CallScheduler {
                   await crmRepo.save(lead);
                   console.log(`Lead ${lead.lead_id} marked as called`);
                 } else {
+    console.log("timeZone=====>", timeZone);
+
                   console.warn(
                     `Lead ${lead.lead_id} call not connected (status: ${callData?.disconnectionReason}), keeping need_to_call = true`
                   );
