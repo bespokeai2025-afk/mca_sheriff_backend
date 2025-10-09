@@ -133,20 +133,22 @@ export class CRMDataService {
       await Promise.all(updatePromises);
 
 
-      tasks;
+
       const headers = {
         Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
         "Content-Type": "application/json",
       };
-
       const payload = {
-        fromNumber: activeNumbers[0].phone_number,
-        tasks, // <-- stays in the body
+        from_number: process.env.RETELL_FROM_NUMBER,
+        tasks: tasks,
+        retell_llm_dynamic_variables: {
+          greeting: "Hello, this is a test call from Retell!",
+        },
       };
 
       const batchResponse = await axios.post(
         "https://api.retellai.com/create-batch-call",
-         payload ,
+        payload,
         { headers }
       );
 
