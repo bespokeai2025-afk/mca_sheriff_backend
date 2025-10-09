@@ -37,6 +37,13 @@ export class CallScheduler {
       return;
     }
 
+    const nowUTC = new Date(); // UTC timestamp
+    const nowLocal = nowUTC.toLocaleString(); // Local time string
+
+    console.log(`\n⏰ Cron triggered for frequency ID ${id}`);
+    console.log(`- Current UTC time  : ${nowUTC.toISOString()}`);
+    console.log(`- Current Local time: ${nowLocal}`);
+    
     // Stop existing job if exists
     if (this.scheduledJobs.has(id)) {
       this.scheduledJobs.get(id)?.stop();
