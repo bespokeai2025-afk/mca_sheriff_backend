@@ -100,64 +100,139 @@ export class CRMDataService {
 
 
   static async startBatchCalling(tasks: RetellTask[]) {
-    if (tasks.length === 0) return null;
+    if (tasks.length === 0) {
+      console.log("⚠️ No tasks provided to startBatchCalling");
+      return null;
+    }
 
     try {
+      // Step 1️⃣: Fetch active phone numbers
       const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+      console.log("📞 Active numbers in DB:", activeNumbers.map(n => n.phone_number));
+
       if (!activeNumbers.length) {
+        console.warn("❌ No active phone numbers found in DB");
         return { result: false, message: "No active phone numbers found in DB" };
       }
 
+      // Step 2️⃣: Fetch phone numbers from RetellAI
       const retellNumbers = await this.fetchRetellPhoneNumbers();
+      console.log("📲 Retell numbers fetched:", retellNumbers.length);
 
-      const updatePromises: Promise<any>[] = [];
+      // Step 2.1️⃣: Collect unique agent_ids that need names
+      const agentIdsToFetch = new Set<string>();
+      for (const num of retellNumbers) {
+        if (num.outbound_agent_id && !num.outbound_agent_name) {
+          agentIdsToFetch.add(num.outbound_agent_id);
+        }
+      }
+
+      // Step 2.2️⃣: Fetch agent names from RetellAI
+      const agentNameMap = new Map<string, string>();
+      await Promise.all(
+        Array.from(agentIdsToFetch).map(async (agentId) => {
+          try {
+            const agentRes = await axios.get(`https://api.retellai.com/get-agent/${agentId}`, {
+              headers: { Authorization: `Bearer ${process.env.API_KEY_RETELL}` },
+            });
+            const data = agentRes.data || {};
+            const name = data.agent_name ?? data.name ?? data.agent?.agent_name ?? data.agent?.name ?? "Unknown Agent";
+            agentNameMap.set(agentId, name);
+          } catch (err: any) {
+            console.warn(`Could not fetch agent ${agentId}:`, err.response?.status, err.message);
+            agentNameMap.set(agentId, "Unknown Agent");
+          }
+        })
+      );
+
+      // Step 3️⃣: Sync outbound agent IDs only if changed
+      const updatePayload: any[] = [];
+
       for (const dbNumber of activeNumbers) {
         const retellMatch = retellNumbers.find((r: any) => r.phone_number === dbNumber.phone_number);
         if (!retellMatch) continue;
 
-        const retellOutboundAgentId = retellMatch.outbound_agent_id;
-        if (dbNumber.outbound_agent_id !== retellOutboundAgentId) {
-          updatePromises.push(
-            axios.post(`http://localhost:3003/phoneNumber/update-phonenumbersfrom-retell`, {
-              phone_number: dbNumber.phone_number,
-              outbound_agent_id: retellOutboundAgentId,
-              outbound_agent_name: retellMatch.outbound_agent_name || null,
-              inbound_agent_id: retellMatch.inbound_agent_id || null,
-              inbound_agent_name: retellMatch.inbound_agent_name || null,
-              is_active: dbNumber.is_active,
-            })
-          );
+        const outboundName = retellMatch.outbound_agent_id
+          ? agentNameMap.get(retellMatch.outbound_agent_id) || null
+          : null;
+
+        const outboundChanged =
+          dbNumber.outbound_agent_id !== retellMatch.outbound_agent_id ||
+          (dbNumber.outbound_agent_name?.trim() || "") !== (outboundName?.trim() || "");
+
+        if (outboundChanged) {
+          console.log(`🔄 Updating phone number: ${dbNumber.phone_number}`);
+          updatePayload.push({
+            phone_number: dbNumber.phone_number,
+            outbound_agent_id: retellMatch.outbound_agent_id,
+            outbound_agent_name: outboundName,
+            is_active: dbNumber.is_active,
+          });
         }
       }
 
-      await Promise.all(updatePromises);
+      // Step 4️⃣: Update DB directly
+      for (const update of updatePayload) {
+        await PhoneNumber.update(
+          { phone_number: update.phone_number }, // ✅ criteria
+          {
+            outbound_agent_id: update.outbound_agent_id,
+            outbound_agent_name: update.outbound_agent_name
+          } // ✅ partial entity
+        );
+      }
+
+      console.log("✅ Phone numbers updated directly in DB");
 
 
+
+
+
+      const fromNumber = activeNumbers[0].phone_number;
+      const apiKey = process.env.API_KEY_RETELL;
+
+      if (!apiKey) {
+        console.error("❌ Missing API_KEY_RETELL in environment variables!");
+        return { result: false, message: "Missing API_KEY_RETELL" };
+      }
 
       const headers = {
-        Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
+        Authorization: `Bearer ${apiKey}`, // ✅ only one Bearer
         "Content-Type": "application/json",
       };
-      const payload = {
-        from_number: process.env.RETELL_FROM_NUMBER,
-        tasks: tasks,
-        retell_llm_dynamic_variables: {
-          greeting: "Hello, this is a test call from Retell!",
-        },
-      };
+      console.log("🔑 Raw API Key from .env:", process.env.API_KEY_RETELL);
+      console.log("🔍 Final Headers Sent:", headers);
 
-      const batchResponse = await axios.post(
-        "https://api.retellai.com/create-batch-call",
-        payload,
-        { headers }
-      );
+      console.log("🔍 Final Headers Sent:", headers);
 
-      return { result: true, message: "Batch calling started successfully", data: batchResponse.data };
+
+      console.log("🔐 Retell API Key exists:", !!apiKey);
+      console.log("📞 From Number:", fromNumber);
+      console.log("📦 Tasks Payload Sample:", JSON.stringify(tasks[0], null, 2));
+
+
+      console.log("📤 Sending request to RetellAI /create-batch-call...");
+      try {
+        const batchResponse = await axios.post(
+          "https://api.retellai.com/create-batch-call",
+          { from_number: fromNumber, tasks },
+          { headers }
+        );
+        console.log("✅ Retell batch call success:", batchResponse.data);
+      } catch (err: any) {
+        console.error("❌ RetellAI request failed");
+        console.error("Request headers:", headers);
+        console.error("Request payload:", { from_number: fromNumber, tasks });
+        console.error("Error message:", err.message);
+        console.error("Error response:", err.response?.data);
+      }
+      return { result: true, message: "Batch calling started successfully" };
     } catch (error: any) {
-      console.error("Error starting batch calling:", error.response?.data || error.message);
+      console.error("❌ Error starting batch calling:", error.response?.data || error.message);
       return { result: false, message: "Failed to start batch calling", error: error.response?.data || error.message };
     }
   }
+
 
   public async getCRMData(
     verifyUser: any,
