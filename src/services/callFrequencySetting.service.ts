@@ -68,22 +68,32 @@ export class CallFrequencySettingService {
   async update(id: string, data: CallFrequencyInput): Promise<CallFrequencySetting | null> {
     const existing = await this.repo.findOne({ where: { id } });
 
-
+    console.log("existing", existing);
+    
     const [min, hour, day, month, weekday] = data.call_frequency_setting.split(" ");
 
+    console.log("minminminmin", min);
+    console.log("hourhourhourhour", hour);
+    console.log("daydaydayday", day);
+    console.log("monthmonthmonthmonth", month);
+    console.log("weekdayweekdayweekdayweekday", weekday);
+    
     // Use an arbitrary date to perform conversion (the day/month/weekday don't matter)
     const originalTime = DateTime.fromObject(
       { hour: parseInt(hour), minute: parseInt(min) },
       { zone: "UTC" }
     );
-
+    console.log("originalTimeoriginalTimeoriginalTime", originalTime);
+    
     const convertedTime = originalTime.setZone(data.timeZone);
+    console.log("originalTimeoriginalTimeoriginalTime", convertedTime);
 
     const newMin = convertedTime.minute;
     const newHour = convertedTime.hour;
 
     const timeConvertedCronExpression =   `${newMin} ${newHour} ${day} ${month} ${weekday}`;
-
+    console.log("timeConvertedCronExpressiontimeConvertedCronExpression", timeConvertedCronExpression);
+    
     if (!existing) return null;
 
     // existing.number_count = data.number_count ?? existing.number_count;
