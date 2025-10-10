@@ -86,7 +86,7 @@ export class DashboardService {
 const changePercent =
   currentTotalMinutes === 0
     ? 0
-    : ((previousTotalMinutes - currentTotalMinutes) / currentTotalMinutes) * 100;
+    : ((currentTotalMinutes - previousTotalMinutes) / currentTotalMinutes) * 100;
 const changePercentRounded = Math.round(changePercent);
   return {
     total: currentTotalMinutes,
@@ -149,7 +149,7 @@ static async getNumberOfCalls(months: number): Promise<{ total: number; months: 
       ? previousTotalCalls === 0
         ? 0
         : -100
-      : ((previousTotalCalls - totalCount) / totalCount) * 100;
+      : ((totalCount - previousTotalCalls) / totalCount) * 100;
 
   return {
     total: totalCount,
@@ -232,7 +232,7 @@ static async getLeads(months: number): Promise<{
       ? previousTotalLeads === 0
         ? 0
         : -100
-      : ((previousTotalLeads - total) / total) * 100;
+      : ((total - previousTotalLeads) / total) * 100;
 
   return {
     total,
