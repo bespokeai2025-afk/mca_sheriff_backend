@@ -424,6 +424,7 @@ public async createCRMDataWithoutAuth(DataArray: object[]) {
             toNumber: savedRecord.mobile_number,
             lead_id: savedRecord.lead_id,
             callStatus: "need_to_call",
+            // new_propinfo_street2: savedRecord.new_propinfo_street2
           });
           await callOutputRepository.save(callOutput);
         }
