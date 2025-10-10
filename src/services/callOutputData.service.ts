@@ -620,7 +620,7 @@ static async getUsercallingHistory(
       await this.CRMDataRepository.save(crmRecord);
       console.log("CRM record updated (need_to_call=false)");
     }
-    console.log(savedCall, "savitaaaaaaaaaaaaaaa");
+    // console.log(savedCall, "savitaaaaaaaaaaaaaaa");
     
       return successWithData("Call output data created successfully", savedCall);
     } catch (error) {
