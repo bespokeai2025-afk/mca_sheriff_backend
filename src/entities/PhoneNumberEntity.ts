@@ -13,7 +13,13 @@ export class PhoneNumber extends BaseEntity {
 
   @Column({ nullable: true })
   outbound_agent_name: string;
-  
+
+  @Column({ default: false })
+  voicemail_enabled: boolean;
+
+  @Column({ type: "text", nullable: true })
+  voicemail_text: string | null;
+
   @Column({ nullable: true })
   is_active: boolean;
 }

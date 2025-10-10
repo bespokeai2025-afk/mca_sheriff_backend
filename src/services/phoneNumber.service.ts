@@ -98,49 +98,107 @@ export class PhoneNumberService {
   }
 
   static async savePhoneNumber(phonenumbers: InputPhonenumber[]): Promise<any> {
-  const savedPhoneNumbers: PhoneNumber[] = [];
+    const savedPhoneNumbers: PhoneNumber[] = [];
 
-  try {
-    // 1️⃣ Loop through input phone numbers
-    for (const input of phonenumbers) {
-      const isActive = input.is_active === true || input.is_active === "true";
+    try {
+      // 1️⃣ Loop through input phone numbers
+      for (const input of phonenumbers) {
+        const isActive = input.is_active === true || input.is_active === "true";
 
-      // 2️⃣ Remove inactive numbers from DB
-      if (!isActive) {
-        const existing = await PhoneNumber.findOne({ where: { phone_number: input.phone_number } });
-        if (existing) await PhoneNumber.remove(existing);
-        continue;
+        // 2️⃣ Remove inactive numbers from DB
+        if (!isActive) {
+          const existing = await PhoneNumber.findOne({ where: { phone_number: input.phone_number } });
+          if (existing) await PhoneNumber.remove(existing);
+          continue;
+        }
+
+        // 3️⃣ Find existing record or create new
+        let phoneRecord = await PhoneNumber.findOne({ where: { phone_number: input.phone_number } });
+        if (!phoneRecord) phoneRecord = new PhoneNumber();
+
+        // 4️⃣ Assign fields (no phone_number_id)
+        phoneRecord.phone_number = input.phone_number;
+        phoneRecord.outbound_agent_id = input.outbound_agent_id ?? "N/A";
+        phoneRecord.outbound_agent_name = input.outbound_agent_name ?? "N/A";
+        phoneRecord.is_active = true;
+
+        await phoneRecord.save();
+        savedPhoneNumbers.push(phoneRecord);
       }
 
-      // 3️⃣ Find existing record or create new
-      let phoneRecord = await PhoneNumber.findOne({ where: { phone_number: input.phone_number } });
-      if (!phoneRecord) phoneRecord = new PhoneNumber();
-
-      // 4️⃣ Assign fields (no phone_number_id)
-      phoneRecord.phone_number = input.phone_number;
-      phoneRecord.outbound_agent_id = input.outbound_agent_id ?? "N/A";
-      phoneRecord.outbound_agent_name = input.outbound_agent_name ?? "N/A";
-      phoneRecord.is_active = true;
-
-      await phoneRecord.save();
-      savedPhoneNumbers.push(phoneRecord);
+      return {
+        result: true,
+        statuscode: 200,
+        message: "Phone numbers saved successfully",
+        data: savedPhoneNumbers,
+      };
+    } catch (error: any) {
+      console.error("Error saving phone numbers:", error);
+      return {
+        result: false,
+        statuscode: 500,
+        message: "Failed to save phone numbers",
+        data: [],
+      };
     }
+  }
 
-    return {
-      result: true,
-      statuscode: 200,
-      message: "Phone numbers saved successfully",
-      data: savedPhoneNumbers,
-    };
-  } catch (error: any) {
-    console.error("Error saving phone numbers:", error);
-    return {
-      result: false,
-      statuscode: 500,
-      message: "Failed to save phone numbers",
-      data: [],
-    };
+  // Fetch all phone numbers + live voicemail from Retell
+  static async getAllWithVoicemail() {
+    const phoneNumbers = await PhoneNumber.find(); // just to get list of agents
+    const RETELL_API_KEY = process.env.API_KEY_RETELL;
+    const headers = { Authorization: `Bearer ${RETELL_API_KEY}` };
+
+    const phoneNumbersWithVoicemail = await Promise.all(
+      phoneNumbers.map(async (num) => {
+        if (!num.outbound_agent_id) return { ...num, voicemail_enabled: false, voicemail_text: "" };
+
+        try {
+          const res = await axios.get(
+            `https://api.retellai.com/get-agent/${num.outbound_agent_id}`,
+            { headers }
+          );
+
+          const voicemailData = res.data?.voicemail_option;
+
+          return {
+            ...num,
+            voicemail_enabled: !!voicemailData,
+            voicemail_text: voicemailData?.action?.text || "",
+          };
+        } catch (err: any) {
+          console.error("Error fetching voicemail for agent", num.outbound_agent_id, err.message);
+          return { ...num, voicemail_enabled: false, voicemail_text: "" };
+        }
+      })
+    );
+
+    return phoneNumbersWithVoicemail;
+  }
+
+  // Update voicemail directly in Retell (no DB update)
+  static async updateVoicemailById(outbound_agent_id: string, enable: boolean, text?: string) {
+    if (!process.env.API_KEY_RETELL) throw new Error("Missing RETELL_API_KEY in env");
+
+    const headers = { Authorization: `Bearer ${process.env.API_KEY_RETELL}`, "Content-Type": "application/json" };
+    const payload = enable
+      ? { voicemail_option: { action: { type: "static_text", text: text || "Hi, please leave a message!" } } }
+      : { voicemail_option: null };
+
+    try {
+      const res = await axios.patch(
+        `https://api.retellai.com/update-agent/${outbound_agent_id}`,
+        payload,
+        { headers }
+      );
+      return { result: true, data: res.data };
+    } catch (err: any) {
+      return { result: false, message: err.message, data: err.response?.data || null };
+    }
   }
 }
 
-}
+
+
+
+
