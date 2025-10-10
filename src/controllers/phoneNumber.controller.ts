@@ -16,15 +16,15 @@ export class PhoneNumberController {
 
 static async saveSelectedPhoneNumber(req: Request, res: Response): Promise<void> {
     try {
-      const { phonenumber } = req.body;
+      const { phonenumbers } = req.body;
 
       // Validation: phonenumber array required
-      if (!phonenumber || !Array.isArray(phonenumber) || phonenumber.length === 0) {
+      if (!phonenumbers || !Array.isArray(phonenumbers) || phonenumbers.length === 0) {
         res.status(400).json(errorWithData("phonenumber array is required", null));
         return;
       }
 
-      const savedphonenumber = await PhoneNumberService.savePhoneNumber(phonenumber);
+      const savedphonenumber = await PhoneNumberService.savePhoneNumber(phonenumbers);
 
       res.status(200).json(successWithData("Phone Number saved successfully", savedphonenumber));
     } catch (error) {

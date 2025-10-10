@@ -5,9 +5,6 @@ export class PhoneNumber extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @PrimaryColumn()
-  phone_number_id: string;
-
   @Column({ nullable: true })
   phone_number: string;
 

@@ -5,7 +5,6 @@ import { CRMDataService } from "./CRMData.service"
 
 
 interface RetellPhoneNumber {
-  phone_number_id: string;
   phone_number: string;
   outbound_agent_id: string | null;
   is_active?: boolean;
@@ -13,7 +12,6 @@ interface RetellPhoneNumber {
 }
 
 type InputPhonenumber = {
-  phone_number_id: string;
   phone_number: string;
   outbound_agent_id: string;
   outbound_agent_name?: string;
@@ -78,7 +76,6 @@ export class PhoneNumberService {
           dbEntry?.outbound_agent_id === num.outbound_agent_id;
 
         return {
-          phone_number_id: num.phone_number_id,
           phone_number: num.phone_number,
           outbound_agent_id: num.outbound_agent_id,
           outbound_agent_name: num.outbound_agent_id
@@ -101,59 +98,49 @@ export class PhoneNumberService {
   }
 
   static async savePhoneNumber(phonenumbers: InputPhonenumber[]): Promise<any> {
-    const savedPhoneNumber: PhoneNumber[] = [];
+  const savedPhoneNumbers: PhoneNumber[] = [];
 
-    try {
-      // 1️⃣ Fetch all Phonenumber from RetellAI
-      const retellNumbers = await CRMDataService.fetchRetellPhoneNumbers();
+  try {
+    // 1️⃣ Loop through input phone numbers
+    for (const input of phonenumbers) {
+      const isActive = input.is_active === true || input.is_active === "true";
 
-      // 2️⃣ Deduplicate phone number by agent_id (take latest version)
-      const retailMap = new Map<string, any>();
-      for (const a of retellNumbers) {
-        retailMap.set(a.phone_number_id, a);
+      // 2️⃣ Remove inactive numbers from DB
+      if (!isActive) {
+        const existing = await PhoneNumber.findOne({ where: { phone_number: input.phone_number } });
+        if (existing) await PhoneNumber.remove(existing);
+        continue;
       }
 
-      // 3️⃣ Loop through input phone numbers
-      for (const inputPhoneNumber of phonenumbers) {
-        const isActive = inputPhoneNumber.is_active === true || inputPhoneNumber.is_active === "true";
+      // 3️⃣ Find existing record or create new
+      let phoneRecord = await PhoneNumber.findOne({ where: { phone_number: input.phone_number } });
+      if (!phoneRecord) phoneRecord = new PhoneNumber();
 
-        if (!isActive) {
-          const existing = await PhoneNumber.findOne({ where: { phone_number: inputPhoneNumber.phone_number } });
-          if (existing) await PhoneNumber.remove(existing);
-          continue;
-        }
+      // 4️⃣ Assign fields (no phone_number_id)
+      phoneRecord.phone_number = input.phone_number;
+      phoneRecord.outbound_agent_id = input.outbound_agent_id ?? "N/A";
+      phoneRecord.outbound_agent_name = input.outbound_agent_name ?? "N/A";
+      phoneRecord.is_active = true;
 
-        // Try to find an existing record
-        let phonenumber = await PhoneNumber.findOne({ where: { phone_number: inputPhoneNumber.phone_number } });
-        if (!phonenumber) {
-          phonenumber = new PhoneNumber();
-        }
-
-      
-        phonenumber.phone_number = inputPhoneNumber.phone_number;
-        phonenumber.outbound_agent_id = inputPhoneNumber.outbound_agent_id ?? "N/A";
-        phonenumber.outbound_agent_name = inputPhoneNumber.outbound_agent_name ?? "N/A";
-        phonenumber.is_active = true;
-
-        await phonenumber.save();
-        savedPhoneNumber.push(phonenumber);
-      }
-
-
-      return {
-        result: true,
-        statuscode: 200,
-        message: "Phone number saved successfully",
-        data: savedPhoneNumber,
-      };
-    } catch (error: any) {
-      console.error("Error saving phone number:", error.message);
-      return {
-        result: false,
-        statuscode: 500,
-        message: "Failed to save phone number",
-        data: [],
-      };
+      await phoneRecord.save();
+      savedPhoneNumbers.push(phoneRecord);
     }
+
+    return {
+      result: true,
+      statuscode: 200,
+      message: "Phone numbers saved successfully",
+      data: savedPhoneNumbers,
+    };
+  } catch (error: any) {
+    console.error("Error saving phone numbers:", error);
+    return {
+      result: false,
+      statuscode: 500,
+      message: "Failed to save phone numbers",
+      data: [],
+    };
   }
+}
+
 }

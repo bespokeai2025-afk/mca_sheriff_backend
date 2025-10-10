@@ -13,7 +13,7 @@ import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
 import { PhoneNumber } from "../entities/PhoneNumberEntity";
-import { AllCompanyNumbersAndAgents } from "entities/All_Company_Numbers_and_Agents";
+import { AllCompanyNumbersAndAgents } from "../entities/All_Company_Numbers_and_Agents";
 
 
 // interface RetellTask {
@@ -187,96 +187,131 @@ export class CRMDataService {
   }
 
   static async startBatchCalling(tasks: RetellTask[]) {
-  if (tasks.length === 0) {
-    console.log("⚠️ No tasks provided to startBatchCalling");
-    return null;
-  }
-
-  try {
-    // 1️⃣ Sync RetellAI and DB
-    const syncResult = await this.syncRetellAIandDB();
-
-    if (!Array.isArray(syncResult)) {
-      console.warn("❌ Sync failed:", syncResult.message);
-      return { result: false, message: syncResult.message };
+    if (tasks.length === 0) {
+      console.log("⚠️ No tasks provided to startBatchCalling");
+      return null;
     }
-
-    const activeNumbers = syncResult;
-
-    if (!activeNumbers || activeNumbers.length === 0) {
-      console.warn("❌ No active numbers available after sync");
-      return { result: false, message: "No active numbers available" };
-    }
-
-    const fromNumber = activeNumbers[0].phone_number;
-    const outboundAgentId = activeNumbers[0].outbound_agent_id;
-    const outboundAgentName = activeNumbers[0].outbound_agent_name;
-
-    // 2️⃣ Validate company and phone number mapping
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error("❌ COMPANY_ID not set in environment variables!");
-      return { result: false, message: "Missing COMPANY_ID in environment" };
-    }
-
-    // 3️⃣ Fetch company mapping from AllCompanyNumbersAndAgents
-    const companyRecord = await AllCompanyNumbersAndAgents.findOne({
-      where: { company_id: companyId },
-    });
-
-    if (!companyRecord) {
-      console.warn(`❌ No company record found for company_id = ${companyId}`);
-      return { result: false, message: "Contact to Admin" };
-    }
-
-    // 4️⃣ Validate that phone_number and agent info exist for this company
-    const phoneMatch = companyRecord.phone_number.includes(fromNumber);
-    const agentIdMatch = companyRecord.outbound_agent_id.includes(outboundAgentId);
-    const agentNameMatch = companyRecord.outbound_agent_name.includes(outboundAgentName);
-
-    if (!phoneMatch || !agentIdMatch || !agentNameMatch) {
-      console.warn("🚫 Phone number or agent info not matched for company:", companyId);
-      return { result: false, message: "Contact to Admin" };
-    }
-
-    // 5️⃣ Proceed only if validation passes
-    const apiKey = process.env.API_KEY_RETELL;
-    if (!apiKey) {
-      console.error("❌ Missing API_KEY_RETELL in environment variables!");
-      return { result: false, message: "Missing API_KEY_RETELL" };
-    }
-
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    };
-
-    console.log("📞 From Number:", fromNumber);
-    console.log("📦 Tasks Payload Sample:", JSON.stringify(tasks[0], null, 2));
-    console.log("📤 Sending request to RetellAI /create-batch-call...");
 
     try {
-      const batchResponse = await axios.post(
-        "https://api.retellai.com/create-batch-call",
-        { from_number: fromNumber, tasks },
-        { headers }
-      );
-      console.log("✅ Retell batch call success:", batchResponse.data);
-    } catch (err: any) {
-      console.error("❌ RetellAI request failed");
-      console.error("Request headers:", headers);
-      console.error("Request payload:", { from_number: fromNumber, tasks });
-      console.error("Error message:", err.message);
-      console.error("Error response:", err.response?.data);
-      return { result: false, message: "RetellAI batch call failed" };
-    }
+      
+      // 1️⃣ Sync RetellAI and DB
+      const syncResult = await this.syncRetellAIandDB();
 
-    return { result: true, message: "Batch calling started successfully" };
-  } catch (error: any) {
-    console.error("❌ Error starting batch calling:", error.response?.data || error.message);
-    return { result: false, message: "Failed to start batch calling", error: error.response?.data || error.message };
+      if (!Array.isArray(syncResult)) {
+        console.warn("❌ Sync failed:", syncResult.message);
+        return { result: false, message: syncResult.message };
+      }
+
+      // ✅ Re-fetch active numbers to get the latest outbound agent info
+      const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+
+      if (!activeNumbers || activeNumbers.length === 0) {
+        console.warn("❌ No active numbers available after sync");
+        return { result: false, message: "No active numbers available" };
+      }
+
+
+      const fromNumber = activeNumbers[0].phone_number;
+      const outboundAgentId = activeNumbers[0].outbound_agent_id;
+      const outboundAgentName = activeNumbers[0].outbound_agent_name;
+
+      // 2️⃣ Validate company and phone number mapping
+      const companyId = process.env.COMPANY_ID;
+      if (!companyId) {
+        console.error("❌ COMPANY_ID not set in environment variables!");
+        return { result: false, message: "Missing COMPANY_ID in environment" };
+      }
+
+      // 3️⃣ Fetch all company mappings
+      const allCompanies = await AllCompanyNumbersAndAgents.find();
+
+      if (!allCompanies || allCompanies.length === 0) {
+        console.warn("❌ No company records found in All_Company_Numbers_and_Agents");
+        return { result: false, message: "No company data found. Contact to Admin" };
+      }
+
+      // 4️⃣ Compare each phone_number in company arrays with activeNumbers
+      let matchedNumbers: {
+        phone_number: string;
+        outbound_agent_id: string;
+        outbound_agent_name: string;
+        matched: boolean;
+      }[] = [];
+
+      for (const company of allCompanies) {
+        const { phone_number: phoneArr, outbound_agent_id: agentIdArr, outbound_agent_name: agentNameArr } = company;
+
+        for (let i = 0; i < phoneArr.length; i++) {
+          const phone = phoneArr[i];
+          const agentId = agentIdArr[i];
+          const agentName = agentNameArr[i].trim();
+
+          // Check if this triplet exists in phone_numbers table
+          const match = activeNumbers.find(
+            n =>
+              n.phone_number === phone &&
+              n.outbound_agent_id === agentId &&
+              n.outbound_agent_name.trim() === agentName
+          );
+
+          matchedNumbers.push({
+            phone_number: phone,
+            outbound_agent_id: agentId,
+            outbound_agent_name: agentName,
+            matched: !!match,
+          });
+        }
+      }
+
+      // ✅ Check if at least one number matched
+      const matchFound = matchedNumbers.some(n => n.matched);
+      if (!matchFound) {
+        console.warn("🚫 No matching agent found in All_Company_Numbers_and_Agents");
+        return { result: false, message: "Calling Agent not matched. Contact to Admin", data: matchedNumbers };
+      }
+
+      console.log("✅ At least one number matched in company arrays", matchedNumbers.filter(n => n.matched));
+
+
+
+      // 5️⃣ Proceed only if validation passes
+      const apiKey = process.env.API_KEY_RETELL;
+      if (!apiKey) {
+        console.error("❌ Missing API_KEY_RETELL in environment variables!");
+        return { result: false, message: "Missing API_KEY_RETELL" };
+      }
+
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      };
+
+      console.log("📞 From Number:", fromNumber);
+      console.log("📦 Tasks Payload Sample:", JSON.stringify(tasks[0], null, 2));
+      console.log("📤 Sending request to RetellAI /create-batch-call...");
+
+      try {
+        const batchResponse = await axios.post(
+          "https://api.retellai.com/create-batch-call",
+          { from_number: fromNumber, tasks },
+          { headers }
+        );
+        console.log("✅ Retell batch call success:", batchResponse.data);
+      } catch (err: any) {
+        console.error("❌ RetellAI request failed");
+        console.error("Request headers:", headers);
+        console.error("Request payload:", { from_number: fromNumber, tasks });
+        console.error("Error message:", err.message);
+        console.error("Error response:", err.response?.data);
+        return { result: false, message: "RetellAI batch call failed" };
+      }
+
+      return { result: true, message: "Batch calling started successfully" };
+    } catch (error: any) {
+      console.error("❌ Error starting batch calling:", error.response?.data || error.message);
+      return { result: false, message: "Failed to start batch calling", error: error.response?.data || error.message };
+    }
   }
-}
   public async getCRMData(
     verifyUser: any,
     pageSize: number,
