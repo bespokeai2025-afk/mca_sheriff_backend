@@ -164,7 +164,7 @@ export class CallScheduler {
           console.error("❌ Error fetching leads:", error.message);
         }
       },
-      { timezone: "Asia/Kolkata" } //  Run cron in UTC
+      { timezone: "UTC" } //  Run cron in UTC
     );
 
     this.scheduledJobs.set(id, job);
