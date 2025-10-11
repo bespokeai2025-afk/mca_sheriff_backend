@@ -64,6 +64,9 @@ export class CRMData /* extends Common */ {
 
       @Column({ type: 'text', nullable: true })
     new_propinfo_city: string;
+   
+    @Column({ type: 'text', nullable: true })
+    property_type: string; 
 
     @Column({ type: "boolean", default: true})
     need_to_call: boolean;

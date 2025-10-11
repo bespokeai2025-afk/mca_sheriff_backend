@@ -13,7 +13,7 @@ import authRoutes from './routes/auth.routes'
 import otpRoutes from './routes/otp.routes'
 import adminRoutes from './routes/admin.routes'
 import emailVerificationRoutes from './routes/EmailVerification.routes'
-import multerErrorHandler from "./middlewares/multerErrorHandler"; // ✅ Import the middleware
+import multerErrorHandler from "./middlewares/multerErrorHandler"; //  Import the middleware
 import viewsRoutes from './routes/viewPages.routes'
 // import cron from "node-cron";
 import cookieParser from "cookie-parser";
