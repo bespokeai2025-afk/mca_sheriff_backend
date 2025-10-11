@@ -306,7 +306,7 @@ export class CRMDataService {
         return { result: false, message: "RetellAI batch call failed" };
       }
 
-      return { result: true, message: "Batch calling started successfully" };
+      return { result: true, message: "Call is initiated" };
     } catch (error: any) {
       console.error("❌ Error starting batch calling:", error.response?.data || error.message);
       return { result: false, message: "Failed to start batch calling", error: error.response?.data || error.message };
