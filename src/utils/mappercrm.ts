@@ -16,7 +16,7 @@ export const mapIncomingCRMData = (rawData: any) => {
     address1_stateorprovince: rawData.address1_stateorprovince ||  "",
     new_propinfo_street3: rawData.new_propinfo_street3 ||  "",
     address1_line1: rawData.address1_line1 || "",
-    new_propinfo_city: rawData.city || "",
+    new_propinfo_city: rawData.new_propinfo_city || "",
     property_type: rawData["new_propinfo_typeofproperty@OData.Community.Display.V1.FormattedValue"] || "",
     need_to_call: true,
     isActive: true,
