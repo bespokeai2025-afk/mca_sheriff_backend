@@ -3,7 +3,7 @@ import express from "express";
 import { validateRequest } from "../middlewares/otp.validation";
 import { validateExcelFile } from "../middlewares/validateExcelFile";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
-import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMExcel, getCalendlyAvailable } from "../controllers/CRMData.controller";
+import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMExcel } from "../controllers/CRMData.controller";
 import { validatecrmdata, validateUserID } from "../middlewares/crmdata.validation";
 import excelUpload from "../config/excelupload"; 
 // Import file upload configuration

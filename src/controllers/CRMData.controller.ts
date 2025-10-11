@@ -15,64 +15,23 @@ const upload = multer({ dest: 'uploads/' });
 const crmdataservice = new CRMDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
 
-export async function getCalendlyAvailable(
-  daysAhead: number = 7
-): Promise<string[] | null> {
-  try {
-    // const now = new Date();
-    // const start_time = now.toISOString();
-    // const end_time = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000).toISOString();
-
-   const start_time = "2025-10-11 10:42:00.730474";
-    const end_time = "2025-10-18 10:42:00.730474";
-    const event_type = "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
-
-    const calendlyResponse = await axios.get(
-      "https://api.calendly.com/event_type_available_times",
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.API_KEY_RETELL}`, // <-- add your token here
-          "Content-Type": "application/json",
-        },
-        params: {
-          start_time,
-          end_time,
-          event_type,
-          time_zone: "Asia/Kolkata",
-        },
-      }
-    );
-
-    const collection = calendlyResponse.data.collection || [];
-
-    // Extract scheduling URLs for available slots
-    const slots = collection
-      .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
-      .map((slot: any) => slot.scheduling_url);
-
-    return slots.length > 0 ? slots : null;
-  } catch (error: any) {
-    console.error("Error fetching Calendly slots:", error.response?.data || error.message);
-    return null;
-  }
-}
 export const getCRMData = async (req: Request, res: Response): Promise<any> => {
-
-    try {
-        if (!req.user) {
-            const response = errorWithoutData("Authentication failed");
-                 res.status(response.result ? 200 : 400).json(response);
-                 return; // ✅ exit without returning Response
-        }
-        const { pageSize, currentPage } = req.query;
-
-
-        const response = await crmdataservice.getCRMData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData('something went wrong', { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
+  try {
+    // 1️⃣ Check authentication
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed");
+      return res.status(response.result ? 200 : 400).json(response);
     }
+
+    // 2️⃣ Fetch CRM data (no pagination needed)
+    const response = await crmdataservice.getCRMData(req.verifyUser);
+
+    // 3️⃣ Return response
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error: any) {
+    const response = errorWithData("Something went wrong", { error: error.message || error });
+    return res.status(response.result ? 200 : 400).json(response);
+  }
 };
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
     try {

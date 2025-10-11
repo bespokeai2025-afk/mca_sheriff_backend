@@ -160,111 +160,89 @@ export class CRMDataService {
     }
   }
 
-  public async getCRMData(
-    verifyUser: any,
-    pageSize: number,
-    currentPage: number
-  ) {
-    try {
-      // 1️⃣ Fetch Calendly slots
-      const calendlySlot = await this.getCalendlyAvailableSlot();
+  public async getCRMData(verifyUser: any) {
+  try {
+    // 1️⃣ Fetch Calendly slots
+    const calendlySlot = await this.getCalendlyAvailableSlot();
 
-      // 2️⃣ Build dynamic where condition
-      let whereCondition = {};
-      if (verifyUser.user_exist) {
-        whereCondition = {
-          isActive: true,
-          isDeleted: false,
-          need_to_call: true,
-        };
-      }
-      if (verifyUser.admin_exist) {
-        whereCondition = { isDeleted: false, need_to_call: true };
-      }
-
-      // 3️⃣ Fetch CRM data with pagination
-      const [mainCategories, totalItems] =
-        await this.CRMDataRepository.findAndCount({
-          where: whereCondition,
-          order: { createdAt: "DESC" },
-          skip: (currentPage - 1) * pageSize,
-          take: pageSize,
-        });
-
-      const totalPages = Math.ceil(totalItems / pageSize);
-      if (totalItems >= 1 && totalPages < currentPage) {
-        return errorWithoutData("Page limit exceeded");
-      }
-
-      // 4️⃣ Prepare tasks for RetellAI
-      const tasks: RetellTask[] = mainCategories
-        .filter((crm: any) => crm.mobile_number && crm.need_to_call)
-        .map((crm: any, index: number) => {
-          const slot =
-            calendlySlot && calendlySlot.length > 0
-              ? calendlySlot[index % calendlySlot.length]
-              : null; // ✅ null if no available slots
-
-          const name = crm.name ?? "";
-          const client_name = crm.client_name ?? "";
-          const leadId = crm.lead_id ? String(crm.lead_id) : "";
-          const uniqueId = crm.unique_id ? String(crm.unique_id) : "";
-
-          return {
-            to_number: crm.mobile_number,
-            retell_llm_dynamic_variables: {
-              name,
-              client_name,
-              lead_id: leadId,
-              unique_id: uniqueId,
-              property_type: crm.property_type ?? "",
-              property_type_address_line2:
-                crm.property_type_address_line2 ?? "",
-              property_type_address_line3:
-                crm.property_type_address_line3 ?? "",
-              available_slot: crm.available_slot ?? "",
-              city: crm.city ?? "",
-              slot: slot ?? "", // ✅ always string or empty
-              calendly_url: slot ?? "", // ✅ same
-              greeting: `Hello ${name}, this is a test call from Retell!`,
-            },
-          };
-        });
-
-      // 5️⃣ Call RetellAI API for each CRM record individually
-      const callResults = await Promise.all(
-        tasks.map(async (task) => {
-          const retellResponse = await CRMDataService.createBatchCall(task);
-          return { to_number: task.to_number, retellResponse };
-        })
-      );
-
-      // 6️⃣ Attach responses and Calendly slot to each CRM record
-      const enrichedCategories = mainCategories.map(
-        (crm: any, index: number) => {
-          const response = callResults.find(
-            (r) => r.to_number === crm.mobile_number
-          );
-          return {
-            ...crm,
-            calendly_slot: calendlySlot[index % calendlySlot.length] || "",
-            retellResponse: response?.retellResponse || null,
-          };
-        }
-      );
-
-      // 7️⃣ Return final result
-      return successWithData("CRM data", enrichedCategories, {
-        totalItems,
-        totalPages,
-        currentPage,
-        pageSize,
-      });
-    } catch (error: any) {
-      console.error("Error fetching CRM data:", error.message);
-      return errorWithData("Something went wrong", error);
+    // 2️⃣ Build dynamic where condition
+    let whereCondition = {};
+    if (verifyUser.user_exist) {
+      whereCondition = {
+        isActive: true,
+        isDeleted: false,
+        need_to_call: true,
+      };
     }
+    if (verifyUser.admin_exist) {
+      whereCondition = { isDeleted: false, need_to_call: true };
+    }
+
+    // 3️⃣ Fetch all CRM data (no pagination)
+    const mainCategories = await this.CRMDataRepository.find({
+      where: whereCondition,
+      order: { createdAt: "DESC" },
+    });
+
+    // 4️⃣ Prepare tasks for RetellAI
+    const tasks: RetellTask[] = mainCategories
+      .filter((crm: any) => crm.mobile_number && crm.need_to_call)
+      .map((crm: any, index: number) => {
+        const slot =
+          calendlySlot && calendlySlot.length > 0
+            ? calendlySlot[index % calendlySlot.length]
+            : null; // null if no available slots
+
+        const name = crm.name ?? "";
+        const client_name = crm.client_name ?? "";
+        const leadId = crm.lead_id ? String(crm.lead_id) : "";
+        const uniqueId = crm.unique_id ? String(crm.unique_id) : "";
+
+        return {
+          to_number: crm.mobile_number,
+          retell_llm_dynamic_variables: {
+            name,
+            client_name,
+            lead_id: leadId,
+            unique_id: uniqueId,
+            property_type: crm.property_type ?? "",
+            property_type_address_line2: crm.property_type_address_line2 ?? "",
+            property_type_address_line3: crm.property_type_address_line3 ?? "",
+            available_slot: crm.available_slot ?? "",
+            city: crm.city ?? "",
+            slot: slot ?? "", // always string or empty
+            calendly_url: slot ?? "", // same
+            greeting: `Hello ${name}, this is a test call from Retell!`,
+          },
+        };
+      });
+
+    // 5️⃣ Call RetellAI API for each CRM record individually
+    const callResults = await Promise.all(
+      tasks.map(async (task) => {
+        const retellResponse = await CRMDataService.createBatchCall(task);
+        return { to_number: task.to_number, retellResponse };
+      })
+    );
+
+    // 6️⃣ Attach responses and Calendly slot to each CRM record
+    const enrichedCategories = mainCategories.map((crm: any, index: number) => {
+      const response = callResults.find((r) => r.to_number === crm.mobile_number);
+      return {
+        ...crm,
+        calendly_slot: calendlySlot[index % calendlySlot.length] || "",
+        retellResponse: response?.retellResponse || null,
+      };
+    });
+
+    // 7️⃣ Return final result
+    return successWithData("CRM data", enrichedCategories);
+  } catch (error: any) {
+    console.error("Error fetching CRM data:", error.message);
+    return errorWithData("Something went wrong", error);
   }
+}
+
 
   //   public async getCRMData(
   //   verifyUser: any,
