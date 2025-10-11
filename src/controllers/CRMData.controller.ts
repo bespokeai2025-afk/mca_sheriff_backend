@@ -4,9 +4,9 @@ import XLSX from "xlsx";
 import path from "path";
 import fs from 'fs';
 import { Multer } from "multer";
-
+import axios from "axios";
 // Import utilities and services
-import { errorWithData, errorWithoutData } from "../config/ApiResponse";
+import { errorWithData, errorWithoutData, successWithData } from "../config/ApiResponse";
 import { CRMDataService } from "../services/CRMData.service";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
@@ -14,6 +14,48 @@ const upload = multer({ dest: 'uploads/' });
 // Initialize services and repositories
 const crmdataservice = new CRMDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
+
+export async function getCalendlyAvailable(
+  daysAhead: number = 7
+): Promise<string[] | null> {
+  try {
+    // const now = new Date();
+    // const start_time = now.toISOString();
+    // const end_time = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000).toISOString();
+
+   const start_time = "2025-10-11 10:42:00.730474";
+    const end_time = "2025-10-18 10:42:00.730474";
+    const event_type = "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+
+    const calendlyResponse = await axios.get(
+      "https://api.calendly.com/event_type_available_times",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.API_KEY_RETELL}`, // <-- add your token here
+          "Content-Type": "application/json",
+        },
+        params: {
+          start_time,
+          end_time,
+          event_type,
+          time_zone: "Asia/Kolkata",
+        },
+      }
+    );
+
+    const collection = calendlyResponse.data.collection || [];
+
+    // Extract scheduling URLs for available slots
+    const slots = collection
+      .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
+      .map((slot: any) => slot.scheduling_url);
+
+    return slots.length > 0 ? slots : null;
+  } catch (error: any) {
+    console.error("Error fetching Calendly slots:", error.response?.data || error.message);
+    return null;
+  }
+}
 export const getCRMData = async (req: Request, res: Response): Promise<any> => {
 
     try {
