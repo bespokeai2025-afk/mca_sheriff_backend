@@ -532,12 +532,21 @@ static async getUsercallingHistory(
       .andWhere("call.callStatus = :status", { status: "not_connected" })
       .getCount();
 
+     // ✅ Need to call count (fixed)
+    const needToCall = await this.CRMDataRepository
+      .createQueryBuilder("call")
+      .where(whereCondition)
+      .andWhere("call.need_to_call = :needToCall", { needToCall: true })
+      .getCount();
+
+
     // Return only counts
     return successWithData("User call detail Count fetched successfully", {
       totalCall,
       successCounts,
       failureCounts,
       notConnectedCounts,
+      needToCall
     });
 
   } catch (error) {
