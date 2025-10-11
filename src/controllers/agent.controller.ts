@@ -15,6 +15,7 @@ export class AgentController {
   //     res.status(500).json(errorWithData("Failed to fetch agents", error, 500));
   //   }
   // }
+  
   static async saveSelectedAgents(req: Request, res: Response): Promise<void> {
     try {
       const { agents } = req.body;
@@ -44,6 +45,50 @@ export class AgentController {
     res.status(500).json(errorWithData("Failed to fetch agents", error.message, 500));
   }
 }
+
+
+static async updateVoicemailById(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { enable, text } = req.body;
+
+    // Validate `enable` must exist and be boolean
+    if (enable === undefined || typeof enable !== "boolean") {
+      res.status(400).json(errorWithData("`enable` must be a boolean value", null));
+      return;
+    }
+
+    //  Validate voicemail text only when enabling
+    if (enable && (!text || text.trim() === "")) {
+      res
+        .status(400)
+        .json(errorWithData("Voicemail text is required when enabling voicemail", null));
+      return;
+    }
+
+    //  Call service
+    const result = await AgentService.updateVoicemailById(id, enable, text);
+
+    // Handle service response
+    if (!result.result) {
+      res.status(result.statuscode || 500).json(errorWithData(result.message, result.data));
+      return;
+    }
+
+    // Success response
+    res.status(200).json(successWithData(result.message, result.data));
+
+  } catch (error: any) {
+    console.error("Error updating voicemail:", error);
+    res
+      .status(500)
+      .json(errorWithData("Failed to update voicemail", error.message || error, 500));
+  }
+}
+
+
+
+
 
 
 }
