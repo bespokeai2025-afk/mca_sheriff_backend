@@ -12,7 +12,7 @@ import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
-
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export interface RetellTask {
   to_number: string;
   retell_llm_dynamic_variables?: {
@@ -160,7 +160,7 @@ export class CRMDataService {
     }
   }
 
-  public async getCRMData(verifyUser: any) {
+ public async getCRMData(verifyUser: any) {
   try {
     // 1️⃣ Fetch Calendly slots
     const calendlySlot = await this.getCalendlyAvailableSlot();
@@ -191,39 +191,36 @@ export class CRMDataService {
         const slot =
           calendlySlot && calendlySlot.length > 0
             ? calendlySlot[index % calendlySlot.length]
-            : null; // null if no available slots
-
-        const name = crm.name ?? "";
-        const client_name = crm.client_name ?? "";
-        const leadId = crm.lead_id ? String(crm.lead_id) : "";
-        const uniqueId = crm.unique_id ? String(crm.unique_id) : "";
+            : null;
 
         return {
           to_number: crm.mobile_number,
           retell_llm_dynamic_variables: {
-            name,
-            client_name,
-            lead_id: leadId,
-            unique_id: uniqueId,
+            name: crm.name ?? "",
+            client_name: crm.client_name ?? "",
+            lead_id: crm.lead_id ? String(crm.lead_id) : "",
+            unique_id: crm.unique_id ? String(crm.unique_id) : "",
             property_type: crm.property_type ?? "",
             property_type_address_line2: crm.property_type_address_line2 ?? "",
             property_type_address_line3: crm.property_type_address_line3 ?? "",
             available_slot: crm.available_slot ?? "",
             city: crm.city ?? "",
-            slot: slot ?? "", // always string or empty
-            calendly_url: slot ?? "", // same
-            greeting: `Hello ${name}, this is a test call from Retell!`,
+            slot: slot ?? "",
+            calendly_url: slot ?? "",
+            greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
           },
         };
       });
 
-    // 5️⃣ Call RetellAI API for each CRM record individually
-    const callResults = await Promise.all(
-      tasks.map(async (task) => {
-        const retellResponse = await CRMDataService.createBatchCall(task);
-        return { to_number: task.to_number, retellResponse };
-      })
-    );
+    // 5️⃣ Call RetellAI API one by one using for loop with 1-second delay
+    const callResults: any[] = [];
+    for (const task of tasks) {
+      const retellResponse = await CRMDataService.createBatchCall(task);
+      callResults.push({ to_number: task.to_number, retellResponse });
+
+      // 1-second delay between calls
+      await sleep(1000);
+    }
 
     // 6️⃣ Attach responses and Calendly slot to each CRM record
     const enrichedCategories = mainCategories.map((crm: any, index: number) => {
@@ -242,7 +239,6 @@ export class CRMDataService {
     return errorWithData("Something went wrong", error);
   }
 }
-
 
   //   public async getCRMData(
   //   verifyUser: any,
