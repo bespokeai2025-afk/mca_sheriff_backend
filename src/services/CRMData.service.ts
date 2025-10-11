@@ -12,8 +12,8 @@ import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
-import { PhoneNumber } from "entities/PhoneNumberEntity";
-import { AllCompanyNumbersAndAgents } from "entities/All_Company_Numbers_and_Agents";
+import { PhoneNumber } from "../entities/PhoneNumberEntity";
+import { AllCompanyNumbersAndAgents } from "../entities/All_Company_Numbers_and_Agents";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export interface RetellTask {
   to_number: string;
