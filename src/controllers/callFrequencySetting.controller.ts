@@ -8,7 +8,7 @@ export class CallFrequencySettingController {
   // Create a new call frequency setting
     static async create(req: Request, res: Response): Promise<void> {
     try {
-      const { number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
+      const { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone } = req.body;
 
       // Validate that at least selected_days exists
       // if (!selected_days || selected_days.length === 0) {
@@ -19,7 +19,7 @@ export class CallFrequencySettingController {
       // }
 
       // Prepare payload
-      const payload = { number_count, selected_days, selected_weeks, call_frequency_setting };
+      const payload = { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone };
       const result = await service.create(payload);
 
       res.status(200).json(
@@ -49,7 +49,7 @@ export class CallFrequencySettingController {
   }
   static async update(req: Request, res: Response): Promise<void> {
   try {
-    const { id, number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
+    const { id, number_count, selected_days, selected_weeks, call_frequency_setting, timeZone } = req.body;
 
     // Validate ID
     if (!id) {
@@ -83,7 +83,7 @@ export class CallFrequencySettingController {
     }
 
     // Prepare payload
-    const payload = { number_count, selected_days, selected_weeks, call_frequency_setting };
+    const payload = { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone };
     const updated = await service.update(id, payload);
 
     if (!updated) {

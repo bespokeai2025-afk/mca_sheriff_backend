@@ -13,7 +13,7 @@ import authRoutes from './routes/auth.routes'
 import otpRoutes from './routes/otp.routes'
 import adminRoutes from './routes/admin.routes'
 import emailVerificationRoutes from './routes/EmailVerification.routes'
-import multerErrorHandler from "./middlewares/multerErrorHandler"; // ✅ Import the middleware
+import multerErrorHandler from "./middlewares/multerErrorHandler"; //  Import the middleware
 import viewsRoutes from './routes/viewPages.routes'
 // import cron from "node-cron";
 import cookieParser from "cookie-parser";
@@ -44,8 +44,10 @@ app.use(express.json()); // Parse JSON bodies
 app.use(cookieParser());
 
 const allowedOrigins = [
+    'http://localhost:4173',
     'http://localhost:5173',
     'https://admin.trakify.in',
+    'https://uat.trakify.in',
     'https://devadmin.trakify.in',
     'http://localhost:3003',
     'http://localhost:3000'

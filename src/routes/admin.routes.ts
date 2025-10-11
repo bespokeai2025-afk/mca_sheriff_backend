@@ -8,8 +8,8 @@ import { sendOtpToAdmin, verifyOTPForAdmin } from "../controllers/otp.controller
 
 const router = express.Router();
 
-router.get("/all", verifyAccessToken, getAdmin);
-router.get("/", verifyAccessToken, getAdminById);
+router.get("/get-all-admin", verifyAccessToken, getAdmin);
+router.get("/get-admin/:id", verifyAccessToken, getAdminById);
 router.post("/create-admin",validateAdmin,validateRequest, createAdmin);
 router.put("/update-admin/:id", verifyAccessToken,validateRequest, validateUserID, validateAdmin, validateRequest, updateAdmin);
 router.delete("/delete-admin/:id", verifyAccessToken, validateUserID, validateRequest, deleteAdmin);

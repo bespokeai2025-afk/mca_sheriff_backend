@@ -13,6 +13,7 @@ import upload from "../config/multerConfig";
 const router = express.Router();
 // Get all main categories
 router.get("/start-batch-calling", verifyAccessToken, getCRMData);
+
 router.post("/create", verifyAccessToken, validatecrmdata, validateRequest, createCRMData);
 router.post("/create-without-auth", createCRMDataWithoutAuth);
 router.post(
