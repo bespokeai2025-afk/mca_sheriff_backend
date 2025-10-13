@@ -64,39 +64,65 @@ export class CallFrequencySettingService {
   }
 
   // Update existing frequency setting by ID
-  // Optional: Update existing frequency setting
-  async update(id: string, data: CallFrequencyInput): Promise<CallFrequencySetting | null> {
-    const existing = await this.repo.findOne({ where: { id } });
+  // async update(id: string, data: CallFrequencyInput): Promise<CallFrequencySetting | null> {
+  //   const existing = await this.repo.findOne({ where: { id } });
+  //   const [min, hour, day, month, weekday] = data.call_frequency_setting.split(" ");
 
+  //   // Use an arbitrary date to perform conversion (the day/month/weekday don't matter)
+  //   const originalTime = DateTime.fromObject(
+  //     { hour: parseInt(hour), minute: parseInt(min) },
+  //     { zone: "UTC" }
+  //   );
 
-    const [min, hour, day, month, weekday] = data.call_frequency_setting.split(" ");
+  //   const convertedTime = originalTime.setZone(data.timeZone);
 
-    // Use an arbitrary date to perform conversion (the day/month/weekday don't matter)
-    const originalTime = DateTime.fromObject(
-      { hour: parseInt(hour), minute: parseInt(min) },
-      { zone: "UTC" }
-    );
+  //   const newMin = convertedTime.minute;
+  //   const newHour = convertedTime.hour;
 
-    const convertedTime = originalTime.setZone(data.timeZone);
+  //   const timeConvertedCronExpression =   `${newMin} ${newHour} ${day} ${month} ${weekday}`;
 
-    const newMin = convertedTime.minute;
-    const newHour = convertedTime.hour;
+  //   if (!existing) return null;
+  //   // existing.call_frequency_setting = data.call_frequency_setting;
+  //   existing.call_frequency_setting = timeConvertedCronExpression
+  //   existing.timeZone = data.timeZone;
 
-    const timeConvertedCronExpression =   `${newMin} ${newHour} ${day} ${month} ${weekday}`;
+  //   return await this.repo.save(existing);
+  // }
+// Update existing frequency setting by ID, or insert if not exists
+async updateOrInsert(id: string, data: CallFrequencyInput): Promise<CallFrequencySetting> {
+  // Find existing record
+  let existing = await this.repo.findOne({ where: { id } });
 
-    if (!existing) return null;
+  const [min, hour, day, month, weekday] = data.call_frequency_setting.split(" ");
 
-    // existing.number_count = data.number_count ?? existing.number_count;
-    // existing.selected_days = data.selected_days ? JSON.stringify(data.selected_days) : existing.selected_days;
-    // existing.selected_weeks = data.selected_weeks ? JSON.stringify(data.selected_weeks) : existing.selected_weeks;
+  // Convert time based on timezone
+  const originalTime = DateTime.fromObject(
+    { hour: parseInt(hour), minute: parseInt(min) },
+    { zone: "UTC" }
+  );
 
+  const convertedTime = originalTime.setZone(data.timeZone);
 
-    // existing.call_frequency_setting = data.call_frequency_setting;
-    existing.call_frequency_setting = timeConvertedCronExpression
+  const newMin = convertedTime.minute;
+  const newHour = convertedTime.hour;
+
+  const timeConvertedCronExpression = `${newMin} ${newHour} ${day} ${month} ${weekday}`;
+
+  if (!existing) {
+    // Insert new record
+    existing = this.repo.create({
+      id,
+      call_frequency_setting: timeConvertedCronExpression,
+      timeZone: data.timeZone,
+    });
+  } else {
+    // Update existing record
+    existing.call_frequency_setting = timeConvertedCronExpression;
     existing.timeZone = data.timeZone;
-
-    return await this.repo.save(existing);
   }
+
+  return await this.repo.save(existing);
+}
 
 
   

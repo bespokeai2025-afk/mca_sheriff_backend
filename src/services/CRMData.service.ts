@@ -25,7 +25,13 @@ export interface RetellTask {
     property_type?: string;
     property_type_address_line2?: string;
     property_type_address_line3?: string;
-    available_slot?: string;
+    available_slots?: string;
+    // available_slot?: { 
+    //   preferred_slot: { 
+    //     date: string; 
+    //     time: string; 
+    //   } 
+    // } | null; // <- object type now allowed
     city?: string;
     slot?: string | null; // ✅ can be string or null
     calendly_url?: string | null; // ✅ can be string or null
@@ -38,51 +44,183 @@ export class CRMDataService {
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
 
   // ✅ Fetch available Calendly slot before starting call
-  private async getCalendlyAvailableSlot(
-    daysAhead: number = 7
-  ): Promise<string[]> {
-    try {
-      const now = new Date();
-      const start_time = now.toISOString(); // current UTC time
-      const end_time = new Date(
-        now.getTime() + daysAhead * 24 * 60 * 60 * 1000
-      ).toISOString(); // X days ahead
+  // private async getCalendlyAvailableSlot(
+  //   daysAhead: number = 7
+  // ): Promise<string[]> {
+  //   try {
+  //     // const now = new Date();
+  //     // const start_time = now.toISOString(); // current UTC time
+  //     // const end_time = new Date(
+  //     //   now.getTime() + daysAhead * 24 * 60 * 60 * 1000
+  //     // ).toISOString(); // X days ahead
 
-      console.log("Calendly Start Time:", start_time);
-      console.log("Calendly End Time:", end_time);
+  //      // Convert to Calendly’s expected format: "YYYY-MM-DD HH:mm:ss.SSSSSS"
+  //       const now = new Date();
+  //       const formatCalendlyDate = (date: Date) => {
+  //     const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+  //     return (
+  //       `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+  //       `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
+  //     );
+  //   };
 
-      const event_type =
-        "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+  //   const start_time = formatCalendlyDate(now);
+  //   const end_time = formatCalendlyDate(
+  //     new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000)
+  //   );
 
-      const calendlyResponse = await axios.get(
-        "https://api.calendly.com/event_type_available_times",
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
-          },
-          params: { start_time, end_time, event_type },
-        }
+  //     console.log("Calendly Start Time:", start_time);
+  //     console.log("Calendly End Time:", end_time);
+
+  //     const event_type =
+  //       "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+
+  //     const calendlyResponse = await axios.get(
+  //       "https://api.calendly.com/event_type_available_times",
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
+  //         },
+  //         params: { start_time, end_time, event_type },
+  //       }
+  //     );
+
+  //     const collection = calendlyResponse.data.collection || [];
+  //     if (collection.length === 0) {
+  //       console.warn("⚠️ No available Calendly slots found");
+  //       return []; // ✅ return empty array, not null
+  //     }
+
+  //     // Return all scheduling URLs as array
+  //     const slots = collection
+  //       .filter(
+  //         (slot: any) => slot.status === "available" && slot.scheduling_url
+  //       )
+  //       .map((slot: any) => slot.scheduling_url);
+
+  //     return slots.length > 0 ? slots : [];
+  //   } catch (error: any) {
+  //     console.error("❌ Error fetching Calendly slots:", error.message);
+  //     return []; // ✅ fallback empty array on error
+  //   }
+  // }
+
+// private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<string[]> {
+//   try {
+//     const now = new Date();
+
+//     // Helper: format date to Calendly's expected format
+//     const formatCalendlyDate = (date: Date) => {
+//       const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+//       return (
+//         `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+//         `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
+//       );
+//     };
+
+//     // Add a 1-minute buffer for start_time
+//     const startTimeRaw = new Date(now.getTime() + 60 * 1000);
+//     const endTimeRaw = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+
+//     const start_time = formatCalendlyDate(startTimeRaw);
+//     const end_time = formatCalendlyDate(endTimeRaw);
+
+//     const encodedStart = encodeURIComponent(start_time);
+//     const encodedEnd = encodeURIComponent(end_time);
+
+//     const event_type =
+//       "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+
+//     const url = `https://api.calendly.com/event_type_available_times?event_type=${encodeURIComponent(
+//       event_type
+//     )}&start_time=${encodedStart}&end_time=${encodedEnd}`;
+
+//     console.log("🌐 Calendly API URL:", url);
+
+//     const calendlyResponse = await axios.get(url, {
+//       headers: {
+//         Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
+//       },
+//     });
+
+//     const collection = calendlyResponse.data.collection || [];
+
+//     if (collection.length === 0) {
+//       console.warn("⚠️ No available Calendly slots found");
+//       return [];
+//     }
+
+//     // ✅ Extract full list of available slot URLs
+//     const slots = collection
+//       .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
+//       .map((slot: any) => slot.scheduling_url);
+
+//     console.log("✅ Found available Calendly slots:", slots);
+//     return slots;
+//   } catch (error: any) {
+//     console.error(
+//       "❌ Error fetching Calendly slots:",
+//       error.response?.data || error.message
+//     );
+//     return [];
+//   }
+// }
+
+
+private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferred_slot: { date: string; time: string }[] } | null> {
+  try {
+    const now = new Date();
+
+    const formatCalendlyDate = (date: Date) => {
+      const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+      return (
+        `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+        `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
       );
+    };
 
-      const collection = calendlyResponse.data.collection || [];
-      if (collection.length === 0) {
-        console.warn("⚠️ No available Calendly slots found");
-        return []; // ✅ return empty array, not null
-      }
+    const startTimeRaw = new Date(now.getTime() + 60 * 1000);
+    const endTimeRaw = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
-      // Return all scheduling URLs as array
-      const slots = collection
-        .filter(
-          (slot: any) => slot.status === "available" && slot.scheduling_url
-        )
-        .map((slot: any) => slot.scheduling_url);
+    const start_time = encodeURIComponent(formatCalendlyDate(startTimeRaw));
+    const end_time = encodeURIComponent(formatCalendlyDate(endTimeRaw));
 
-      return slots.length > 0 ? slots : [];
-    } catch (error: any) {
-      console.error("❌ Error fetching Calendly slots:", error.message);
-      return []; // ✅ fallback empty array on error
-    }
+    const event_type = "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+
+    const url = `https://api.calendly.com/event_type_available_times?event_type=${encodeURIComponent(
+      event_type
+    )}&start_time=${start_time}&end_time=${end_time}`;
+
+    const calendlyResponse = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
+      },
+    });
+
+    const collection = calendlyResponse.data.collection || [];
+    if (collection.length === 0) return null;
+// Filter available slots
+    const availableSlots = collection
+      .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
+      .map((slot: any) => {
+        const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+        if (!match) return null;
+        const [_, date, time] = match;
+        return { date, time };
+      })
+      .filter(Boolean) as { date: string; time: string }[];
+
+    if (availableSlots.length === 0) return null;
+
+    return { preferred_slot: availableSlots };
+  } catch (error: any) {
+    console.error("❌ Error fetching Calendly slots:", error.response?.data || error.message);
+    return null;
   }
+}
+
+
+
   //old logic batch call
   // static async createBatchCall(tasks: RetellTask[]) {
   //   if (tasks.length === 0) return null;
@@ -136,8 +274,10 @@ export class CRMDataService {
         "Content-Type": "application/json",
       };
 
-      const response = await axios.get("https://api.retellai.com/list-phone-numbers", { headers });
-      return response.data || [];
+     const response = await axios.get("https://api.retellai.com/list-phone-numbers", { headers });
+ return response.data || [];
+
+
     } catch (error: any) {
       console.warn("Warning: Could not fetch phone numbers from RetellAI:", error.response?.data || error.message);
       return [];
@@ -368,7 +508,8 @@ export class CRMDataService {
   public async getCRMData(verifyUser: any) {
     try {
       // 1️⃣ Fetch Calendly slots
-      const calendlySlot = await this.getCalendlyAvailableSlot();
+      const calendlySlots = await this.getCalendlyAvailableSlot();
+      console.log("calendlySlots",calendlySlots)
 
       // 2️⃣ Build dynamic where condition
       let whereCondition = {};
@@ -389,14 +530,21 @@ export class CRMDataService {
         order: { createdAt: "DESC" },
       });
 
+      
+
+
+      
       // 4️⃣ Prepare tasks for RetellAI
       const tasks: RetellTask[] = mainCategories
         .filter((crm: any) => crm.mobile_number && crm.need_to_call)
         .map((crm: any, index: number) => {
-          const slot =
-            calendlySlot && calendlySlot.length > 0
-              ? calendlySlot[index % calendlySlot.length]
-              : null;
+        // const selectedSlot =
+        //   calendlySlots.length > 0
+        //     ? calendlySlots[index % calendlySlots.length]
+        //     : null;
+
+
+        
 
           return {
             to_number: crm.mobile_number,
@@ -408,10 +556,8 @@ export class CRMDataService {
               property_type: crm.property_type ?? "",
               property_type_address_line2: crm.property_type_address_line2 ?? "",
               property_type_address_line3: crm.property_type_address_line3 ?? "",
-              available_slot: crm.available_slot ?? "",
+              available_slots: JSON.stringify(calendlySlots), // now allowed
               city: crm.city ?? "",
-              slot: slot ?? "",
-              calendly_url: slot ?? "",
               greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
             },
           };
@@ -432,7 +578,6 @@ export class CRMDataService {
         const response = callResults.find((r) => r.to_number === crm.mobile_number);
         return {
           ...crm,
-          calendly_slot: calendlySlot[index % calendlySlot.length] || "",
           retellResponse: response?.retellResponse || null,
         };
       });
