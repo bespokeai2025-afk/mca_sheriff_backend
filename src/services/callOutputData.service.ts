@@ -341,6 +341,10 @@ static async getUsercallingHistory(
         'call."end_reason"',
         'call."updatedAt" AS call_updatedAt',
         'call.event AS event',
+        'call.appointment_date',
+        'call.appointment_time',
+        'call.booking_status',
+        'call.calendly_booking_url',
       ])
       .orderBy('call."updatedAt"', "DESC")
       .getRawMany();
@@ -532,12 +536,21 @@ static async getUsercallingHistory(
       .andWhere("call.callStatus = :status", { status: "not_connected" })
       .getCount();
 
+     // ✅ Need to call count (fixed)
+    const needToCall = await this.CRMDataRepository
+      .createQueryBuilder("call")
+      .where(whereCondition)
+      .andWhere("call.need_to_call = :needToCall", { needToCall: true })
+      .getCount();
+
+
     // Return only counts
     return successWithData("User call detail Count fetched successfully", {
       totalCall,
       successCounts,
       failureCounts,
       notConnectedCounts,
+      needToCall
     });
 
   } catch (error) {
@@ -620,7 +633,7 @@ static async getUsercallingHistory(
       await this.CRMDataRepository.save(crmRecord);
       console.log("CRM record updated (need_to_call=false)");
     }
-    console.log(savedCall, "savitaaaaaaaaaaaaaaa");
+    // console.log(savedCall, "savitaaaaaaaaaaaaaaa");
     
       return successWithData("Call output data created successfully", savedCall);
     } catch (error) {

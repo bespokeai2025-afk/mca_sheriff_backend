@@ -8,7 +8,7 @@ export class CallFrequencySettingController {
   // Create a new call frequency setting
     static async create(req: Request, res: Response): Promise<void> {
     try {
-      const { number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
+      const { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone } = req.body;
 
       // Validate that at least selected_days exists
       // if (!selected_days || selected_days.length === 0) {
@@ -19,7 +19,7 @@ export class CallFrequencySettingController {
       // }
 
       // Prepare payload
-      const payload = { number_count, selected_days, selected_weeks, call_frequency_setting };
+      const payload = { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone };
       const result = await service.create(payload);
 
       res.status(200).json(
@@ -47,58 +47,103 @@ export class CallFrequencySettingController {
       );
     }
   }
-  static async update(req: Request, res: Response): Promise<void> {
-  try {
-    const { id, number_count, selected_days, selected_weeks, call_frequency_setting } = req.body;
+//   static async update(req: Request, res: Response): Promise<void> {
+//   try {
+//     const { id, call_frequency_setting, timeZone } = req.body;
 
-    // Validate ID
-    if (!id) {
-      res.status(400).json(errorWithData("ID parameter is required", null, 400));
-      return;
-    }
+//     // Validate ID
+//     if (!id) {
+//       res.status(400).json(errorWithData("ID parameter is required", null, 400));
+//       return;
+//     }
 
-    // Validate selected_days
-    // if (!selected_days || selected_days.length === 0) {
-    //   res.status(400).json(errorWithData("selected_days is required", null, 400));
-    //   return;
-    // }
+//     // Validate call_frequency_setting
+//     if (!call_frequency_setting) {
+//       res.status(400).json(errorWithData("call_frequency_setting is required", null, 400));
+//       return;
+//     }
 
-    // Validate call_frequency_setting
-    if (!call_frequency_setting) {
-      res.status(400).json(errorWithData("call_frequency_setting is required", null, 400));
-      return;
-    }
+//     // Optional: validate cron expression using cron-validator
+//     const { isValidCron } = await import("cron-validator");
+//     if (!isValidCron(call_frequency_setting, { seconds: false })) {
+//       res.status(400).json(
+//         errorWithData(
+//           "Invalid cron expression. Example of valid cron: '30 5 * * 1,6'",
+//           call_frequency_setting,
+//           400
+//         )
+//       );
+//       return;
+//     }
 
-    // Optional: validate cron expression using cron-validator
-    const { isValidCron } = await import("cron-validator");
-    if (!isValidCron(call_frequency_setting, { seconds: false })) {
-      res.status(400).json(
-        errorWithData(
-          "Invalid cron expression. Example of valid cron: '30 5 * * 1,6'",
-          call_frequency_setting,
-          400
+//     // Prepare payload
+//     const payload = { call_frequency_setting, timeZone };
+//     const updated = await service.update(id, payload);
+
+//     if (!updated) {
+//       res.status(404).json(errorWithData("Call frequency setting not found", null, 404));
+//       return;
+//     }
+
+//     res.status(200).json(
+//       successWithData("Call frequency setting updated successfully", updated, undefined, 200)
+//     );
+//   } catch (err: any) {
+//     console.error(err);
+//     res.status(500).json(
+//       errorWithData("Failed to update call frequency setting", err.message, 500)
+//     );
+//   }
+// }
+
+static async update(req: Request, res: Response): Promise<void> {
+    try {
+      const { id, call_frequency_setting, timeZone } = req.body;
+
+      // Validate ID
+      // if (!id) {
+      //   res.status(400).json(errorWithData("ID parameter is required", null, 400));
+      //   return;
+      // }
+
+      // Validate call_frequency_setting
+      if (!call_frequency_setting) {
+        res.status(400).json(errorWithData("call_frequency_setting is required", null, 400));
+        return;
+      }
+
+      // Optional: validate cron expression using cron-validator
+      const { isValidCron } = await import("cron-validator");
+      if (!isValidCron(call_frequency_setting, { seconds: false })) {
+        res.status(400).json(
+          errorWithData(
+            "Invalid cron expression. Example of valid cron: '30 5 * * 1,6'",
+            call_frequency_setting,
+            400
+          )
+        );
+        return;
+      }
+
+      // Prepare payload
+      const payload = { call_frequency_setting, timeZone };
+
+      // Save frequency setting (insert if not exists, update if exists)
+      const result = await service.updateOrInsert(id, payload);
+
+      res.status(200).json(
+        successWithData(
+          "Call frequency setting saved successfully",
+          result,
+          undefined,
+          200
         )
       );
-      return;
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json(
+        errorWithData("Failed to save call frequency setting", err.message, 500)
+      );
     }
-
-    // Prepare payload
-    const payload = { number_count, selected_days, selected_weeks, call_frequency_setting };
-    const updated = await service.update(id, payload);
-
-    if (!updated) {
-      res.status(404).json(errorWithData("Call frequency setting not found", null, 404));
-      return;
-    }
-
-    res.status(200).json(
-      successWithData("Call frequency setting updated successfully", updated, undefined, 200)
-    );
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json(
-      errorWithData("Failed to update call frequency setting", err.message, 500)
-    );
   }
-}
 }

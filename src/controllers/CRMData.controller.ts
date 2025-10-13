@@ -4,9 +4,9 @@ import XLSX from "xlsx";
 import path from "path";
 import fs from 'fs';
 import { Multer } from "multer";
-
+import axios from "axios";
 // Import utilities and services
-import { errorWithData, errorWithoutData } from "../config/ApiResponse";
+import { errorWithData, errorWithoutData, successWithData } from "../config/ApiResponse";
 import { CRMDataService } from "../services/CRMData.service";
 import { AppDataSource } from "../config/database";
 import { Admin } from "../entities/Admin";
@@ -14,23 +14,24 @@ const upload = multer({ dest: 'uploads/' });
 // Initialize services and repositories
 const crmdataservice = new CRMDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
+
 export const getCRMData = async (req: Request, res: Response): Promise<any> => {
-
-    try {
-        if (!req.user) {
-            const response = errorWithoutData("Authentication failed");
-                 res.status(response.result ? 200 : 400).json(response);
-                 return; // ✅ exit without returning Response
-        }
-        const { pageSize, currentPage } = req.query;
-
-
-        const response = await crmdataservice.getCRMData(req.verifyUser, parseInt(pageSize as string) || 50, parseInt(currentPage as string) || 1);
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData('something went wrong', { error: error });
-        return res.status(response.result ? 200 : 400).json(response);
+  try {
+    // 1️⃣ Check authentication
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed");
+      return res.status(response.result ? 200 : 400).json(response);
     }
+
+    // 2️⃣ Fetch CRM data (no pagination needed)
+    const response = await crmdataservice.getCRMData(req.verifyUser);
+
+    // 3️⃣ Return response
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error: any) {
+    const response = errorWithData("Something went wrong", { error: error.message || error });
+    return res.status(response.result ? 200 : 400).json(response);
+  }
 };
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
     try {

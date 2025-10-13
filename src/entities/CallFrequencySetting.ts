@@ -20,6 +20,9 @@ export class CallFrequencySetting {
 
   @Column({ type: "text", nullable: true })
   call_frequency_setting: string;
+  
+  @Column({ type: "text", nullable: true })
+  timeZone: string;
 
   @Column({ type: "boolean", default: true })
   isActive: boolean;
