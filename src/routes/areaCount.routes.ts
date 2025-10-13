@@ -4,7 +4,7 @@ import { addAreaCount, editAreaCount, getAllAreaCounts } from "../controllers/ar
 const router = Router();
 
 router.post("/add", addAreaCount);
-router.put("/update/:id", editAreaCount);
+router.post("/update", editAreaCount);
 router.get("/fetch", getAllAreaCounts);
 
 export default router;
