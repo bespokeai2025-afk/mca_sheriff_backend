@@ -27,14 +27,28 @@ export class PhoneNumberController {
         return;
       }
 
+      // Validation: at least one active phone number must be selected
+      const activeNumbers = phonenumbers.filter(
+        (p) => p.is_active === true || p.is_active === "true"
+      );
+      if (activeNumbers.length === 0) {
+        res.status(400).json(errorWithData("At least one active phone number must be selected", null));
+        return;
+      }
+
       const savedphonenumber = await PhoneNumberService.savePhoneNumber(phonenumbers);
 
-      res.status(200).json(successWithData("Phone Number saved successfully", savedphonenumber));
+      res
+        .status(200)
+        .json(successWithData("Phone Number saved successfully", savedphonenumber));
     } catch (error) {
       console.error("Controller error in saveSelectedPhoneNumber:", error);
-      res.status(500).json(errorWithData("Failed to save phone numbers", error, 500));
+      res
+        .status(500)
+        .json(errorWithData("Failed to save phone numbers", error, 500));
     }
   }
+
   static async getPhoneNumberActive(req: Request, res: Response): Promise<void> {
     try {
       // No need to take body for GET
