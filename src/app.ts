@@ -104,8 +104,8 @@ AppDataSource.initialize()
         // cronJobManager.startAllCronJobs();
 
            // This now works fine
-        await CallScheduler.initialize();
-        console.log("All call frequency schedulers initialized!");
+        // await CallScheduler.initialize();
+        // console.log("All call frequency schedulers initialized!");
     })
     .catch((err) => {
         console.error("Error Connecting Database", err);
