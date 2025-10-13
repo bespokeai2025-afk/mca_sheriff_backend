@@ -46,4 +46,9 @@ router.post(
   CallFrequencySettingController.update
 );
 
+// 🧩 New route to trigger AWS EventBridge job creation
+// router.post(
+//   "/create-eventbridge-schedule",
+//   CallFrequencySettingController.createEventBridgeSchedule
+// );
 export default router;
