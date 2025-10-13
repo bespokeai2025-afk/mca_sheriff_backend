@@ -110,35 +110,27 @@ export class PhoneNumberService {
       "Content-Type": "application/json",
     };
     try {
-      // :one: Fetch list-phone-numbers from Retell
-      // 1️⃣ Fetch list-phone-numbers from Retell
+
+      //  Fetch list-phone-numbers from Retell
       const response = await axios.get(url, { headers });
       const retellPhoneNumbers: RetellPhoneNumber[] = response.data || [];
-      // :two: Fetch active phone numbers from DB
 
-      // 2️⃣ Fetch active phone numbers from DB
+      //  Fetch active phone numbers from DB
       const dbPhoneNumbers = await PhoneNumber.find({ where: { is_active: true } });
-      // :three: Fetch all company numbers (flatten all phone_number arrays)
-      const allCompanyRecords = await AllCompanyNumbersAndAgents.find();
-      const allowedPhoneNumbers = new Set<string>(
-        allCompanyRecords.flatMap((rec) => rec.phone_number)
-      );
-      // :four: Collect unique outbound agent IDs
 
-      // 3️⃣ Fetch all company numbers (flatten all phone_number arrays)
       const allCompanyRecords = await AllCompanyNumbersAndAgents.find();
       const allowedPhoneNumbers = new Set<string>(
         allCompanyRecords.flatMap((rec) => rec.phone_number)
       );
 
-      // 4️⃣ Collect unique outbound agent IDs
+
+      //  Collect unique outbound agent IDs
       const agentIds = new Set<string>();
       for (const num of retellPhoneNumbers) {
         if (num.outbound_agent_id) agentIds.add(num.outbound_agent_id);
       }
-      // :five: Fetch agent details in parallel
 
-      // 5️⃣ Fetch agent details in parallel
+      //  Fetch agent details in parallel
       const agentNameMap = new Map<string, string>();
       await Promise.all(
         Array.from(agentIds).map(async (agentId) => {
@@ -158,9 +150,8 @@ export class PhoneNumberService {
           }
         })
       );
-      // :six: Merge Retell + DB + Agent info
 
-      // 6️⃣ Merge Retell + DB + Agent info
+      //  Merge Retell + DB + Agent info
       const merged = retellPhoneNumbers.map((num) => {
         const dbEntry = dbPhoneNumbers.find(
           (p) => p.phone_number === num.phone_number
@@ -176,10 +167,9 @@ export class PhoneNumberService {
           is_active: sameOutboundAgent ? dbEntry?.is_active ?? false : false,
         };
       });
-      // :seven: Filter only allowed phone numbers
-      const filtered = merged.filter((num) => allowedPhoneNumbers.has(num.phone_number));
 
-      // 7️⃣ Filter only allowed phone numbers
+
+      //  Filter only allowed phone numbers
       const filtered = merged.filter((num) => allowedPhoneNumbers.has(num.phone_number));
 
       return {
@@ -187,7 +177,7 @@ export class PhoneNumberService {
         statuscode: 200,
         message: "Phone numbers fetched successfully",
         data: filtered,
-        data: filtered,
+
       };
     } catch (error: any) {
       console.error("Error fetching phone numbers from RetellAI:", error.response?.data || error.message);
