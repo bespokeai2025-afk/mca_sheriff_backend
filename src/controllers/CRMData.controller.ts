@@ -230,6 +230,38 @@ export const uploadCRMExcel = async (req: Request, res: Response): Promise<void>
 //   }
 // };
 
+export const getCRMDataStatic = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Mock static user context
+    const staticUser = { id: "system_static", role: "admin", name: "Static Token User" };
+
+    const response = await crmdataservice.getCRMData(staticUser);
+
+    if (response.result) {
+      res.status(200).json({
+        result: true,
+        statuscode: 200,
+        message: "CRM data fetched successfully static token",
+        data: response.data || [],
+      });
+      return;
+    }
+
+    res.status(400).json({
+      result: false,
+      statuscode: 400,
+      message: response.message || "Failed to fetch CRM data",
+      data: null,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      statuscode: 500,
+      message: "Something went wrong while fetching CRM data (static route)",
+      data: { error: error.message || String(error) },
+    });
+  }
+};
 
 
 

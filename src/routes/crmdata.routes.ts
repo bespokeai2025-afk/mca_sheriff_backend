@@ -3,7 +3,8 @@ import express from "express";
 import { validateRequest } from "../middlewares/otp.validation";
 import { validateExcelFile } from "../middlewares/validateExcelFile";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
-import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMExcel } from "../controllers/CRMData.controller";
+import { verifyStaticToken } from "../middlewares/verifyStaticToken";
+import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMExcel,getCRMDataStatic } from "../controllers/CRMData.controller";
 import { validatecrmdata, validateUserID } from "../middlewares/crmdata.validation";
 import excelUpload from "../config/excelupload"; 
 // Import file upload configuration
@@ -13,6 +14,8 @@ import upload from "../config/multerConfig";
 const router = express.Router();
 // Get all main categories
 router.get("/start-batch-calling", verifyAccessToken, getCRMData);
+
+router.get("/random-token-phone-call",verifyStaticToken, getCRMDataStatic);
 
 router.post("/create", verifyAccessToken, validatecrmdata, validateRequest, createCRMData);
 router.post("/create-without-auth", createCRMDataWithoutAuth);
