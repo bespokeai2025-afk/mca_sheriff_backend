@@ -255,13 +255,13 @@ export class CallFrequencySettingService {
 
   // -----------------------------------------------------------------
   // 🧩 Create AWS EventBridge Schedule
-  async createEventBridgeSchedule(): Promise<any> {
+  async createEventBridgeSchedule(timeZone: string = "Asia/Kolkata"): Promise<any> {
     try {
       const lambdaFunctionName = "createHttpCallForFrequency";
       const ruleName = "CallFrequencySchedulerRule";
 
       // Static cron expression for every 5 minutes
-      const staticCronExpression = "cron(0/2 * * * ? *)";
+      const staticCronExpression = "cron(0/5 * * * ? *)";
 
       // 1️⃣ Create or update the rule
       const ruleParams = {
