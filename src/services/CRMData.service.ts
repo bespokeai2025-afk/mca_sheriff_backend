@@ -136,8 +136,10 @@ export class CRMDataService {
         "Content-Type": "application/json",
       };
 
-      const response = await axios.get("https://api.retellai.com/list-phone-numbers", { headers });
-      return response.data || [];
+     const response = await axios.get("https://api.retellai.com/list-phone-numbers", { headers });
+ return response.data || [];
+
+
     } catch (error: any) {
       console.warn("Warning: Could not fetch phone numbers from RetellAI:", error.response?.data || error.message);
       return [];
