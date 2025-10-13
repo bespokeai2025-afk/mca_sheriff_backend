@@ -34,7 +34,7 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
     return res.status(500).json({
       result: false,
       statuscode: 500,
-      message: "Internal Server Error",
+      message: "Internal Server Error New",
       error: (error as Error).message,
     });
   }
@@ -184,7 +184,7 @@ export const getUsercallingHistory = async (req: Request, res: Response): Promis
   } catch (error) {
     console.error("Error in getUserCallHistory controller:", error);
     return res.status(500).json(
-      errorWithData("Internal server error", { error: (error as Error).message })
+      errorWithData("Internal Server Error New", { error: (error as Error).message })
     );
   }
 };
@@ -212,7 +212,7 @@ export const getUserCallDataCount = async (req: Request, res: Response): Promise
   } catch (error) {
     console.error("Error in getUserCallDataCount controller:", error);
     return res.status(500).json(
-      errorWithData("Internal server error", { error: (error as Error).message })
+      errorWithData("Internal Server Error New", { error: (error as Error).message })
     );
   }
 };
@@ -220,6 +220,7 @@ export const getUserCallDataCount = async (req: Request, res: Response): Promise
 
 export const createCallOutputData = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log("Satish");
     // 🔍 Log the full request body
     console.log(" Incoming Request Body:", req.body, null, 2);
 

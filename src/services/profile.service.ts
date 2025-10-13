@@ -92,7 +92,7 @@ export class ProfileService {
 
     //     } catch (err) {
     //         console.log(err)
-    //         return errorWithData('Internal server Error', { error: err })
+    //         return errorWithData('Internal Server Error New', { error: err })
     //     }
     // }
 

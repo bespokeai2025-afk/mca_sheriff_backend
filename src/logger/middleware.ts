@@ -43,6 +43,33 @@ export const logResponse = (req: Request, res: Response, next: NextFunction) => 
   next();
 };
 
+// // Global error handler
+// export const logError = (
+//   err: any,
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   errorLogger.error({
+//     type: "error",
+//     timestamp: new Date().toISOString(),
+//     message: err.message,
+//     stack: err.stack,
+//     url: req.originalUrl,
+//     method: req.method,
+//     statusCode: res.statusCode || 500,
+//     request: {
+//       headers: req.headers,
+//       query: req.query,
+//       body: req.body,
+//       params: req.params,
+//     },
+//   });
+
+//   res.status(500).json({ error: "Internal Server Error Error" });
+// };
+
+
 // Global error handler
 export const logError = (
   err: any,
@@ -50,21 +77,29 @@ export const logError = (
   res: Response,
   next: NextFunction
 ) => {
-  errorLogger.error({
-    type: "error",
-    timestamp: new Date().toISOString(),
-    message: err.message,
-    stack: err.stack,
-    url: req.originalUrl,
-    method: req.method,
-    statusCode: res.statusCode || 500,
-    request: {
-      headers: req.headers,
-      query: req.query,
-      body: req.body,
-      params: req.params,
-    },
-  });
+  try {
+    errorLogger.error({
+      type: "error",
+      timestamp: new Date().toISOString(),
+      message: err?.message || "Unknown error",
+      stack: err?.stack || "No stack trace",
+      name: err?.name || "Error",
+      url: req.originalUrl,
+      method: req.method,
+      statusCode: res.statusCode || 500,
+      request: {
+        headers: req.headers || {},
+        query: req.query || {},
+        body: req.body || {},
+        params: req.params || {},
+      },
+    });
+  } catch (loggingError) {
+    // Prevent crashing if logger fails
+    console.error("Error logging failed:", loggingError);
+    console.error("Original error:", err);
+  }
 
-  res.status(500).json({ error: "Internal Server Error" });
+  // Always send a generic response to the client
+  res.status(500).json({ error: err });
 };

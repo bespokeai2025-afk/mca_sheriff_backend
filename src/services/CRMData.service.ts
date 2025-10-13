@@ -203,10 +203,23 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
     const availableSlots = collection
       .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
       .map((slot: any) => {
-        const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+        // const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+        // if (!match) return null;
+        // const [_, date, time] = match;
+        // return { date, time };
+
+         const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
         if (!match) return null;
-        const [_, date, time] = match;
+        const [_, date, hoursStr, minutesStr] = match;
+
+        let hours = parseInt(hoursStr, 10);
+        const minutes = minutesStr;
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12; // convert 0 => 12
+        const time = `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+
         return { date, time };
+        
       })
       .filter(Boolean) as { date: string; time: string }[];
 
@@ -541,10 +554,7 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
         //     ? calendlySlots[index % calendlySlots.length]
         //     : null;
 
-
-        
-
-          return {
+        return {
             to_number: crm.mobile_number,
             retell_llm_dynamic_variables: {
               name: crm.name ?? "",
@@ -552,10 +562,10 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
               lead_id: crm.lead_id ? String(crm.lead_id) : "",
               unique_id: crm.unique_id ? String(crm.unique_id) : "",
               property_type: crm.property_type ?? "",
-              property_type_address_line2: crm.property_type_address_line2 ?? "",
-              property_type_address_line3: crm.property_type_address_line3 ?? "",
+              property_address_line2: crm.new_propinfo_street2 ?? "",
+              property_address_line3: crm.address1_line2 ?? "",
               available_slots: JSON.stringify(calendlySlots), // now allowed
-              city: crm.city ?? "",
+              city: crm.new_propinfo_city ?? "",
               greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
             },
           };
