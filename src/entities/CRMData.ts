@@ -8,6 +8,7 @@ import { Entity, Column, Check, OneToMany, JoinColumn, BeforeUpdate, CreateDateC
 import { CallOutputData } from './CallOutputData';
 
 
+
 // MainCategory entity representing main categories
 @Entity({ name: 'CRM_data' })
 // @Check('priority >= 0') // Ensure priority is non-negative
@@ -25,7 +26,10 @@ export class CRMData /* extends Common */ {
 
     @Column({ type: 'text', nullable: true })
     email: string;
-
+    
+    @Column({ type: 'text', nullable: true })
+    client_name: string;
+    
     @Column({ type: 'text', nullable: true })
     unique_id: string;
 
