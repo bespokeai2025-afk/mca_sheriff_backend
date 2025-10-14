@@ -503,10 +503,10 @@ export class LeadFilterMasterService {
     try {
       const filter = await this.leadFilterStatusRepository.find({
         where: { isDeleted: false },
-        select: ['query'], // include 'id' + any other columns you want
-        order: { createdAt: 'ASC' }, // get earliest row
+        select: ['query','id'], // include 'id' + any other columns you want
+        order: { createdAt: 'ASC' }, // get the earliest row
+        //  where: { id, isDeleted: false },
       });
-
       if (!filter) {
         return errorWithoutData("Lead filter not found");
       }
