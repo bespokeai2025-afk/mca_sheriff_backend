@@ -390,7 +390,7 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
   }
  public async getCRMData(
   verifyUser: any,
-  batchLimit: number = 20 // default batch size
+  batchLimit: number = 1 // default batch size
 ) {
   try {
     const allProcessedData: any[] = [];
