@@ -12,6 +12,7 @@ interface CallFrequencyInput {
   // selected_weeks?: string[];
   call_frequency_setting: string;
   timeZone: string;
+  label: string;
 }
 
 export class CallFrequencySettingService {
@@ -50,6 +51,7 @@ export class CallFrequencySettingService {
       // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
       call_frequency_setting: data.call_frequency_setting, // use user input directly
       timeZone: data.timeZone, // use user input directly
+      label: data.label, // use user input directly
     });
 
     return await this.repo.save(entity);
@@ -150,10 +152,12 @@ async updateOrInsert(id: string, data: CallFrequencyInput): Promise<CallFrequenc
       id,
       call_frequency_setting: timeConvertedCronExpression,
       timeZone: data.timeZone,
+      label: data.label,
     });
   } else {
     existing.call_frequency_setting = timeConvertedCronExpression;
     existing.timeZone = data.timeZone;
+    existing.label = data.label;
   }
 
   return await this.repo.save(existing);
