@@ -120,7 +120,7 @@ export class OTPService {
 
       return successWithData("OTP sent successfully", { mobile, otpCode });
     } catch (err) {
-      return errorWithoutData(`${err} Internal Server Error`,);
+      return errorWithoutData(`${err} Internal Server Error New`,);
     }
   }
 
@@ -222,7 +222,7 @@ export class OTPService {
 
       return successWithData("OTP sent successfully", { mobile, otpCode });
     } catch (err) {
-      return errorWithoutData("Internal Server Error");
+      return errorWithoutData("Internal Server Error New");
     }
   }
 

@@ -569,6 +569,7 @@ static async getUsercallingHistory(
         try {
           raw = JSON.parse(raw);
         } catch (parseErr) {
+          console.log(" test ",parseErr)
           return errorWithData("Invalid JSON in raw_data", { raw, parseErr });
         }
       }
@@ -637,7 +638,7 @@ static async getUsercallingHistory(
     
       return successWithData("Call output data created successfully", savedCall);
     } catch (error) {
-      console.error(" Error creating call output data:", error);
+      console.log(" Error creating call output data:", error);
       return errorWithData("Failed to create call output data", {
         error: (error as Error).message,
       });

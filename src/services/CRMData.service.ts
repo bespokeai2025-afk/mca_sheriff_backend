@@ -12,6 +12,8 @@ import { ILike } from "typeorm";
 import { CallOutputData } from "../entities/CallOutputData";
 import { mapIncomingCRMData } from "../utils/mappercrm";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
+import { PhoneNumber } from "../entities/PhoneNumberEntity";
+import { AllCompanyNumbersAndAgents } from "../entities/All_Company_Numbers_and_Agents";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export interface RetellTask {
   to_number: string;
@@ -23,7 +25,13 @@ export interface RetellTask {
     property_type?: string;
     property_type_address_line2?: string;
     property_type_address_line3?: string;
-    available_slot?: string;
+    available_slots?: string;
+    // available_slot?: { 
+    //   preferred_slot: { 
+    //     date: string; 
+    //     time: string; 
+    //   } 
+    // } | null; // <- object type now allowed
     city?: string;
     slot?: string | null; // ✅ can be string or null
     calendly_url?: string | null; // ✅ can be string or null
@@ -36,51 +44,196 @@ export class CRMDataService {
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
 
   // ✅ Fetch available Calendly slot before starting call
-  private async getCalendlyAvailableSlot(
-    daysAhead: number = 7
-  ): Promise<string[]> {
-    try {
-      const now = new Date();
-      const start_time = now.toISOString(); // current UTC time
-      const end_time = new Date(
-        now.getTime() + daysAhead * 24 * 60 * 60 * 1000
-      ).toISOString(); // X days ahead
+  // private async getCalendlyAvailableSlot(
+  //   daysAhead: number = 7
+  // ): Promise<string[]> {
+  //   try {
+  //     // const now = new Date();
+  //     // const start_time = now.toISOString(); // current UTC time
+  //     // const end_time = new Date(
+  //     //   now.getTime() + daysAhead * 24 * 60 * 60 * 1000
+  //     // ).toISOString(); // X days ahead
 
-      console.log("Calendly Start Time:", start_time);
-      console.log("Calendly End Time:", end_time);
+  //      // Convert to Calendly’s expected format: "YYYY-MM-DD HH:mm:ss.SSSSSS"
+  //       const now = new Date();
+  //       const formatCalendlyDate = (date: Date) => {
+  //     const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+  //     return (
+  //       `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+  //       `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
+  //     );
+  //   };
 
-      const event_type =
-        "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+  //   const start_time = formatCalendlyDate(now);
+  //   const end_time = formatCalendlyDate(
+  //     new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000)
+  //   );
 
-      const calendlyResponse = await axios.get(
-        "https://api.calendly.com/event_type_available_times",
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
-          },
-          params: { start_time, end_time, event_type },
-        }
+  //     console.log("Calendly Start Time:", start_time);
+  //     console.log("Calendly End Time:", end_time);
+
+  //     const event_type =
+  //       "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+
+  //     const calendlyResponse = await axios.get(
+  //       "https://api.calendly.com/event_type_available_times",
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
+  //         },
+  //         params: { start_time, end_time, event_type },
+  //       }
+  //     );
+
+  //     const collection = calendlyResponse.data.collection || [];
+  //     if (collection.length === 0) {
+  //       console.warn("⚠️ No available Calendly slots found");
+  //       return []; // ✅ return empty array, not null
+  //     }
+
+  //     // Return all scheduling URLs as array
+  //     const slots = collection
+  //       .filter(
+  //         (slot: any) => slot.status === "available" && slot.scheduling_url
+  //       )
+  //       .map((slot: any) => slot.scheduling_url);
+
+  //     return slots.length > 0 ? slots : [];
+  //   } catch (error: any) {
+  //     console.error("❌ Error fetching Calendly slots:", error.message);
+  //     return []; // ✅ fallback empty array on error
+  //   }
+  // }
+
+// private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<string[]> {
+//   try {
+//     const now = new Date();
+
+//     // Helper: format date to Calendly's expected format
+//     const formatCalendlyDate = (date: Date) => {
+//       const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+//       return (
+//         `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+//         `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
+//       );
+//     };
+
+//     // Add a 1-minute buffer for start_time
+//     const startTimeRaw = new Date(now.getTime() + 60 * 1000);
+//     const endTimeRaw = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+
+//     const start_time = formatCalendlyDate(startTimeRaw);
+//     const end_time = formatCalendlyDate(endTimeRaw);
+
+//     const encodedStart = encodeURIComponent(start_time);
+//     const encodedEnd = encodeURIComponent(end_time);
+
+//     const event_type =
+//       "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+
+//     const url = `https://api.calendly.com/event_type_available_times?event_type=${encodeURIComponent(
+//       event_type
+//     )}&start_time=${encodedStart}&end_time=${encodedEnd}`;
+
+//     console.log("🌐 Calendly API URL:", url);
+
+//     const calendlyResponse = await axios.get(url, {
+//       headers: {
+//         Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
+//       },
+//     });
+
+//     const collection = calendlyResponse.data.collection || [];
+
+//     if (collection.length === 0) {
+//       console.warn("⚠️ No available Calendly slots found");
+//       return [];
+//     }
+
+//     // ✅ Extract full list of available slot URLs
+//     const slots = collection
+//       .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
+//       .map((slot: any) => slot.scheduling_url);
+
+//     console.log("✅ Found available Calendly slots:", slots);
+//     return slots;
+//   } catch (error: any) {
+//     console.error(
+//       "❌ Error fetching Calendly slots:",
+//       error.response?.data || error.message
+//     );
+//     return [];
+//   }
+// }
+
+
+private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferred_slot: { date: string; time: string }[] } | null> {
+  try {
+    const now = new Date();
+
+    const formatCalendlyDate = (date: Date) => {
+      const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+      return (
+        `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+        `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
       );
+    };
 
-      const collection = calendlyResponse.data.collection || [];
-      if (collection.length === 0) {
-        console.warn("⚠️ No available Calendly slots found");
-        return []; // ✅ return empty array, not null
-      }
+    const startTimeRaw = new Date(now.getTime() + 60 * 1000);
+    const endTimeRaw = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
-      // Return all scheduling URLs as array
-      const slots = collection
-        .filter(
-          (slot: any) => slot.status === "available" && slot.scheduling_url
-        )
-        .map((slot: any) => slot.scheduling_url);
+    const start_time = encodeURIComponent(formatCalendlyDate(startTimeRaw));
+    const end_time = encodeURIComponent(formatCalendlyDate(endTimeRaw));
 
-      return slots.length > 0 ? slots : [];
-    } catch (error: any) {
-      console.error("❌ Error fetching Calendly slots:", error.message);
-      return []; // ✅ fallback empty array on error
-    }
+    const event_type = "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+
+    const url = `https://api.calendly.com/event_type_available_times?event_type=${encodeURIComponent(
+      event_type
+    )}&start_time=${start_time}&end_time=${end_time}`;
+
+    const calendlyResponse = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
+      },
+    });
+
+    const collection = calendlyResponse.data.collection || [];
+    if (collection.length === 0) return null;
+// Filter available slots
+    const availableSlots = collection
+      .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
+      .map((slot: any) => {
+        // const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+        // if (!match) return null;
+        // const [_, date, time] = match;
+        // return { date, time };
+
+         const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+        if (!match) return null;
+        const [_, date, hoursStr, minutesStr] = match;
+
+        let hours = parseInt(hoursStr, 10);
+        const minutes = minutesStr;
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12; // convert 0 => 12
+        const time = `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+
+        return { date, time };
+        
+      })
+      .filter(Boolean) as { date: string; time: string }[];
+
+    if (availableSlots.length === 0) return null;
+
+    return { preferred_slot: availableSlots };
+  } catch (error: any) {
+    console.error("❌ Error fetching Calendly slots:", error.response?.data || error.message);
+    return null;
   }
+}
+
+
+
   //old logic batch call
   // static async createBatchCall(tasks: RetellTask[]) {
   //   if (tasks.length === 0) return null;
@@ -123,9 +276,213 @@ export class CRMDataService {
   //   }
   // }
 
+
+  static async fetchRetellPhoneNumbers(): Promise<any[]> {
+    try {
+      const apiKey = process.env.API_KEY_RETELL;
+      if (!apiKey) throw new Error("Missing Retell API key");
+
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      };
+
+     const response = await axios.get("https://api.retellai.com/list-phone-numbers", { headers });
+ return response.data || [];
+
+
+    } catch (error: any) {
+      console.warn("Warning: Could not fetch phone numbers from RetellAI:", error.response?.data || error.message);
+      return [];
+    }
+  }
+
+  static async syncRetellAIandDB() {
+
+    try {
+      // Step 1️⃣: Fetch active phone numbers
+      const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+      console.log("📞 Active numbers in DB:", activeNumbers.map(n => n.phone_number));
+
+      if (!activeNumbers.length) {
+        console.warn("❌ No active phone numbers found in DB");
+        return { result: false, message: "No active phone numbers found in DB" };
+      }
+
+      // Step 2️⃣: Fetch phone numbers from RetellAI
+      const retellNumbers = await this.fetchRetellPhoneNumbers();
+      console.log("📲 Retell numbers fetched:", retellNumbers.length);
+
+      // Step 2.1️⃣: Collect unique agent_ids that need names
+      const agentIdsToFetch = new Set<string>();
+      for (const num of retellNumbers) {
+        if (num.outbound_agent_id && !num.outbound_agent_name) {
+          agentIdsToFetch.add(num.outbound_agent_id);
+        }
+      }
+
+      // Step 2.2️⃣: Fetch agent names from RetellAI
+      const agentNameMap = new Map<string, string>();
+      await Promise.all(
+        Array.from(agentIdsToFetch).map(async (agentId) => {
+          try {
+            const agentRes = await axios.get(`https://api.retellai.com/get-agent/${agentId}`, {
+              headers: { Authorization: `Bearer ${process.env.API_KEY_RETELL}` },
+            });
+            const data = agentRes.data || {};
+            const name = data.agent_name ?? data.name ?? data.agent?.agent_name ?? data.agent?.name ?? "Unknown Agent";
+            agentNameMap.set(agentId, name);
+          } catch (err: any) {
+            console.warn(`Could not fetch agent ${agentId}:`, err.response?.status, err.message);
+            agentNameMap.set(agentId, "Unknown Agent");
+          }
+        })
+      );
+
+      // Step 3️⃣: Sync outbound agent IDs only if changed
+      const updatePayload: any[] = [];
+
+      for (const dbNumber of activeNumbers) {
+        const retellMatch = retellNumbers.find((r: any) => r.phone_number === dbNumber.phone_number);
+        if (!retellMatch) continue;
+
+        const outboundName = retellMatch.outbound_agent_id
+          ? agentNameMap.get(retellMatch.outbound_agent_id) || null
+          : null;
+
+        const outboundChanged =
+          dbNumber.outbound_agent_id !== retellMatch.outbound_agent_id ||
+          (dbNumber.outbound_agent_name?.trim() || "") !== (outboundName?.trim() || "");
+
+        if (outboundChanged) {
+          console.log(`🔄 Updating phone number: ${dbNumber.phone_number}`);
+          updatePayload.push({
+            phone_number: dbNumber.phone_number,
+            outbound_agent_id: retellMatch.outbound_agent_id,
+            outbound_agent_name: outboundName,
+            is_active: dbNumber.is_active,
+          });
+        }
+      }
+
+      // Step 4️⃣: Update DB directly
+      for (const update of updatePayload) {
+        await PhoneNumber.update(
+          { phone_number: update.phone_number }, // ✅ criteria
+          {
+            outbound_agent_id: update.outbound_agent_id,
+            outbound_agent_name: update.outbound_agent_name
+          } // ✅ partial entity
+        );
+      }
+
+      console.log("✅ Phone numbers updated directly in DB");
+      return activeNumbers;
+    } catch (error: any) {
+      console.warn("Warning: Could not fetch phone numbers from RetellAI:", error.response?.data || error.message);
+      return [];
+    }
+  }
+
+
+
+
   static async createBatchCall(task: RetellTask) {
+    // 1️⃣ Sync RetellAI and DB
+    const syncResult = await this.syncRetellAIandDB();
+
+    if (!Array.isArray(syncResult)) {
+      console.warn("❌ Sync failed:", syncResult.message);
+      return { result: false, message: syncResult.message };
+    }
+
+    // ✅ Re-fetch active numbers to get the latest outbound agent info
+    const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+
+    if (!activeNumbers || activeNumbers.length === 0) {
+      console.warn("❌ No active numbers available after sync");
+      return { result: false, message: "No active numbers available" };
+    }
+
+
+    const fromNumber = activeNumbers[0].phone_number;
+    const outboundAgentId = activeNumbers[0].outbound_agent_id;
+    const outboundAgentName = activeNumbers[0].outbound_agent_name;
+
+    // 2️⃣ Validate company and phone number mapping
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error("❌ COMPANY_ID not set in environment variables!");
+      return { result: false, message: "Missing COMPANY_ID in environment" };
+    }
+
+    // 3️⃣ Fetch all company mappings
+    const allCompanies = await AllCompanyNumbersAndAgents.find();
+
+    if (!allCompanies || allCompanies.length === 0) {
+      console.warn("❌ No company records found in All_Company_Numbers_and_Agents");
+      return { result: false, message: "No company data found. Contact to Admin" };
+    }
+
+    // 4️⃣ Compare each phone_number in company arrays with activeNumbers
+    let matchedNumbers: {
+      phone_number: string;
+      outbound_agent_id: string;
+      outbound_agent_name: string;
+      matched: boolean;
+    }[] = [];
+
+    for (const company of allCompanies) {
+      const { phone_number: phoneArr, outbound_agent_id: agentIdArr, outbound_agent_name: agentNameArr } = company;
+
+      for (let i = 0; i < phoneArr.length; i++) {
+        const phone = phoneArr[i];
+        const agentId = agentIdArr[i];
+        const agentName = agentNameArr[i].trim();
+
+        // Check if this triplet exists in phone_numbers table
+        const match = activeNumbers.find(
+          n =>
+            n.phone_number === phone &&
+            n.outbound_agent_id === agentId &&
+            n.outbound_agent_name.trim() === agentName
+        );
+
+        matchedNumbers.push({
+          phone_number: phone,
+          outbound_agent_id: agentId,
+          outbound_agent_name: agentName,
+          matched: !!match,
+        });
+      }
+    }
+
+    // ✅ Check if at least one number matched
+    const matchFound = matchedNumbers.some(n => n.matched);
+    if (!matchFound) {
+      console.warn("🚫 No matching agent found in All_Company_Numbers_and_Agents");
+      return { result: false, message: "Calling Agent not matched. Contact to Admin", data: matchedNumbers };
+    }
+
+    console.log("✅ At least one number matched in company arrays", matchedNumbers.filter(n => n.matched));
+
+
+    //  Proceed only if validation passes
+    const apiKey = process.env.API_KEY_RETELL;
+    if (!apiKey) {
+      console.error("❌ Missing API_KEY_RETELL in environment variables!");
+      return { result: false, message: "Missing API_KEY_RETELL" };
+    }
+
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    };
+
+    
+
     const payload = {
-      from_number: process.env.RETELL_FROM_NUMBER,
+      from_number: fromNumber,
       to_number: task.to_number,
       retell_llm_dynamic_variables: task.retell_llm_dynamic_variables,
       trigger_timestamp: Date.now() + 60 * 1000, // 1 minute later
@@ -158,87 +515,90 @@ export class CRMDataService {
       }
       return null;
     }
+
   }
 
- public async getCRMData(verifyUser: any) {
-  try {
-    // 1️⃣ Fetch Calendly slots
-    const calendlySlot = await this.getCalendlyAvailableSlot();
+  public async getCRMData(verifyUser: any) {
+    try {
+      // 1️⃣ Fetch Calendly slots
+      const calendlySlots = await this.getCalendlyAvailableSlot();
+      console.log("calendlySlots",calendlySlots)
 
-    // 2️⃣ Build dynamic where condition
-    let whereCondition = {};
-    if (verifyUser.user_exist) {
-      whereCondition = {
-        isActive: true,
-        isDeleted: false,
-        need_to_call: true,
-      };
-    }
-    if (verifyUser.admin_exist) {
-      whereCondition = { isDeleted: false, need_to_call: true };
-    }
+      // 2️⃣ Build dynamic where condition
+      let whereCondition = {};
+      if (verifyUser.user_exist) {
+        whereCondition = {
+          isActive: true,
+          isDeleted: false,
+          need_to_call: true,
+        };
+      }
+      if (verifyUser.admin_exist) {
+        whereCondition = { isDeleted: false, need_to_call: true };
+      }
 
-    // 3️⃣ Fetch all CRM data (no pagination)
-    const mainCategories = await this.CRMDataRepository.find({
-      where: whereCondition,
-      order: { createdAt: "DESC" },
-    });
+      // 3️⃣ Fetch all CRM data (no pagination)
+      const mainCategories = await this.CRMDataRepository.find({
+        where: whereCondition,
+        order: { createdAt: "DESC" },
+      });
 
-    // 4️⃣ Prepare tasks for RetellAI
-    const tasks: RetellTask[] = mainCategories
-      .filter((crm: any) => crm.mobile_number && crm.need_to_call)
-      .map((crm: any, index: number) => {
-        const slot =
-          calendlySlot && calendlySlot.length > 0
-            ? calendlySlot[index % calendlySlot.length]
-            : null;
+      
+
+
+      
+      // 4️⃣ Prepare tasks for RetellAI
+      const tasks: RetellTask[] = mainCategories
+        .filter((crm: any) => crm.mobile_number && crm.need_to_call)
+        .map((crm: any, index: number) => {
+        // const selectedSlot =
+        //   calendlySlots.length > 0
+        //     ? calendlySlots[index % calendlySlots.length]
+        //     : null;
 
         return {
-          to_number: crm.mobile_number,
-          retell_llm_dynamic_variables: {
-            name: crm.name ?? "",
-            client_name: crm.client_name ?? "",
-            lead_id: crm.lead_id ? String(crm.lead_id) : "",
-            unique_id: crm.unique_id ? String(crm.unique_id) : "",
-            property_type: crm.property_type ?? "",
-            property_address_line2: crm.new_propinfo_street2 ?? "",
-            property_address_line3: crm.address1_line2 ?? "",
-            available_slots: crm.available_slot ?? "",
-            city: crm.new_propinfo_city ?? "",
-            slot: slot ?? "",
-            calendly_url: slot ?? "",
-            greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
-          },
+            to_number: crm.mobile_number,
+            retell_llm_dynamic_variables: {
+              name: crm.name ?? "",
+              client_name: crm.client_name ?? "",
+              lead_id: crm.lead_id ? String(crm.lead_id) : "",
+              unique_id: crm.unique_id ? String(crm.unique_id) : "",
+              property_type: crm.property_type ?? "",
+              property_address_line2: crm.new_propinfo_street2 ?? "",
+              property_address_line3: crm.address1_line2 ?? "",
+              available_slots: JSON.stringify(calendlySlots), // now allowed
+              city: crm.new_propinfo_city ?? "",
+              greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
+            },
+          };
+        });
+
+      // 5️⃣ Call RetellAI API one by one using for loop with 1-second delay
+      const callResults: any[] = [];
+      for (const task of tasks) {
+        const retellResponse = await CRMDataService.createBatchCall(task);
+        callResults.push({ to_number: task.to_number, retellResponse });
+
+        // 1-second delay between calls
+        await sleep(1000);
+      }
+
+      // 6️⃣ Attach responses and Calendly slot to each CRM record
+      const enrichedCategories = mainCategories.map((crm: any, index: number) => {
+        const response = callResults.find((r) => r.to_number === crm.mobile_number);
+        return {
+          ...crm,
+          retellResponse: response?.retellResponse || null,
         };
       });
 
-    // 5️⃣ Call RetellAI API one by one using for loop with 1-second delay
-    const callResults: any[] = [];
-    for (const task of tasks) {
-      const retellResponse = await CRMDataService.createBatchCall(task);
-      callResults.push({ to_number: task.to_number, retellResponse });
-
-      // 1-second delay between calls
-      await sleep(1000);
+      // 7️⃣ Return final result
+      return successWithData("CRM data", enrichedCategories);
+    } catch (error: any) {
+      console.error("Error fetching CRM data:", error.message);
+      return errorWithData("Something went wrong", error);
     }
-
-    // 6️⃣ Attach responses and Calendly slot to each CRM record
-    const enrichedCategories = mainCategories.map((crm: any, index: number) => {
-      const response = callResults.find((r) => r.to_number === crm.mobile_number);
-      return {
-        ...crm,
-        calendly_slot: calendlySlot[index % calendlySlot.length] || "",
-        retellResponse: response?.retellResponse || null,
-      };
-    });
-
-    // 7️⃣ Return final result
-    return successWithData("CRM data", enrichedCategories);
-  } catch (error: any) {
-    console.error("Error fetching CRM data:", error.message);
-    return errorWithData("Something went wrong", error);
   }
-}
 
   //   public async getCRMData(
   //   verifyUser: any,
@@ -678,15 +1038,15 @@ export class CRMDataService {
         const timestampPart = `${now.getFullYear()}${(now.getMonth() + 1)
           .toString()
           .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}${now
-          .getHours()
-          .toString()
-          .padStart(2, "0")}${now.getMinutes().toString().padStart(2, "0")}${now
-          .getSeconds()
-          .toString()
-          .padStart(2, "0")}${now
-          .getMilliseconds()
-          .toString()
-          .padStart(3, "0")}`;
+            .getHours()
+            .toString()
+            .padStart(2, "0")}${now.getMinutes().toString().padStart(2, "0")}${now
+              .getSeconds()
+              .toString()
+              .padStart(2, "0")}${now
+                .getMilliseconds()
+                .toString()
+                .padStart(3, "0")}`;
 
         const leadId = item.leadid || `${timestampPart}`;
 

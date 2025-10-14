@@ -33,56 +33,59 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
+
+
+
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
-    try {
-        // Authentication check
-        if (!req.user) {
-            const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
-        }
-
-        // Optional mobile number filter
-        const mobile_number = req.query.mobile_number as string | undefined;
-
-        // Call service
-        const response = await crmdataservice.getUsercrmData(
-            req.verifyUser,
-            mobile_number
-        );
-
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData("Something went wrong", { error });
-        return res.status(response.result ? 200 : 400).json(response);
+  try {
+    // Authentication check
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed");
+      return res.status(response.result ? 200 : 400).json(response);
     }
+
+    // Optional mobile number filter
+    const mobile_number = req.query.mobile_number as string | undefined;
+
+    // Call service
+    const response = await crmdataservice.getUsercrmData(
+      req.verifyUser,
+      mobile_number
+    );
+
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    const response = errorWithData("Something went wrong", { error });
+    return res.status(response.result ? 200 : 400).json(response);
+  }
 };
 export const createCRMData = async (req: Request, res: Response): Promise<any> => {
-    try {
-        if (!req.user) {
-            const response = errorWithoutData("Authentication failed");
-            return res.status(response.result ? 200 : 400).json(response);
-        }
-
-        // Ensure only admin can create CRM data
-        const user = await adminRepository.findOneBy({ id: req.user.id });
-        if (!user) {
-            const response = errorWithoutData("Only admin can create CRM data");
-            return res.status(response.result ? 200 : 400).json(response);
-        }
-
-        // Prepare data
-        const data = {
-            ...req.body,
-            image: (req.file as Express.Multer.File & { location: string })?.location || null
-        };
-
-        // Service handles both CRMData + CallOutputData
-        const response = await crmdataservice.createCRMData(data, req.verifyUser);
-        return res.status(response.result ? 200 : 400).json(response);
-    } catch (error) {
-        const response = errorWithData("Something went wrong", { error });
-        return res.status(response.result ? 200 : 400).json(response);
+  try {
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed");
+      return res.status(response.result ? 200 : 400).json(response);
     }
+
+    // Ensure only admin can create CRM data
+    const user = await adminRepository.findOneBy({ id: req.user.id });
+    if (!user) {
+      const response = errorWithoutData("Only admin can create CRM data");
+      return res.status(response.result ? 200 : 400).json(response);
+    }
+
+    // Prepare data
+    const data = {
+      ...req.body,
+      image: (req.file as Express.Multer.File & { location: string })?.location || null
+    };
+
+    // Service handles both CRMData + CallOutputData
+    const response = await crmdataservice.createCRMData(data, req.verifyUser);
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    const response = errorWithData("Something went wrong", { error });
+    return res.status(response.result ? 200 : 400).json(response);
+  }
 };
 
 export const createCRMDataWithoutAuth = async (req: Request, res: Response): Promise<any> => {
@@ -227,6 +230,38 @@ export const uploadCRMExcel = async (req: Request, res: Response): Promise<void>
 //   }
 // };
 
+export const getCRMDataStatic = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Mock static user context
+    const staticUser = { id: "system_static", role: "admin", name: "Static Token User" };
+
+    const response = await crmdataservice.getCRMData(staticUser);
+
+    if (response.result) {
+      res.status(200).json({
+        result: true,
+        statuscode: 200,
+        message: "CRM data fetched successfully static token",
+        data: response.data || [],
+      });
+      return;
+    }
+
+    res.status(400).json({
+      result: false,
+      statuscode: 400,
+      message: response.message || "Failed to fetch CRM data",
+      data: null,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      statuscode: 500,
+      message: "Something went wrong while fetching CRM data (static route)",
+      data: { error: error.message || String(error) },
+    });
+  }
+};
 
 
 

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { CallFrequencySettingService } from "../services/callFrequencySetting.service";
 import { successWithData, errorWithData } from "../config/ApiResponse";
+import AWS from "aws-sdk";
 
 const service = new CallFrequencySettingService();
 
@@ -146,4 +147,40 @@ static async update(req: Request, res: Response): Promise<void> {
       );
     }
   }
+
+  // 🧩 Create AWS EventBridge schedule
+  static async createEventBridgeSchedule(req: Request, res: Response) {
+    try {
+      // Static cron expression for now
+      // const cronExpression = "35 21 * * *"; // 9:35 PM every day
+      const region = "eu-north-1";
+
+      // Initialize AWS SDK
+      const scheduler = new AWS.Scheduler({ region });
+
+      //  Lambda ARN (replace with your actual ARN)
+      const lambdaArn = "arn:aws:lambda:eu-north-1:691903504845:function:createHttpCallForFrequency";
+      // IAM role ARN that allows EventBridge to invoke Lambda
+      const roleArn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole";
+
+      const params = {
+        Name: "StaticCallFrequencySchedule",
+        ScheduleExpression: `cron(0/2 * * * ? *)`, 
+        FlexibleTimeWindow: { Mode: "OFF" },
+        Target: {
+          Arn: lambdaArn,
+          RoleArn: roleArn,
+        },
+      };
+
+      const result = await scheduler.createSchedule(params).promise();
+      console.log(result, "resultresultresultresult");
+      
+      res.status(200).json(successWithData("EventBridge schedule created successfully", result));
+    } catch (err: any) {
+      console.error("Error creating EventBridge schedule:", err);
+      res.status(500).json(errorWithData("Failed to create schedule", err.message));
+    }
+  }
+
 }
