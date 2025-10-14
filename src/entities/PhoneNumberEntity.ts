@@ -20,6 +20,10 @@ export class PhoneNumber extends BaseEntity {
   @Column({ type: "text", nullable: true })
   voicemail_text: string | null;
 
-  @Column({ nullable: true })
-  is_active: boolean;
+  // @Column({ nullable: true })
+  // is_active: boolean;
+
+  @Column({ name: 'isActive' })
+is_active: boolean;
+
 }
