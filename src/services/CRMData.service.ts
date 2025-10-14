@@ -388,169 +388,325 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
     }
 
   }
- public async getCRMData(
-  verifyUser: any,
-  batchLimit: number = 1 // default batch size
-) {
-  try {
-    const allProcessedData: any[] = [];
+  private async getBatchCallRecords(verifyUser: any, batchLimit: number) {
+    const crmWhere: any = { need_to_call: true, isDeleted: false };
+    if (verifyUser.user_exist) crmWhere.isActive = true;
 
-    // 1️⃣ Fetch available Calendly slots once
-    const calendlySlots = await this.getCalendlyAvailableSlot();
+    // Fetch CRM data
+    const crmDataList = await this.CRMDataRepository.find({
+      where: crmWhere,
+      order: { createdAt: "DESC" },
+    });
 
-    while (true) {
-      // 2️⃣ Fetch CRM records that need to be called
-      const crmWhere: any = { need_to_call: true, isDeleted: false };
-      if (verifyUser.user_exist) crmWhere.isActive = true;
+    if (!crmDataList.length) return [];
 
-      const crmDataList = await this.CRMDataRepository.find({
-        where: crmWhere,
-        order: { createdAt: "DESC" },
-      });
+    // Sync CRM data with BatchCalling table
+    for (const crm of crmDataList) {
+      if (!crm.lead_id) continue;
 
-      if (!crmDataList.length) break; // No more CRM records
-
-      // 3️⃣ Insert/update records in BatchCalling table
-      for (const crm of crmDataList) {
-        if (!crm.lead_id) continue;
-
-        const existing = await this.BatchRepository.findOne({ where: { lead_id: crm.lead_id } });
-        if (existing) {
-          existing.mobile_number = crm.mobile_number;
-          existing.name = crm.name;
-          existing.need_to_call = true;
-          existing.send_to_retail = false;
-          await this.BatchRepository.save(existing);
-        } else {
-          const newCall = this.BatchRepository.create({
-            lead_id: crm.lead_id,
-            mobile_number: crm.mobile_number,
-            name: crm.name,
-            need_to_call: true,
-            send_to_retail: false,
-          });
-          await this.BatchRepository.save(newCall);
-        }
-      }
-
-      // 4️⃣ Fetch batch records ready to call (limited by batchLimit)
-      const batchRecords = await this.BatchRepository.find({
-        where: { need_to_call: true },
-        take: batchLimit,
-        order: { createdAt: "ASC" },
-      });
-
-      if (!batchRecords.length) break; // No more batch records
-
-      // 5️⃣ Map RetellAI tasks
-      const tasks: RetellTask[] = batchRecords
-        .map((batch) => {
-          const crm = crmDataList.find((c) => c.lead_id === batch.lead_id);
-          if (!crm) return null;
-
-          return {
-            to_number: batch.mobile_number,
-            retell_llm_dynamic_variables: {
-              name: crm.name ?? "",
-              client_name: crm.client_name ?? "",
-              lead_id: String(crm.lead_id),
-              unique_id: crm.unique_id ?? "",
-              property_type: crm.property_type ?? "",
-              property_address_line2: crm.new_propinfo_street2 ?? "",
-              property_address_line3: crm.address1_line2 ?? "",
-              city: crm.new_propinfo_city ?? "",
-              available_slots: JSON.stringify(calendlySlots),
-              greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
-            },
-          };
-        })
-        .filter(Boolean) as RetellTask[];
-
-      // 6️⃣ Call RetellAI sequentially
-      const callResults: any[] = [];
-      for (const task of tasks) {
-        if (!task.retell_llm_dynamic_variables) continue;
-
-        const retellResponse = await CRMDataService.createBatchCall(task);
-
-        callResults.push({
-          lead_id: task.retell_llm_dynamic_variables.lead_id,
-          to_number: task.to_number,
-          retellResponse,
+      const existing = await this.BatchRepository.findOne({ where: { lead_id: crm.lead_id } });
+      if (existing) {
+        existing.mobile_number = crm.mobile_number;
+        existing.name = crm.name;
+        existing.need_to_call = true;
+        existing.send_to_retail = false;
+         existing.call_status = 'pending';
+        await this.BatchRepository.save(existing);
+      } else {
+        const newCall = this.BatchRepository.create({
+          lead_id: crm.lead_id,
+          mobile_number: crm.mobile_number,
+          name: crm.name,
+          need_to_call: true,
+          send_to_retail: false,
+          call_status : 'pending',
         });
-
-        await sleep(1000); // small delay between calls
+        await this.BatchRepository.save(newCall);
       }
-
-      // 7️⃣ Update only completed or ended calls with valid duration
-      // for (const result of callResults) {
-      //   const retell = result.retellResponse;
-      //   const isCallEnded = retell?.status == "ended";
-      //   const durationMs = retell?.duration_ms ! =="null";
-
-      //   if (!isCallEnded || durationMs == null) continue;
-
-      //   // Update BatchCalling table
-      //   const batchCall = await this.BatchRepository.findOne({ where: { lead_id: result.lead_id } });
-      //   if (batchCall) {
-      //     batchCall.need_to_call = false;
-      //     batchCall.send_to_retail = true;
-      //     await this.BatchRepository.save(batchCall);
-      //   }
-
-      //   // Update CRMData table
-      //   const crmRecord = await this.CRMDataRepository.findOne({ where: { lead_id: result.lead_id } });
-      //   if (crmRecord) {
-      //     crmRecord.need_to_call = false;
-      //     await this.CRMDataRepository.save(crmRecord);
-      //   }
-
-      //   // Insert/Update CallOutputData
-      //   if (batchCall && crmRecord) {
-      //     await AppDataSource.getRepository(CallOutputData).save({
-      //       crmData: crmRecord,
-      //       batchCallId: batchCall.id,
-      //       duration_ms: durationMs,
-      //       call_status: retell.status,
-      //       to_number: result.to_number,
-      //       raw_response: retell,
-      //     });
-      //   }
-      // }
-for (const task of tasks) {
-  const retellResponse = await CRMDataService.createBatchCall(task);
-
-  // Update batch record immediately after call
-  const batchCall = await this.BatchRepository.findOne({ where: { lead_id: task.retell_llm_dynamic_variables?.lead_id } });
-  if (batchCall) {
-    batchCall.need_to_call = false;
-    batchCall.send_to_retail = true;
-    await this.BatchRepository.save(batchCall);
-  }
-
-  // Update CRMData
-  const crmRecord = await this.CRMDataRepository.findOne({ where: { lead_id: task.retell_llm_dynamic_variables?.lead_id } });
-  if (crmRecord) {
-    crmRecord.need_to_call = false;
-    await this.CRMDataRepository.save(crmRecord);
-  }
-}
-
-      // 8️⃣ Collect processed data for this batch
-      const enrichedCRMData = crmDataList.map((crm) => {
-        const response = callResults.find((r) => r.lead_id === String(crm.lead_id));
-        return { ...crm, retellResponse: response?.retellResponse || null };
-      });
-
-      allProcessedData.push(...enrichedCRMData);
     }
 
-    return successWithData("✅ All CRM batches processed successfully", allProcessedData);
+    // Fetch all batch records ready to call
+    const batchRecords = await this.BatchRepository.find({
+      where: { need_to_call: true, send_to_retail: false,call_status : 'pending' },
+      take: batchLimit,
+      order: { createdAt: "ASC" },
+    });
+
+    return batchRecords;
+  }
+
+private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
+  const callResults: any[] = [];
+
+  for (const batch of batchRecords) {
+    const crm = await this.CRMDataRepository.findOne({ where: { lead_id: batch.lead_id } });
+    if (!crm) continue;
+
+    const task = {
+      to_number: batch.mobile_number,
+      retell_llm_dynamic_variables: {
+        name: crm.name ?? "",
+        client_name: crm.client_name ?? "",
+        lead_id: String(crm.lead_id),
+        unique_id: crm.unique_id ?? "",
+        property_type: crm.property_type ?? "",
+        property_address_line2: crm.new_propinfo_street2 ?? "",
+        property_address_line3: crm.address1_line2 ?? "",
+        city: crm.new_propinfo_city ?? "",
+        available_slots: JSON.stringify(calendlySlots),
+        greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
+      },
+    };
+
+    //  Call RetellAI
+    const retellResponse = await CRMDataService.createBatchCall(task);
+
+    //  Save Call Output in CallOutputData
+    const callOutput = await AppDataSource.getRepository(CallOutputData).save({
+      crmData: crm,
+      batchCallId: batch.id,
+      duration_ms: retellResponse?.duration_ms ?? null,
+      call_status: retellResponse?.status ?? null,
+      to_number: batch.mobile_number,
+      raw_response: retellResponse,
+    });
+
+    //  Only update BatchCalling + CRMData when call is completed successfully
+    if (callOutput.call_status == 'ended' && callOutput.duration_ms !== null) {
+      batch.need_to_call = false;
+      batch.send_to_retail = true;
+      await this.BatchRepository.save(batch);
+
+      crm.need_to_call = false;
+      await this.CRMDataRepository.save(crm);
+
+      console.log(` Updated lead ${crm.lead_id}: call completed successfully.`);
+    } else {
+      console.warn(
+        ` Skipped update for lead ${crm.lead_id}: missing call_status or duration_ms.`
+      );
+    }
+
+    // 4️⃣ Push to results
+    callResults.push({
+      lead_id: crm.lead_id,
+      to_number: batch.mobile_number,
+      retellResponse,
+    });
+
+    // 5️⃣ Small delay between calls
+    await sleep(1000);
+  }
+
+  return callResults;
+}
+
+ public async getCRMData(verifyUser: any, batchLimit: number = 5) {
+  try {
+    console.log(" Starting getCRMData() process...");
+
+    //  Fetch Calendly slots (for RetellAI dynamic variable)
+    const calendlySlots = await this.getCalendlyAvailableSlot();
+
+    //  Get batch call records (CRM data synced into BatchCalling)
+    const batchRecords = await this.getBatchCallRecords(verifyUser, batchLimit);
+    console.log(" Batch records fetched:", batchRecords?.length || 0);
+
+    if (!batchRecords.length) {
+      console.log(" No leads found for batch calling");
+      return successWithoutData("No CRM data available for calling");
+    }
+
+    //  Start batch calls using RetellAI
+    const callResults = await this.startBatchCalls(batchRecords, calendlySlots);
+    console.log(" Batch calls completed:", callResults?.length || 0);
+
+    // Attach Retell call responses with CRM data for response
+    const enrichedData = await Promise.all(
+      callResults.map(async (result: any) => {
+        const crm = await this.CRMDataRepository.findOne({
+          where: { lead_id: result.lead_id },
+        });
+        return {
+          ...crm,
+          retellResponse: result.retellResponse || null,
+        };
+      })
+    );
+
+    // 5️⃣ Final success response
+    return successWithData("CRM data and call results processed successfully", enrichedData);
   } catch (error: any) {
-    console.error("Error in getCRMData:", error.message);
-    return errorWithData("Something went wrong", error);
+    console.error(" Error in getCRMData:", error.message);
+    return errorWithData("Something went wrong while fetching CRM data", error);
   }
 }
+
+
+
+//  public async getCRMData(
+//   verifyUser: any,
+//   batchLimit: number = 1 // default batch size
+// ) {
+//   try {
+//     const allProcessedData: any[] = [];
+
+//     // 1️⃣ Fetch available Calendly slots once
+//     const calendlySlots = await this.getCalendlyAvailableSlot();
+
+//     while (true) {
+//       // 2️⃣ Fetch CRM records that need to be called
+//       const crmWhere: any = { need_to_call: true, isDeleted: false };
+//       if (verifyUser.user_exist) crmWhere.isActive = true;
+
+//       const crmDataList = await this.CRMDataRepository.find({
+//         where: crmWhere,
+//         order: { createdAt: "DESC" },
+//       });
+
+//       if (!crmDataList.length) break; // No more CRM records
+
+//       // 3️⃣ Insert/update records in BatchCalling table
+//       for (const crm of crmDataList) {
+//         if (!crm.lead_id) continue;
+
+//         const existing = await this.BatchRepository.findOne({ where: { lead_id: crm.lead_id } });
+//         if (existing) {
+//           existing.mobile_number = crm.mobile_number;
+//           existing.name = crm.name;
+//           existing.need_to_call = true;
+//           existing.send_to_retail = false;
+//           await this.BatchRepository.save(existing);
+//         } else {
+//           const newCall = this.BatchRepository.create({
+//             lead_id: crm.lead_id,
+//             mobile_number: crm.mobile_number,
+//             name: crm.name,
+//             need_to_call: true,
+//             send_to_retail: false,
+//           });
+//           await this.BatchRepository.save(newCall);
+//         }
+//       }
+
+//       // 4️⃣ Fetch batch records ready to call (limited by batchLimit)
+//       const batchRecords = await this.BatchRepository.find({
+//         where: { need_to_call: true },
+//         take: batchLimit,
+//         order: { createdAt: "ASC" },
+//       });
+
+//       if (!batchRecords.length) break; // No more batch records
+
+//       // 5️⃣ Map RetellAI tasks
+//       const tasks: RetellTask[] = batchRecords
+//         .map((batch) => {
+//           const crm = crmDataList.find((c) => c.lead_id === batch.lead_id);
+//           if (!crm) return null;
+
+//           return {
+//             to_number: batch.mobile_number,
+//             retell_llm_dynamic_variables: {
+//               name: crm.name ?? "",
+//               client_name: crm.client_name ?? "",
+//               lead_id: String(crm.lead_id),
+//               unique_id: crm.unique_id ?? "",
+//               property_type: crm.property_type ?? "",
+//               property_address_line2: crm.new_propinfo_street2 ?? "",
+//               property_address_line3: crm.address1_line2 ?? "",
+//               city: crm.new_propinfo_city ?? "",
+//               available_slots: JSON.stringify(calendlySlots),
+//               greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
+//             },
+//           };
+//         })
+//         .filter(Boolean) as RetellTask[];
+
+//       // 6️⃣ Call RetellAI sequentially
+//       const callResults: any[] = [];
+//       for (const task of tasks) {
+//         if (!task.retell_llm_dynamic_variables) continue;
+
+//         const retellResponse = await CRMDataService.createBatchCall(task);
+
+//         callResults.push({
+//           lead_id: task.retell_llm_dynamic_variables.lead_id,
+//           to_number: task.to_number,
+//           retellResponse,
+//         });
+
+//         await sleep(1000); // small delay between calls
+//       }
+
+//       // 7️⃣ Update only completed or ended calls with valid duration
+//       // for (const result of callResults) {
+//       //   const retell = result.retellResponse;
+//       //   const isCallEnded = retell?.status == "ended";
+//       //   const durationMs = retell?.duration_ms ! =="null";
+
+//       //   if (!isCallEnded || durationMs == null) continue;
+
+//       //   // Update BatchCalling table
+//       //   const batchCall = await this.BatchRepository.findOne({ where: { lead_id: result.lead_id } });
+//       //   if (batchCall) {
+//       //     batchCall.need_to_call = false;
+//       //     batchCall.send_to_retail = true;
+//       //     await this.BatchRepository.save(batchCall);
+//       //   }
+
+//       //   // Update CRMData table
+//       //   const crmRecord = await this.CRMDataRepository.findOne({ where: { lead_id: result.lead_id } });
+//       //   if (crmRecord) {
+//       //     crmRecord.need_to_call = false;
+//       //     await this.CRMDataRepository.save(crmRecord);
+//       //   }
+
+//       //   // Insert/Update CallOutputData
+//       //   if (batchCall && crmRecord) {
+//       //     await AppDataSource.getRepository(CallOutputData).save({
+//       //       crmData: crmRecord,
+//       //       batchCallId: batchCall.id,
+//       //       duration_ms: durationMs,
+//       //       call_status: retell.status,
+//       //       to_number: result.to_number,
+//       //       raw_response: retell,
+//       //     });
+//       //   }
+//       // }
+// for (const task of tasks) {
+//   const retellResponse = await CRMDataService.createBatchCall(task);
+
+//   // Update batch record immediately after call
+//   const batchCall = await this.BatchRepository.findOne({ where: { lead_id: task.retell_llm_dynamic_variables?.lead_id } });
+//   if (batchCall) {
+//     batchCall.need_to_call = false;
+//     batchCall.send_to_retail = true;
+//     await this.BatchRepository.save(batchCall);
+//   }
+
+//   // Update CRMData
+//   const crmRecord = await this.CRMDataRepository.findOne({ where: { lead_id: task.retell_llm_dynamic_variables?.lead_id } });
+//   if (crmRecord) {
+//     crmRecord.need_to_call = false;
+//     await this.CRMDataRepository.save(crmRecord);
+//   }
+// }
+
+//       // 8️⃣ Collect processed data for this batch
+//       const enrichedCRMData = crmDataList.map((crm) => {
+//         const response = callResults.find((r) => r.lead_id === String(crm.lead_id));
+//         return { ...crm, retellResponse: response?.retellResponse || null };
+//       });
+
+//       allProcessedData.push(...enrichedCRMData);
+//     }
+
+//     return successWithData("✅ All CRM batches processed successfully", allProcessedData);
+//   } catch (error: any) {
+//     console.error("Error in getCRMData:", error.message);
+//     return errorWithData("Something went wrong", error);
+//   }
+// }
 
   // public async getCRMData(verifyUser: any) {
   //   try {
