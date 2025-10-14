@@ -73,7 +73,7 @@ export class LeadFilterStatusController {
           id: d.id,
           filterCode: d.filterCode, // single status value
           filterName: d.filterName, // corresponding label
-          updatedAt: d.updatedAt,
+        //   updatedAt: d.updatedAt,
         })),
       });
     } catch (error: any) {
