@@ -176,7 +176,9 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
 
     try {
       // Step 1️⃣: Fetch active phone numbers
-      const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+      // const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+      const activeNumbers = await PhoneNumber.find({ where: { isActive: true } });
+
       console.log("📞 Active numbers in DB:", activeNumbers.map(n => n.phone_number));
 
       if (!activeNumbers.length) {
@@ -235,7 +237,7 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
             phone_number: dbNumber.phone_number,
             outbound_agent_id: retellMatch.outbound_agent_id,
             outbound_agent_name: outboundName,
-            is_active: dbNumber.is_active,
+            is_active: dbNumber.isActive,
           });
         }
       }
@@ -268,7 +270,7 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
     }
 
     // ✅ Re-fetch active numbers to get the latest outbound agent info
-    const activeNumbers = await PhoneNumber.find({ where: { is_active: true } });
+    const activeNumbers = await PhoneNumber.find({ where: { isActive: true } });
 
     if (!activeNumbers || activeNumbers.length === 0) {
       console.warn("❌ No active numbers available after sync");

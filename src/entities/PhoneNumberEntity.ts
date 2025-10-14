@@ -22,8 +22,9 @@ export class PhoneNumber extends BaseEntity {
 
   // @Column({ nullable: true })
   // is_active: boolean;
-@Column({ name: "isActive", nullable: true })
-is_active: boolean;
+@Column({ name: "isActive", type: "boolean", default: true })
+isActive: boolean;
+
 
   
 }
