@@ -8,5 +8,7 @@ const router = express.Router();
 router.post("/update", verifyAccessToken, AgentController.saveSelectedAgents);
 
 router.get("/get-list", verifyAccessToken, AgentController.getAgentsActive);
+
+router.patch("/voicemailSetting/:id", verifyAccessToken, AgentController.updateVoicemailById)
 // router.get("/update-active", verifyAccessToken, AgentController.getAgentsWithStatus);
 export default router;

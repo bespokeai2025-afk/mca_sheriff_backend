@@ -234,7 +234,7 @@ export class AdminService {
             }
 
             // Validate new password strength
-            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
             if (!strongPasswordRegex.test(data.newPassword)) {
                 return errorWithoutData(
                     "New password must be at least 8 characters long, include uppercase, lowercase, number, and special character."

@@ -20,6 +20,8 @@ export class ScheduledCallHistory {
   webhookResponse?: string; // store webhook response
 
   @Column({ type: "text", nullable: true })
+
+  
   responseData?: string; // store RetellAI response
 
   @Column({ type: "text", nullable: true })

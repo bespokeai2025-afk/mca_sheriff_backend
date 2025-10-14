@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryColumn, BaseEntity, PrimaryGeneratedColumn } fro
 
 @Entity("agents")
 export class Agent extends BaseEntity {
-    @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @PrimaryColumn()
@@ -11,8 +11,21 @@ export class Agent extends BaseEntity {
   @Column({ nullable: true })
   agent_name: string;
 
+  @Column({ default: false })
+  voicemail_enabled: boolean;
+
+  @Column({ type: "text", nullable: true })
+  voicemail_text: string | null;
+
+
   @Column({ nullable: true })
   is_active: boolean;
+
+  //   @Column({ nullable: true })
+  // retell_agent_id: string;
+
+
+
 
   // @Column({ nullable: true })
   // channel: string;
