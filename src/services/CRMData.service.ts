@@ -501,7 +501,7 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
   return callResults;
 }
 
- public async getCRMData(verifyUser: any, batchLimit: number = 5) {
+ public async getCRMData(verifyUser: any, batchLimit: number = 1) {
   try {
     console.log(" Starting getCRMData() process...");
 
