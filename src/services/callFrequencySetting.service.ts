@@ -8,14 +8,13 @@
 // import parser from "cron-parser";
 // import { DateTime } from "luxon";
 
-interface CallFrequencyInput {
-  // number_count?: number;
-  // selected_days?: string[];
-  // selected_weeks?: string[];
-  call_frequency_setting: string;
-  timeZone: string;
-  label: string;
-}
+// interface CallFrequencyInput {
+//   // number_count?: number;
+//   // selected_days?: string[];
+//   // selected_weeks?: string[];
+//   call_frequency_setting: string;
+//   timeZone: string;
+// }
 
 // export class CallFrequencySettingService {
 //   private repo: Repository<CallFrequencySetting>;
@@ -46,15 +45,14 @@ interface CallFrequencyInput {
   // }
 
   // Create new frequency setting
-  async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
-    const entity = this.repo.create({
-      // number_count: data.number_count,
-      // selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
-      // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
-      call_frequency_setting: data.call_frequency_setting, // use user input directly
-      timeZone: data.timeZone, // use user input directly
-      label: data.label, // use user input directly
-    });
+  // async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
+  //   const entity = this.repo.create({
+  //     // number_count: data.number_count,
+  //     // selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
+  //     // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
+  //     call_frequency_setting: data.call_frequency_setting, // use user input directly
+  //     timeZone: data.timeZone, // use user input directly
+  //   });
 
   //   return await this.repo.save(entity);
   // }
@@ -179,6 +177,7 @@ dotenv.config();
 interface CallFrequencyInput {
   call_frequency_setting: string;
   timeZone: string;
+  label: string;
 }
 
 export class CallFrequencySettingService {
@@ -209,6 +208,7 @@ export class CallFrequencySettingService {
     const entity = this.repo.create({
       call_frequency_setting: data.call_frequency_setting,
       timeZone: data.timeZone,
+      label: data.label,
     });
     return await this.repo.save(entity);
   }
@@ -241,18 +241,18 @@ export class CallFrequencySettingService {
       timeConvertedCronExpression = `${newMin} ${newHour} ${day} ${month} ${weekday}`;
     }
 
-  if (!existing) {
-    existing = this.repo.create({
-      id,
-      call_frequency_setting: timeConvertedCronExpression,
-      timeZone: data.timeZone,
-      label: data.label,
-    });
-  } else {
-    existing.call_frequency_setting = timeConvertedCronExpression;
-    existing.timeZone = data.timeZone;
-    existing.label = data.label;
-  }
+    if (!existing) {
+      existing = this.repo.create({
+        id,
+        call_frequency_setting: timeConvertedCronExpression,
+        timeZone: data.timeZone,
+        label: data.label,
+      });
+    } else {
+      existing.call_frequency_setting = timeConvertedCronExpression;
+      existing.timeZone = data.timeZone;
+      existing.label = data.label;
+    }
 
     return await this.repo.save(existing);
   }
@@ -265,8 +265,18 @@ export class CallFrequencySettingService {
       const ruleName = "CallFrequencySchedulerRule";
 
       // Static cron expression for every 5 minutes
-      const staticCronExpression = "cron(0/5 * * * ? *)";
+      // const staticCronExpression = "cron(0/5 * * * ? *)";
 
+       // 1️⃣ Fetch the latest active call frequency setting
+    const settings = await this.getAll();
+    if (!settings || settings.length === 0) {
+      throw new Error("No active call frequency settings found");
+    }
+
+    // Take the latest one
+    const latestSetting = settings[0];
+    const staticCronExpression = latestSetting.call_frequency_setting;
+console.log(staticCronExpression, "staticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpression");
       // 1️⃣ Create or update the rule
       const ruleParams = {
         Name: ruleName,
@@ -303,7 +313,7 @@ export class CallFrequencySettingService {
         Targets: [
           {
             Id: "1",
-            Arn: `arn:aws:lambda:${process.env.AWS_REGION_FOR_LAMBDA}:${process.env.AWS_ACCOUNT_ID}:function:${lambdaFunctionName}`,
+            Arn: `arn:aws:lambda:${process.env.AWS_REGION_FOR_LAMBDA}:${process.env.AWS_ACCOUNT_ID_FOR_LAMBDA}:function:${lambdaFunctionName}`,
           },
         ],
       };
