@@ -272,7 +272,7 @@ export class CallFrequencySettingService {
     // Take the latest one
     const latestSetting = settings[0];
     const staticCronExpression = latestSetting.call_frequency_setting;
-console.log(staticCronExpression, "staticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpression");
+console.log(staticCronExpression, "staticCronExpression======");
       // 1️⃣ Create or update the rule
       const ruleParams = {
         Name: ruleName,
