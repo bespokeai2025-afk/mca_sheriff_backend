@@ -152,10 +152,8 @@ static async update(req: Request, res: Response): Promise<void> {
   static async createEventBridgeSchedule(req: Request, res: Response) {
     try {
       // Static cron expression for now
-      const cronExpression = "35 21 * * *"; // 9:35 PM every day
+      // const cronExpression = "35 21 * * *"; // 9:35 PM every day
       const region = "eu-north-1";
-
-
 
       // Initialize AWS SDK
       const scheduler = new AWS.Scheduler({ region });
@@ -176,6 +174,8 @@ static async update(req: Request, res: Response): Promise<void> {
       };
 
       const result = await scheduler.createSchedule(params).promise();
+      console.log(result, "resultresultresultresult");
+      
       res.status(200).json(successWithData("EventBridge schedule created successfully", result));
     } catch (err: any) {
       console.error("Error creating EventBridge schedule:", err);

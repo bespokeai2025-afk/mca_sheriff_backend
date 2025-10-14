@@ -261,8 +261,18 @@ export class CallFrequencySettingService {
       const ruleName = "CallFrequencySchedulerRule";
 
       // Static cron expression for every 5 minutes
-      const staticCronExpression = "cron(0/5 * * * ? *)";
+      // const staticCronExpression = "cron(0/5 * * * ? *)";
 
+       // 1️⃣ Fetch the latest active call frequency setting
+    const settings = await this.getAll();
+    if (!settings || settings.length === 0) {
+      throw new Error("No active call frequency settings found");
+    }
+
+    // Take the latest one
+    const latestSetting = settings[0];
+    const staticCronExpression = latestSetting.call_frequency_setting;
+console.log(staticCronExpression, "staticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpressionstaticCronExpression");
       // 1️⃣ Create or update the rule
       const ruleParams = {
         Name: ruleName,
@@ -299,7 +309,7 @@ export class CallFrequencySettingService {
         Targets: [
           {
             Id: "1",
-            Arn: `arn:aws:lambda:${process.env.AWS_REGION_FOR_LAMBDA}:${process.env.AWS_ACCOUNT_ID}:function:${lambdaFunctionName}`,
+            Arn: `arn:aws:lambda:${process.env.AWS_REGION_FOR_LAMBDA}:${process.env.AWS_ACCOUNT_ID_FOR_LAMBDA}:function:${lambdaFunctionName}`,
           },
         ],
       };
