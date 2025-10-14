@@ -6,7 +6,7 @@ import dotenv from 'dotenv'
 import path from 'path';
 // Database configuration
 import { AppDataSource } from './config/database';
-// import { CronJobManager } from "./config/cronJobManager";
+// import { CronJobManager } from "./config/";
 import userRoutes from './routes/user.routes';
 import profileRoutes from './routes/profile.routes';
 import authRoutes from './routes/auth.routes'
