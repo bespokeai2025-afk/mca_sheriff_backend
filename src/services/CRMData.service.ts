@@ -388,52 +388,61 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
     }
 
   }
-  private async getBatchCallRecords(verifyUser: any, batchLimit: number) {
-    const crmWhere: any = { need_to_call: true, isDeleted: false };
-    if (verifyUser.user_exist) crmWhere.isActive = true;
+ private async getBatchCallRecords(verifyUser: any, batchLimit: number) {
+  const crmWhere: any = { need_to_call: true, isDeleted: false };
+  if (verifyUser.user_exist) crmWhere.isActive = true;
 
-    // Fetch CRM data
-    const crmDataList = await this.CRMDataRepository.find({
-      where: crmWhere,
-      order: { createdAt: "DESC" },
-    });
+  // 1️⃣ Fetch CRM data
+  const crmDataList = await this.CRMDataRepository.find({
+    where: crmWhere,
+    order: { createdAt: "DESC" },
+  });
 
-    if (!crmDataList.length) return [];
+  if (!crmDataList.length) return [];
 
-    // Sync CRM data with BatchCalling table
-    for (const crm of crmDataList) {
-      if (!crm.lead_id) continue;
-
-      const existing = await this.BatchRepository.findOne({ where: { lead_id: crm.lead_id } });
-      if (existing) {
-        existing.mobile_number = crm.mobile_number;
-        existing.name = crm.name;
-        existing.need_to_call = true;
-        existing.send_to_retail = false;
-         existing.call_status = 'pending';
-        await this.BatchRepository.save(existing);
-      } else {
-        const newCall = this.BatchRepository.create({
-          lead_id: crm.lead_id,
-          mobile_number: crm.mobile_number,
-          name: crm.name,
-          need_to_call: true,
-          send_to_retail: false,
-          call_status : 'pending',
-        });
-        await this.BatchRepository.save(newCall);
-      }
+  // 2️⃣ Sync CRM data with BatchCalling table
+  for (const crm of crmDataList) {
+    // Skip if invalid or undefined lead_id
+    if (!crm.lead_id || crm.lead_id === "undefined") {
+      console.warn("⚠️ Skipping CRM record with invalid lead_id:", crm.lead_id);
+      continue;
     }
 
-    // Fetch all batch records ready to call
-    const batchRecords = await this.BatchRepository.find({
-      where: { need_to_call: true, send_to_retail: false,call_status : 'pending' },
-      take: batchLimit,
-      order: { createdAt: "ASC" },
-    });
+    // Find existing batch call record by lead_id
+    const existing = await this.BatchRepository.findOne({ where: { lead_id: crm.lead_id } });
 
-    return batchRecords;
+    if (existing) {
+      // Update existing record
+      existing.mobile_number = crm.mobile_number;
+      existing.name = crm.name;
+      existing.need_to_call = true;
+      existing.send_to_retail = false;
+      existing.call_status = "pending";
+      await this.BatchRepository.save(existing);
+    } else {
+      // Create new batch record
+      const newCall = this.BatchRepository.create({
+        lead_id: crm.lead_id,
+        mobile_number: crm.mobile_number,
+        name: crm.name,
+        need_to_call: true,
+        send_to_retail: false,
+        call_status: "pending",
+      });
+      await this.BatchRepository.save(newCall);
+    }
   }
+
+  // 3️⃣ Fetch all batch records ready for calling
+  const batchRecords = await this.BatchRepository.find({
+    where: { need_to_call: true, send_to_retail: false, call_status: "pending" },
+    take: batchLimit,
+    order: { createdAt: "ASC" },
+  });
+
+  return batchRecords;
+}
+
 
 private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
   const callResults: any[] = [];
