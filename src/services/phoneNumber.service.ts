@@ -116,7 +116,7 @@ export class PhoneNumberService {
       const retellPhoneNumbers: RetellPhoneNumber[] = response.data || [];
 
       //  Fetch active phone numbers from DB
-      const dbPhoneNumbers = await PhoneNumber.find({ where: { is_active: true } });
+      const dbPhoneNumbers = await PhoneNumber.find({ where: { isActive: true } });
 
       const allCompanyRecords = await AllCompanyNumbersAndAgents.find();
       const allowedPhoneNumbers = new Set<string>(
@@ -164,7 +164,7 @@ export class PhoneNumberService {
           outbound_agent_name: num.outbound_agent_id
             ? agentNameMap.get(num.outbound_agent_id) || "Unknown Agent"
             : null,
-          is_active: sameOutboundAgent ? dbEntry?.is_active ?? false : false,
+          is_active: sameOutboundAgent ? dbEntry?.isActive ?? false : false,
         };
       });
 
@@ -208,7 +208,7 @@ export class PhoneNumberService {
         phoneRecord.phone_number = input.phone_number;
         phoneRecord.outbound_agent_id = input.outbound_agent_id ?? "N/A";
         phoneRecord.outbound_agent_name = input.outbound_agent_name ?? "N/A";
-        phoneRecord.is_active = true;
+        phoneRecord.isActive = true;
 
         await phoneRecord.save();
         savedPhoneNumbers.push(phoneRecord);
