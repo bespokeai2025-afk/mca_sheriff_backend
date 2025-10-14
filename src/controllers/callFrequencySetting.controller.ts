@@ -9,7 +9,7 @@ export class CallFrequencySettingController {
   // Create a new call frequency setting
     static async create(req: Request, res: Response): Promise<void> {
     try {
-      const { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone } = req.body;
+      const { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone,label } = req.body;
 
       // Validate that at least selected_days exists
       // if (!selected_days || selected_days.length === 0) {
@@ -20,7 +20,7 @@ export class CallFrequencySettingController {
       // }
 
       // Prepare payload
-      const payload = { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone };
+      const payload = { number_count, selected_days, selected_weeks, call_frequency_setting, timeZone, label };
       const result = await service.create(payload);
 
       res.status(200).json(
@@ -99,7 +99,7 @@ export class CallFrequencySettingController {
 
 static async update(req: Request, res: Response): Promise<void> {
     try {
-      const { id, call_frequency_setting, timeZone } = req.body;
+      const { id, call_frequency_setting, timeZone,label } = req.body;
 
       // Validate ID
       // if (!id) {
@@ -127,7 +127,7 @@ static async update(req: Request, res: Response): Promise<void> {
       }
 
       // Prepare payload
-      const payload = { call_frequency_setting, timeZone };
+      const payload = { call_frequency_setting, timeZone,label };
 
       // Save frequency setting (insert if not exists, update if exists)
       const result = await service.updateOrInsert(id, payload);

@@ -8,13 +8,14 @@
 // import parser from "cron-parser";
 // import { DateTime } from "luxon";
 
-// interface CallFrequencyInput {
-//   // number_count?: number;
-//   // selected_days?: string[];
-//   // selected_weeks?: string[];
-//   call_frequency_setting: string;
-//   timeZone: string;
-// }
+interface CallFrequencyInput {
+  // number_count?: number;
+  // selected_days?: string[];
+  // selected_weeks?: string[];
+  call_frequency_setting: string;
+  timeZone: string;
+  label: string;
+}
 
 // export class CallFrequencySettingService {
 //   private repo: Repository<CallFrequencySetting>;
@@ -45,14 +46,15 @@
   // }
 
   // Create new frequency setting
-  // async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
-  //   const entity = this.repo.create({
-  //     // number_count: data.number_count,
-  //     // selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
-  //     // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
-  //     call_frequency_setting: data.call_frequency_setting, // use user input directly
-  //     timeZone: data.timeZone, // use user input directly
-  //   });
+  async create(data: CallFrequencyInput): Promise<CallFrequencySetting> {
+    const entity = this.repo.create({
+      // number_count: data.number_count,
+      // selected_days: data.selected_days ? JSON.stringify(data.selected_days) : null,
+      // selected_weeks: data.selected_weeks ? JSON.stringify(data.selected_weeks) : null,
+      call_frequency_setting: data.call_frequency_setting, // use user input directly
+      timeZone: data.timeZone, // use user input directly
+      label: data.label, // use user input directly
+    });
 
   //   return await this.repo.save(entity);
   // }
@@ -239,16 +241,18 @@ export class CallFrequencySettingService {
       timeConvertedCronExpression = `${newMin} ${newHour} ${day} ${month} ${weekday}`;
     }
 
-    if (!existing) {
-      existing = this.repo.create({
-        id,
-        call_frequency_setting: timeConvertedCronExpression,
-        timeZone: data.timeZone,
-      });
-    } else {
-      existing.call_frequency_setting = timeConvertedCronExpression;
-      existing.timeZone = data.timeZone;
-    }
+  if (!existing) {
+    existing = this.repo.create({
+      id,
+      call_frequency_setting: timeConvertedCronExpression,
+      timeZone: data.timeZone,
+      label: data.label,
+    });
+  } else {
+    existing.call_frequency_setting = timeConvertedCronExpression;
+    existing.timeZone = data.timeZone;
+    existing.label = data.label;
+  }
 
     return await this.repo.save(existing);
   }
