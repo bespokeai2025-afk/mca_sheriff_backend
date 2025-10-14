@@ -26,6 +26,7 @@ import CallFrequency from './routes/callFrequencySetting.routes'
 import Agent from './routes/agent.routes'
 import PhoneNumbers from './routes/phoneNumber.routes'
 import LeadFiltermaster from './routes/leadFilterMaster.routes'
+import areaCountRoutes from "./routes/areaCount.routes";
 import { CallScheduler } from "./utils/scheduler";
 // Load environment variables
 dotenv.config()
@@ -86,6 +87,7 @@ app.use('/center-stage', CenterStage)
 app.use('/frquency-setting', CallFrequency)
 app.use('/agent', Agent)
 app.use('/phoneNumber', PhoneNumbers)
+app.use("/area-count", areaCountRoutes);
 app.use(multerErrorHandler);
 
 app.use('/', viewsRoutes)
