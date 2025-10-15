@@ -29,6 +29,7 @@ import LeadFiltermaster from './routes/leadFilterMaster.routes'
 import areaCountRoutes from "./routes/areaCount.routes";
 import leadFilterStatusRoutes from "./routes/leadFilterStatus.routes";
 import contactfromdynamics from "./routes/contactfromdynamics.routes";
+import emailLogRoutes from "./routes/emailLog.routes";
 import { CallScheduler } from "./utils/scheduler";
 // Load environment variables
 dotenv.config()
@@ -79,7 +80,7 @@ app.use("/auth", authRoutes); // Authentication routes
 app.use("/auth/email", emailVerificationRoutes); // Keeping email routes separate
 app.use('/api/user', otpRoutes) // OTP verification routes
 app.use('/admin', adminRoutes) // Admin routes
-
+app.use("/email-Log",emailLogRoutes );
 app.use('/call-output-data', callOutputDataRoutes)
 app.use('/crm-data', CRMDataRoutes)
 app.use('/leadfiltermaster',LeadFiltermaster)
