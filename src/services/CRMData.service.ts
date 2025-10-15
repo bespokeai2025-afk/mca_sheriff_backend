@@ -483,7 +483,7 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
     });
 
     //  Only update BatchCalling + CRMData when call is completed successfully
-    if (callOutput.call_status == 'ended' && callOutput.duration_ms !== null) {
+    // if (callOutput.call_status == 'ended' && callOutput.duration_ms !== null) {
       batch.need_to_call = false;
       batch.send_to_retail = true;
       await this.BatchRepository.save(batch);
@@ -492,11 +492,11 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
       await this.CRMDataRepository.save(crm);
 
       console.log(` Updated lead ${crm.lead_id}: call completed successfully.`);
-    } else {
-      console.warn(
-        ` Skipped update for lead ${crm.lead_id}: missing call_status or duration_ms.`
-      );
-    }
+    // } else {
+    //   console.warn(
+    //     ` Skipped update for lead ${crm.lead_id}: missing call_status or duration_ms.`
+    //   );
+    // }
 
     // 4️⃣ Push to results
     callResults.push({
