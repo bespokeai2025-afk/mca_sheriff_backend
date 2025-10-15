@@ -85,15 +85,11 @@ export const deleteLeadFilter = async (req: Request, res: Response): Promise<any
 export const updateLeadFilterStatus = async (req: Request, res: Response): Promise<any> => {
   try {
     const id = req.params.id;
-    // const data = req.body; // expected: { query, new_currentstatus, ...other master fields }
 
-    
-   let data = {
-      "query": "https://pinnaclemanagementcorporation.crm4.dynamics.com/api/data/v9.2/leads?$select=fullname&$filter=(startswith(fullname,'Anoop') and new_currentstatus eq 100000000)",
-      "new_currentstatus": req.body.new_currentstatus
-    }
-
-    const response = await leadFilterService.updateLeadFilterStatus(id, data);
+    const response = await leadFilterService.updateLeadFilterStatus(id, {
+      new_currentstatus: req.body.new_currentstatus,
+      query: "", // Will be rebuilt in service
+    });
 
     return res.status(response.result ? 200 : 400).json(response);
   } catch (error) {

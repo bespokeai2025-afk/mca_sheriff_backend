@@ -6,11 +6,12 @@ import { CallOutputData } from "../entities/CallOutputData";
 import { In } from "typeorm";
 import { CallOutputHistoryData } from "../entities/CallOutputHistoryData";
 import { mapCallOutputData } from "../utils/mapper";
-
+import { BatchCalling } from "../entities/BatchCalling";
 const DEFAULT_PAGE_SIZE = Number(process.env.PAGE_SIZE) || 10;
 
 export class callOutputDataService {
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
+    private BatchCallingRepository = AppDataSource.getRepository(BatchCalling);
   private callOutputRepository = AppDataSource.getRepository(CallOutputData);
   private historyRepository = AppDataSource.getRepository(CallOutputHistoryData);
 
@@ -345,6 +346,7 @@ static async getUsercallingHistory(
         'call.appointment_time',
         'call.booking_status',
         'call.calendly_booking_url',
+        'call.sentiment_analysis',
       ])
       .orderBy('call."updatedAt"', "DESC")
       .getRawMany();
@@ -592,6 +594,12 @@ static async getUsercallingHistory(
       const crmRecord = await this.CRMDataRepository.findOne({
         where: { lead_id: mappedData.lead_id, isDeleted: false },
       });
+
+       
+      const batchRecord = await this.BatchCallingRepository.findOne({
+        where: { lead_id: mappedData.lead_id, isDeleted: false },
+      });
+
       // mappedData.crm_data_id = crmRecord ? crmRecord.id : null;
       if (crmRecord) {
         mappedData.crmData = crmRecord;
@@ -629,9 +637,19 @@ static async getUsercallingHistory(
       await this.historyRepository.save(historyRecord);
       console.log("📝 History record saved");
 
-       if (crmRecord && savedCall.callStatus !== "not_connected") {
+       if (crmRecord && savedCall.callStatus !== "not_connected"  && savedCall.durationMs !== null) {
       crmRecord.need_to_call = false;
       await this.CRMDataRepository.save(crmRecord);
+
+      // Update BatchCalling
+      if (batchRecord) {
+        batchRecord.need_to_call = false;
+        batchRecord.send_to_retail = true;
+        batchRecord.call_status = "completed"; // instead of "pending"
+        await this.BatchCallingRepository.save(batchRecord);
+      }
+
+
       console.log("CRM record updated (need_to_call=false)");
     }
     // console.log(savedCall, "savitaaaaaaaaaaaaaaa");
