@@ -346,6 +346,7 @@ static async getUsercallingHistory(
         'call.appointment_time',
         'call.booking_status',
         'call.calendly_booking_url',
+        'call.sentiment_analysis',
       ])
       .orderBy('call."updatedAt"', "DESC")
       .getRawMany();
