@@ -112,48 +112,47 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
     return null;
   }
 }
-  //old logic batch call
-  // static async createBatchCall(tasks: RetellTask[]) {
-  //   if (tasks.length === 0) return null;
+//old logic batch call
+// static async createBatchCall(tasks: RetellTask[]) {
+//   if (tasks.length === 0) return null;
 
-  //   const payload = {
-  //     from_number: process.env.RETELL_FROM_NUMBER,
-  //     tasks: tasks,
-  //     trigger_timestamp:Date.now() + 60 * 1000, // current UTC time + 1 minute (in ms)
-  //     retell_llm_dynamic_variables: {
-  //       greeting: "Hello, this is a test call from Retell!",
-  //     },
-  //   };
+//   const payload = {
+//     from_number: process.env.RETELL_FROM_NUMBER,
+//     tasks: tasks,
+//     trigger_timestamp:Date.now() + 60 * 1000, // current UTC time + 1 minute (in ms)
+//     retell_llm_dynamic_variables: {
+//       greeting: "Hello, this is a test call from Retell!",
+//     },
+//   };
 
-  //   try {
-  //     const response = await axios.post(
-  //       "https://api.retellai.com/create-batch-call",
-  //       payload,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
+//   try {
+//     const response = await axios.post(
+//       "https://api.retellai.com/create-batch-call",
+//       payload,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${process.env.API_KEY_RETELL}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
 
-  //     console.log(" RetellAI response:", response.data);
-  //     return response.data;
-  //   } catch (error: any) {
-  //     if (error.response) {
-  //       console.error(" RetellAI API Error:", {
-  //         status: error.response.status,
-  //         data: error.response.data,
-  //       });
-  //     } else if (error.request) {
-  //       console.error(" No response received from RetellAI:", error.request);
-  //     } else {
-  //       console.error(" Error creating batch call:", error.message);
-  //     }
-  //     return null;
-  //   }
-  // }
-
+//     console.log(" RetellAI response:", response.data);
+//     return response.data;
+//   } catch (error: any) {
+//     if (error.response) {
+//       console.error(" RetellAI API Error:", {
+//         status: error.response.status,
+//         data: error.response.data,
+//       });
+//     } else if (error.request) {
+//       console.error(" No response received from RetellAI:", error.request);
+//     } else {
+//       console.error(" Error creating batch call:", error.message);
+//     }
+//     return null;
+//   }
+// }
   static async fetchRetellPhoneNumbers(): Promise<any[]> {
     try {
       const apiKey = process.env.API_KEY_RETELL;
@@ -173,7 +172,6 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
       return [];
     }
   }
-
   static async syncRetellAIandDB() {
 
     try {
@@ -443,6 +441,7 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
   }
   const areaCount = await this.AreaCountRepository.findOne({
     where: {
+      isActive: true,
       updatedAt: Between(startOfDay, endOfDay),
     },
   });
@@ -479,8 +478,6 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
 
   return batchRecords;
 }
-
-
 private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
   const callResults: any[] = [];
 
@@ -530,7 +527,6 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
 
   return callResults;
 }
-
  public async getCRMData(verifyUser: any, batchLimit: number = 2) {
   try {
     console.log(" Starting getCRMData() process...");
@@ -571,9 +567,6 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
     return errorWithData("Something went wrong while fetching CRM data", error);
   }
 }
-
-
-
 //  public async getCRMData(
 //   verifyUser: any,
 //   batchLimit: number = 1 // default batch size
@@ -818,9 +811,7 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
   //     console.error("Error fetching CRM data:", error.message);
   //     return errorWithData("Something went wrong", error);
   //   }
-  // }
-
-  
+  // }  
   public async getUsercrmData(
     verifyUser: any,
     mobile_number?: string // optional
