@@ -14,6 +14,8 @@ import { BatchCalling } from "../entities/BatchCalling";
 import { mapIncomingCRMData } from "../utils/mappercrm";
 import { ExcelHistory } from "../entities/ExcelHistorySave";
 import { PhoneNumber } from "../entities/PhoneNumberEntity";
+import { AreaCount } from "../entities/AreaCount";
+import { Between } from "typeorm";
 import { AllCompanyNumbersAndAgents } from "../entities/All_Company_Numbers_and_Agents";
 import { lookup } from "dns";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -45,7 +47,7 @@ export class CRMDataService {
   // Repository for CMR Data database operations
   private CRMDataRepository = AppDataSource.getRepository(CRMData);
    private BatchRepository = AppDataSource.getRepository(BatchCalling);
-
+   private AreaCountRepository = AppDataSource.getRepository(AreaCount);
 private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferred_slot: { date: string; time: string }[] } | null> {
   try {
     const now = new Date();
@@ -391,6 +393,12 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
 
   }
  private async getBatchCallRecords(verifyUser: any, batchLimit: number) {
+
+  //  Fetch current day's allowed call count from AreaCount
+  const today = new Date();
+  const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
   const crmWhere: any = { need_to_call: true, isDeleted: false };
   if (verifyUser.user_exist) crmWhere.isActive = true;
 
@@ -401,12 +409,11 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
   });
 
   if (!crmDataList.length) return [];
-
-  // 2️⃣ Sync CRM data with BatchCalling table
+  // Sync CRM data with BatchCalling table
   for (const crm of crmDataList) {
     // Skip if invalid or undefined lead_id
     if (!crm.lead_id || crm.lead_id === "undefined") {
-      console.warn("⚠️ Skipping CRM record with invalid lead_id:", crm.lead_id);
+      console.warn(" Skipping CRM record with invalid lead_id:", crm.lead_id);
       continue;
     }
 
@@ -434,11 +441,39 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
       await this.BatchRepository.save(newCall);
     }
   }
+  const areaCount = await this.AreaCountRepository.findOne({
+    where: {
+      updatedAt: Between(startOfDay, endOfDay),
+    },
+  });
+ // If no record found, fallback to batchLimit
+  const allowedCalls = areaCount ? areaCount.count : batchLimit;
 
-  // 3️⃣ Fetch all batch records ready for calling
+  //  Fetch today's call count already made
+  const todayCallsCount = await this.BatchRepository.count({
+    where: {
+      call_status: "completed",
+      need_to_call: false,
+      send_to_retail: true,
+      updatedAt: Between(startOfDay, endOfDay),
+    },
+  });
+
+  // Calculate remaining calls allowed today
+  const remainingCalls = Math.max(allowedCalls - todayCallsCount, 0);
+
+  if (remainingCalls === 0) {
+    console.log("Daily call limit reached.");
+    return [];
+  }
+ // Fetch all batch records ready for calling
+  const takeCount = Math.min(batchLimit, remainingCalls)
+
+  //  Fetch all batch records ready for calling
   const batchRecords = await this.BatchRepository.find({
     where: { need_to_call: true, send_to_retail: false, call_status: "pending" },
-    take: batchLimit,
+    // take: batchLimit,
+    take: takeCount,
     order: { createdAt: "ASC" },
   });
 
@@ -481,23 +516,6 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
       to_number: batch.mobile_number,
       raw_response: retellResponse,
     });
-
-    //  Only update BatchCalling + CRMData when call is completed successfully
-    // if (callOutput.call_status == 'ended' && callOutput.duration_ms !== null) {
-    //   batch.need_to_call = false;
-    //   batch.send_to_retail = true;
-    //    batch.call_status = "pending";
-    //   await this.BatchRepository.save(batch);
-
-    //   crm.need_to_call = false;
-    //   await this.CRMDataRepository.save(crm);
-
-    //   console.log(` Updated lead ${crm.lead_id}: call completed successfully.`);
-    // } else {
-    //   console.warn(
-    //     ` Skipped update for lead ${crm.lead_id}: missing call_status or duration_ms.`
-    //   );
-    // }
 
     // 4️⃣ Push to results
     callResults.push({
