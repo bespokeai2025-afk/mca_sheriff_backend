@@ -28,6 +28,7 @@ import PhoneNumbers from './routes/phoneNumber.routes'
 import LeadFiltermaster from './routes/leadFilterMaster.routes'
 import areaCountRoutes from "./routes/areaCount.routes";
 import leadFilterStatusRoutes from "./routes/leadFilterStatus.routes";
+import contactfromdynamics from "./routes/contactfromdynamics.routes";
 import { CallScheduler } from "./utils/scheduler";
 // Load environment variables
 dotenv.config()
@@ -90,6 +91,7 @@ app.use('/agent', Agent)
 app.use('/phoneNumber', PhoneNumbers)
 app.use("/area-count", areaCountRoutes);
 app.use("/lead-filterStatus",leadFilterStatusRoutes);
+app.use("/contactfromdynamics",contactfromdynamics );
 app.use(multerErrorHandler);
 
 app.use('/', viewsRoutes)

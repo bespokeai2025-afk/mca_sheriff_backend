@@ -88,7 +88,7 @@ export const updateLeadFilterStatus = async (req: Request, res: Response): Promi
     // const data = req.body; // expected: { query, new_currentstatus, ...other master fields }
 
     
-    let data = {
+   let data = {
       "query": "https://pinnaclemanagementcorporation.crm4.dynamics.com/api/data/v9.2/leads?$select=fullname&$filter=(startswith(fullname,'Anoop') and new_currentstatus eq 100000000)",
       "new_currentstatus": req.body.new_currentstatus
     }
