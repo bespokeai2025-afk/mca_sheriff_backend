@@ -37,6 +37,10 @@ send_to_retail: boolean;
   
     @Column({ type: "text", nullable: true })
   call_status?: string;
+   @Column({ type: "boolean", default: true })
+    isActive: boolean
+    @Column({ type: "boolean", default: false })
+    isDeleted: boolean
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt: Date;
