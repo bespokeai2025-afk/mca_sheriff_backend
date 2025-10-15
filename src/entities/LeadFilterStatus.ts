@@ -16,7 +16,7 @@ export class LeadFilterStatus {
   id: string;
 
   // Optional text or condition query
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: "text", nullable: true })
   query?: string;
 
   // Store multiple selected values (array of strings)
