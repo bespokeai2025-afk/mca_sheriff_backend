@@ -212,39 +212,68 @@ export class LeadFilterMasterService {
     }
   }
 
-
   public async updateLeadFilterStatus(id: string, data: any) {
     try {
+      // Destructure incoming data
       const { new_currentstatus, ...masterData } = data;
 
+      // 1️⃣ Fetch existing status
       const status = await this.leadFilterStatusRepository.findOne({
         where: { id, isDeleted: false },
+        relations: ["leadFilterMaster"],
       });
 
       if (!status) {
         return errorWithoutData("Lead filter status not found");
       }
 
-      // Normalize new_currentstatus
+      // 2️⃣ Normalize input array
       const parsedStatus: string[] = Array.isArray(new_currentstatus)
         ? new_currentstatus
         : new_currentstatus
-          ? String(new_currentstatus).split(",").map((s) => s.trim()).filter(Boolean)
+          ? String(new_currentstatus)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
           : [];
 
-      // Build dynamic query (OR between selected values)
-      status.query = parsedStatus.length
-        ? `(${parsedStatus.map((v) => `new_currentstatus eq '${v}'`).join(" or ")})`
+      // 3️⃣ Build CRM query
+      const filterPart = parsedStatus.length
+        ? `(${parsedStatus.map((v) => `new_currentstatus eq ${v}`).join(" and ")})`
         : "";
 
-      status.new_currentstatus = parsedStatus.map((v) => v.toString());
+      const fullQuery = `${process.env.FILTER_STATUS_UPDATE}${filterPart ? ` and ${filterPart}` : ""})`;
+
+
+      // 4️⃣ Assign masterData first (avoid overwriting computed fields)
       Object.assign(status, masterData);
 
-      const updatedStatus = await this.leadFilterStatusRepository.save(status);
+      // 5️⃣ Assign parsed array and query explicitly
+      status.new_currentstatus = parsedStatus;
+      status.query = fullQuery;
 
-      return successWithData("Lead filter status updated successfully", {
-        status: updatedStatus,
+      // 6️⃣ Save entity
+      await this.leadFilterStatusRepository.save(status);
+
+      await axios.post(`${process.env.BESPOKE_WEBHOOK_LEAD_STATUS}`, {
+        id: status.id,
+        query: fullQuery,
+        new_currentstatus: parsedStatus,
+        leadFilterMasterId: status.leadFilterMaster?.id || null,
       });
+
+      // 7️⃣ Return response
+      return {
+        result: true,
+        statuscode: 200,
+        message: "Lead filter query updated successfully!",
+        data: [
+          {
+            query: fullQuery,
+            leadFilterMaster: status.leadFilterMaster || null,
+          },
+        ],
+      };
     } catch (error) {
       console.error("Error updating lead filter status:", error);
       return errorWithData("Error updating lead filter status", { error });
@@ -252,11 +281,13 @@ export class LeadFilterMasterService {
   }
 
 
+
+
   public async getDataFromDynamicsQuery() {
     try {
       const filter = await this.leadFilterStatusRepository.find({
         where: { isDeleted: false },
-        select: ['query','id'], // include 'id' + any other columns you want
+        select: ['query', 'id'], // include 'id' + any other columns you want
         order: { createdAt: 'ASC' }, // get the earliest row
         //  where: { id, isDeleted: false },
       });
