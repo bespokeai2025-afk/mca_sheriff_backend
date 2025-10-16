@@ -17,6 +17,7 @@ import { AreaCount } from "../entities/AreaCount";
 import { Between } from "typeorm";
 import { AllCompanyNumbersAndAgents } from "../entities/All_Company_Numbers_and_Agents";
 import { lookup } from "dns";
+import { generateTokens } from "../utils/jwtUtils"; // adjust path if needed
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export interface RetellTask {
   to_number: string;
@@ -147,55 +148,141 @@ export class CRMDataService {
 //   }
 // }
 
-private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferred_slot: { date: string; time: string }[] } | null> {
-  try {
-    const now = new Date();
+// private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferred_slot: { date: string; time: string }[] } | null> {
+//   try {
+//     //  const accessToken = await this.generateTokens(); // ✅ get token dynamically
+//     const now = new Date();
 
-    const formatCalendlyDate = (date: Date) => {
-      const pad = (n: number, width = 2) => String(n).padStart(width, "0");
-      return (
-        `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
-        `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
-      );
-    };
+//     const formatCalendlyDate = (date: Date) => {
+//       const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+//       return (
+//         `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+//         `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}.000000`
+//       );
+//     };
 
-    const startTimeRaw = new Date(now.getTime() + 60 * 1000);
-    const endTimeRaw = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+//     const startTimeRaw = new Date(now.getTime() + 60 * 1000);
+//     const endTimeRaw = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
-    const start_time = encodeURIComponent(formatCalendlyDate(startTimeRaw));
-    const end_time = encodeURIComponent(formatCalendlyDate(endTimeRaw));
+//     const start_time = encodeURIComponent(formatCalendlyDate(startTimeRaw));
+//     const end_time = encodeURIComponent(formatCalendlyDate(endTimeRaw));
 
-    //event type URL
-    const event_type = "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
+//     //event type URL
+//     const event_type = "https://api.calendly.com/event_types/6cc6e7d5-4efb-407b-a75d-78ba2905e02a";
 
-    const url = `https://api.calendly.com/event_type_available_times?event_type=${encodeURIComponent(
-      event_type
-    )}&start_time=${start_time}&end_time=${end_time}`;
+//     const url = `https://api.calendly.com/event_type_available_times?event_type=${encodeURIComponent(
+//       event_type
+//     )}&start_time=${start_time}&end_time=${end_time}`;
 
-    // const calendlyResponse = await axios.get(url, {
-    //   headers: {
-    //     Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
-    //   },
-    // });
- const calendlyResponse = {
+//     const calendlyResponse = await axios.get(url, {
+//       headers: {
+//         Authorization: `Bearer ${process.env.CALENDLY_API_KEY}`,
+//       },
+//     });
+
+
+//     // }); const calendlyResponse = { data: { collection: [] // Empty collection triggers null scenario } };
+//     const collection = calendlyResponse.data.collection || [];
+//     if (collection.length === 0) {
+//       // Send email if no slots returned
+//       // await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
+//       //   to: process.env.EMAIL_TO,
+//       //   cc: process.env.EMAIL_CC || "",
+//       //   bcc: process.env.EMAIL_BCC || "",
+//       //   subject: "No Calendly Slots Available",
+//       //   body: `<h3>No Calendly slot available for the next ${daysAhead} days</h3>`,
+//       // });
+
+//       try {
+//           const emailResponse = await axios.post(
+//             `${process.env.API_BASE_URL}/email-Log/send-Email`,
+//             {
+//               to: process.env.EMAIL_TO,
+//               cc: process.env.EMAIL_CC || "",
+//               bcc: process.env.EMAIL_BCC || "",
+//               subject: "No Calendly Slots Available",
+//               body: `<h3>No Calendly slot available for the next ${daysAhead} days</h3>`,
+//             },
+//             {
+//               headers: {
+//                 Authorization: `Bearer ${generateTokens }`,
+//                 "Content-Type": "application/json",
+//               },
+//             }
+//           );
+
+//           console.log("Email sent:", emailResponse.data);
+//         } catch (err: any) {
+//           console.error("Email send failed:", err.response?.data || err.message);
+//         }
+
+//       return null;
+//     }
+
+//     // Filter available slots
+//     const availableSlots = collection
+//       .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
+//       .map((slot: any) => {
+//         const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+//         if (!match) return null;
+//         const [_, date, hoursStr, minutesStr] = match;
+
+//         let hours = parseInt(hoursStr, 10);
+//         const minutes = minutesStr;
+//         const ampm = hours >= 12 ? "PM" : "AM";
+//         hours = hours % 12 || 12;
+//         const time = `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+
+//         return { date, time };
+//       })
+//       .filter(Boolean) as { date: string; time: string }[];
+
+//     if (availableSlots.length === 0) {
+//       // Send email if filtering results in no slots
+//       await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
+//         to: process.env.EMAIL_TO,
+//         cc: process.env.EMAIL_CC || "",
+//         bcc: process.env.EMAIL_BCC || "",
+//         subject: "No Available Calendly Slots",
+//         body: `<h3>No available Calendly slots found after filtering</h3>`,
+//       });
+//       return null;
+//     }
+
+//     return { preferred_slot: availableSlots };
+//   } catch (error: any) {
+//     console.error("Error fetching Calendly slots:", error.response?.data || error.message);
+
+//     // Send email on error
+//     await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
+//       to: process.env.EMAIL_TO,
+//       cc: process.env.EMAIL_CC || "",
+//       bcc: process.env.EMAIL_BCC || "",
+//       subject: "Error Fetching Calendly Slots",
+//       body: `<h3>Error while fetching Calendly slots</h3><p>${error.response?.data || error.message}</p>`,
+//     });
+
+//     return null;
+//   }
+// }
+
+private async getCalendlyAvailableSlot(daysAhead: number = 7) {
+  console.log("Simulating Calendly response...");
+
+  // Simulate no slots
+  const calendlyResponse = {
     data: {
       collection: [] // Empty collection triggers null scenario
     }
   };
 
   console.log("Calendly API response:", calendlyResponse.data);
-    const collection = calendlyResponse.data.collection || [];
-    if (collection.length === 0) {
-      // Send email if no slots returned
-      // await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
-      //   to: process.env.EMAIL_TO,
-      //   cc: process.env.EMAIL_CC || "",
-      //   bcc: process.env.EMAIL_BCC || "",
-      //   subject: "No Calendly Slots Available",
-      //   body: `<h3>No Calendly slot available for the next ${daysAhead} days</h3>`,
-      // });
 
-      console.log("No slots available! Sending email...");
+  const collection = calendlyResponse.data.collection || [];
+  console.log("Total slots returned:", collection.length);
+
+  if (collection.length === 0) {
+    console.log("No slots available! Sending email...");
     try {
       const emailResponse = await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
         to: process.env.EMAIL_TO,
@@ -203,60 +290,22 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
         bcc: process.env.EMAIL_BCC || "",
         subject: "No Calendly Slots Available",
         body: `<h3>No Calendly slot available for the next ${daysAhead} days</h3>`,
-      });
+      },
+            {
+              headers: {
+                Authorization: `Bearer ${generateTokens }`,
+                "Content-Type": "application/json",
+              },
+            });
       console.log("Email sent:", emailResponse.data);
     } catch (err: any) {
       console.error("Email send failed:", err.message);
     }
-      return null;
-    }
-
-    // Filter available slots
-    const availableSlots = collection
-      .filter((slot: any) => slot.status === "available" && slot.scheduling_url)
-      .map((slot: any) => {
-        const match = slot.scheduling_url.match(/\/(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
-        if (!match) return null;
-        const [_, date, hoursStr, minutesStr] = match;
-
-        let hours = parseInt(hoursStr, 10);
-        const minutes = minutesStr;
-        const ampm = hours >= 12 ? "PM" : "AM";
-        hours = hours % 12 || 12;
-        const time = `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
-
-        return { date, time };
-      })
-      .filter(Boolean) as { date: string; time: string }[];
-
-    if (availableSlots.length === 0) {
-      // Send email if filtering results in no slots
-      await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
-        to: process.env.EMAIL_TO,
-        cc: process.env.EMAIL_CC || "",
-        bcc: process.env.EMAIL_BCC || "",
-        subject: "No Available Calendly Slots",
-        body: `<h3>No available Calendly slots found after filtering</h3>`,
-      });
-      return null;
-    }
-
-    return { preferred_slot: availableSlots };
-  } catch (error: any) {
-    console.error("Error fetching Calendly slots:", error.response?.data || error.message);
-
-    // Send email on error
-    await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
-      to: process.env.EMAIL_TO,
-      cc: process.env.EMAIL_CC || "",
-      bcc: process.env.EMAIL_BCC || "",
-      subject: "Error Fetching Calendly Slots",
-      body: `<h3>Error while fetching Calendly slots</h3><p>${error.response?.data || error.message}</p>`,
-    });
-
     return null;
   }
 }
+
+
   static async fetchRetellPhoneNumbers(): Promise<any[]> {
     try {
       const apiKey = process.env.API_KEY_RETELL;
