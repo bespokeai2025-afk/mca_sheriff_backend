@@ -52,7 +52,7 @@ export class CallFrequencySettingService {
 
   private convertToAwsCron(cron: string): string {
     const parts = cron.trim().split(" ");
-    if (parts.length !== 5) throw new Error("Invalid cron format. Must have 5 fields.");
+    if (parts.length !== 5) throw new Error("Invalid cron format. Must have 2 fields.");
 
     const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
     const awsMinute = minute.includes("*/") ? `0/${minute.replace("*/", "")}` : minute;
