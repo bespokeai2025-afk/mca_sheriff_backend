@@ -5,6 +5,6 @@ import { EmailController } from "../controllers/emailLog.controller";
 
 const router = Router();
 
-router.post("/send-Email",verifyAccessToken, EmailController.sendEmail);
+router.post("/send-Email", EmailController.sendEmail);
 
 export default router;
