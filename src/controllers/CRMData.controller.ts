@@ -122,23 +122,16 @@ export const uploadCRMCSV = async (req: Request, res: Response): Promise<void> =
     const csvString = req.file.buffer.toString("utf-8");
 
     // Read CSV as workbook
-    // const workbook = XLSX.read(csvString, { type: "string" });
-    // const sheetName = workbook.SheetNames[0];
-    // const sheet = workbook.Sheets[sheetName];
+    const workbook = XLSX.read(csvString, { type: "string" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
 
-    // const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
     // Convert CSV buffer to string
 
 
-// Use PapaParse to keep all symbols exactly as in CSV
-const parsed = Papa.parse(csvString, {
-  header: true,
-  skipEmptyLines: true,
-  dynamicTyping: false, // VERY IMPORTANT: keep + and leading zeros
-});
 
-const data = parsed.data;
 
     if (!data.length) {
       res.status(400).json({
