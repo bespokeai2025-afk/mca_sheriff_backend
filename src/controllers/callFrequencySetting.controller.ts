@@ -31,9 +31,9 @@ export class CallFrequencySettingController {
       if (!id) return res.status(400).json(errorWithData("ID is required", null, 400));
       if (!call_frequency_setting) return res.status(400).json(errorWithData("call_frequency_setting is required", null, 400));
 
-      if (!isValidCron(call_frequency_setting, { seconds: false })) {
-        return res.status(400).json(errorWithData("Invalid cron expression", call_frequency_setting, 400));
-      }
+      // if (!isValidCron(call_frequency_setting, { seconds: false })) {
+      //   return res.status(400).json(errorWithData("Invalid cron expression", call_frequency_setting, 400));
+      // }
 
       const payload = { call_frequency_setting, timeZone, label, isActive };
       const updated = await service.updateOrInsert(id, payload);
