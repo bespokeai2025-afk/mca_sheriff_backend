@@ -505,14 +505,15 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
     const retellResponse = await CRMDataService.createBatchCall(task);
 
     //  Save Call Output in CallOutputData
-    const callOutput = await AppDataSource.getRepository(CallOutputData).save({
-      crmData: crm,
-      batchCallId: batch.id,
-      duration_ms: retellResponse?.duration_ms ?? null,
-      call_status: retellResponse?.status ?? null,
-      to_number: batch.mobile_number,
-      raw_response: retellResponse,
-    });
+
+    // const callOutput = await AppDataSource.getRepository(CallOutputData).save({
+    //   crmData: crm,
+    //   batchCallId: batch.id,
+    //   duration_ms: retellResponse?.duration_ms ?? null,
+    //   call_status: retellResponse?.status ?? null,
+    //   to_number: batch.mobile_number,
+    //   raw_response: retellResponse,
+    // });
 
     // 4️⃣ Push to results
     callResults.push({
