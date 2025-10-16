@@ -52,8 +52,8 @@ export class AdminService {
 
         // Validate password strength
         if (data.password) {
-            const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-            if (!strongPasswordRegex.test(data.password)) {
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;          
+          if (!strongPasswordRegex.test(data.password)) {
                 return errorWithoutData("Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.");
             }
 

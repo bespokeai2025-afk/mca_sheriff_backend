@@ -42,8 +42,7 @@ import { body, param } from "express-validator";
 
 // Regex for strong password: 
 // Minimum 8 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special char
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 export const validateAdmin = [
    body("mobile")
         .optional()
