@@ -4,20 +4,6 @@ import { LeadFilterMasterService } from "../services/leadFilterMaster.service";
 
 const leadFilterService = new LeadFilterMasterService();
 
-// export const getLeadFilters = async (req: Request, res: Response): Promise<any> => {
-//   try {
-//     const pageSize = parseInt(req.query.pageSize as string) || 50;
-//     const currentPage = parseInt(req.query.currentPage as string) || 1;
-//     const search = req.query.search as string | undefined;
-
-//     const response = await leadFilterService.getLeadFilters(pageSize, currentPage, search);
-//     return res.status(response.result ? 200 : 400).json(response);
-//   } catch (error) {
-//     const response = errorWithData("Something went wrong", { error });
-//     return res.status(500).json(response);
-//   }
-// };
-
 export const getLeadFilters = async (req: Request, res: Response): Promise<any> => {
   try {
     const pageSize = parseInt(req.query.pageSize as string) || 50;

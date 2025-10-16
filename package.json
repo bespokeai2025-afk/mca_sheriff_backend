@@ -18,7 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",
-    "@aws-sdk/client-scheduler": "^3.910.0",
+    "@aws-sdk/client-scheduler": "^3.911.0",
     "@aws-sdk/client-ses": "^3.787.0",
     "@bull-board/api": "^6.7.10",
     "@bull-board/express": "^6.7.10",
@@ -71,6 +71,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/node-fetch": "^2.6.13",
     "@types/nodemailer": "^6.4.17",
+    "@types/papaparse": "^5.3.16",
     "@types/redis": "^4.0.10",
     "@types/uuid": "^11.0.0",
     "nodemon": "^3.1.9",

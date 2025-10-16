@@ -10,10 +10,6 @@ const calloutputdataservice = new callOutputDataService();
 const userhistoryservice = new callOutputDataService();
 const adminRepository = AppDataSource.getRepository(Admin);
 
-
-
-
-
 //Yet To call
 export const getUsercallingData = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -40,12 +36,6 @@ export const getUsercallingData = async (req: Request, res: Response): Promise<a
   }
 };
 
-
-
-
-
-
-
 //Lead of user calls
 export const getUsercallingDataLead = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -68,86 +58,6 @@ export const getUsercallingDataLead = async (req: Request, res: Response): Promi
     return res.status(response.result ? 200 : 400).json(response);
   }
 };
-
-// export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
-//   try {
-//     if (!req.user) {
-//       const response = errorWithoutData("Authentication failed");
-//       return res.status(response.result ? 200 : 400).json(response);
-//     }
-
-//     const { pageSize, currentPage, toNumber, status } = req.query;
-
-//     // Normalize and validate status
-//     let normalizedStatus: "completed" | "ongoing" | undefined;
-//     if (typeof status === "string") {
-//       const lower = status.toLowerCase();
-//       if (lower === "completed" || lower === "ongoing") {
-//         normalizedStatus = lower as "completed" | "ongoing";
-//       }
-//     }
-
-//     const response = await calloutputdataservice.getUsercallingHistory(
-//       req.verifyUser,
-//       parseInt(pageSize as string, 10) || 50,
-//       parseInt(currentPage as string, 10) || 1,
-//       toNumber as string,       // optional filter
-//       normalizedStatus          // optional filter
-//     );
-
-//     return res.status(response.result ? 200 : 400).json(response);
-//   } catch (error) {
-//     const response = errorWithData("Something went wrong", { error });
-//     return res.status(response.result ? 200 : 400).json(response);
-//   }
-// };
-
-//count of user call 
-
-// export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
-//   try {
-//     const {
-//       from_date,
-//       to_date,
-//       from_time,
-//       to_time,
-//       currentPage,
-//       pageSize,
-//       toNumber,
-//       status
-//     } = req.body;
-
-//     if (!from_date || !to_date) {
-//       return res.status(400).json({
-//         result: false,
-//         statuscode: 400,
-//         message: "from_date and to_date are required"
-//       });
-//     }
-
-//     const result = await callOutputDataService.getUsercallingHistory(
-//       from_date,
-//       to_date,
-//       from_time,
-//       to_time,
-//       currentPage,
-//       pageSize,
-//       toNumber,
-//       status
-//     );
-
-//     // 🚀 Return service result directly
-//     res.status(result.statuscode).json(result);
-//   } catch (error: any) {
-//     console.error(error);
-//     res.status(500).json({
-//       result: false,
-//       statuscode: 500,
-//       message: "Failed to fetch call data",
-//       error: error.message,
-//     });
-//   }
-// };
 export const getUsercallingHistory = async (req: Request, res: Response): Promise<any> => {
   try {
     const verifyUser = req.user;

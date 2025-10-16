@@ -45,11 +45,11 @@ import { body, param } from "express-validator";
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 export const validateAdmin = [
-    body("mobile")
+   body("mobile")
         .optional()
         .isString()
-        .matches(/^[6-9]\d{9}$/)
-        .withMessage("Mobile number must be 10 digits and start with 6-9.")
+        .matches(/^(\+?\d{1,3}[- ]?)?\d{7,15}$/)
+        .withMessage("Please enter a valid mobile number with optional country code.")
         .trim()
         .escape(),
 

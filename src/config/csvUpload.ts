@@ -10,9 +10,9 @@ if (!MAX_FILE_SIZE_BYTES) {
   throw new Error("Please set EXCEL_MAX_FILE_SIZE_BYTES in your .env file");
 }
 
-const excelUpload = multer({
+const csvUpload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE_BYTES },
 });
 
-export default excelUpload;
+export default csvUpload;
