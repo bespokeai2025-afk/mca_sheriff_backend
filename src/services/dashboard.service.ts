@@ -17,6 +17,13 @@ export class DashboardService {
  // Total Call Minutes month-wise
  static async getTotalCallMinutes(months: number) {
   // Step 1: Query total duration in milliseconds per month
+    const today = new Date();
+  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+
+   // 2️⃣ Previous 6 months start & end dates
+  const previousStartDate = new Date(today.getFullYear(), today.getMonth() - (2 * months - 1), 1);
+  const previousEndDate = new Date(today.getFullYear(), today.getMonth() - months + 1, 0); // last day of previous 6 months
+
   const rawResult: { month_number: number; year: number; total_ms: number }[] =
     await AppDataSource.query(`
       SELECT 
@@ -35,8 +42,8 @@ export class DashboardService {
   const previousRaw: { total_ms: number }[] = await AppDataSource.query(`
     SELECT COALESCE(SUM("duration_ms"), 0) AS total_ms
     FROM "call_output_data"
-    WHERE "updatedAt" >= date_trunc('month', NOW()) - INTERVAL '${2 * months - 1} MONTH'
-      AND "updatedAt" < date_trunc('month', NOW()) - INTERVAL '${months} MONTH'
+     WHERE "updatedAt" >= :previousStartDate', { previousStartDate })
+       AND "updatedAt" <= :previousEndDate', { previousEndDate })
       AND "isActive" = TRUE
       AND "isDeleted" = FALSE
   `);
