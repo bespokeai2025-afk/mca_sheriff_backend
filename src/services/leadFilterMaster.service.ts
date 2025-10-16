@@ -192,7 +192,8 @@ export class LeadFilterMasterService {
 
       // 6️⃣ Save entity
       await this.leadFilterStatusRepository.save(status);
-
+      console.log("process.env.BESPOKE_WEBHOOK_LEAD_STATUS", process.env.BESPOKE_WEBHOOK_LEAD_STATUS);
+      
       await axios.post(`${process.env.BESPOKE_WEBHOOK_LEAD_STATUS}`, {
         id: status.id,
         query: fullQuery,
@@ -208,6 +209,7 @@ export class LeadFilterMasterService {
         data: [
           {
             query: fullQuery,
+            new_currentstatus: parsedStatus,
             leadFilterMaster: status.leadFilterMaster || null,
           },
         ],
