@@ -19,29 +19,8 @@ const addTestJobs = async () => {
     ]
     const duration = 10
 
-    // await createTopicNotificationJob(title, body, data, topic, "10");
-    // await createBatchNotificationJob(title, body, data, tokens, 10);
-
-
-    // const result = await pushNotificationService.create({
-    //     title: "New Reward Earned",
-    //     message: body,
-    //     payload: data,
-    //     tokens,
-    //     delay: 10,
-    //     scheduledTime: new Date().toISOString().split('T')[0]
-    // });
-    // console.log(result)
-
     try {
-        // const pushNotificationRepo = AppDataSource.getRepository(PushNotification);
-        // await pushNotificationRepo.save({
-        //     title: "New Reward Earned",
-        //     message: "Congratulations! You earned a new reward.",
-        //     payload: { data },
-        //     tokens,
-        //     scheduledTime: new Date().toISOString().split('T')[0],
-        // });
+       
     } catch (error) {
         console.log(error)
     }

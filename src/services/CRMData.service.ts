@@ -5,7 +5,6 @@ import {
   successWithoutData,
 } from "../config/ApiResponse";
 import { AppDataSource } from "../config/database";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { CRMData } from "../entities/CRMData";
 import axios from "axios";
 import { ILike } from "typeorm";
@@ -30,12 +29,6 @@ export interface RetellTask {
     property_type_address_line2?: string;
     property_type_address_line3?: string;
     available_slots?: string;
-    // available_slot?: { 
-    //   preferred_slot: { 
-    //     date: string; 
-    //     time: string; 
-    //   } 
-    // } | null; // <- object type now allowed
     city?: string;
     slot?: string | null; // ✅ can be string or null
     calendly_url?: string | null; // ✅ can be string or null
@@ -500,21 +493,8 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
         greeting: `Hello ${crm.name ?? ""}, this is a test call from Retell!`,
       },
     };
-
     //  Call RetellAI
     const retellResponse = await CRMDataService.createBatchCall(task);
-
-    //  Save Call Output in CallOutputData
-
-    // const callOutput = await AppDataSource.getRepository(CallOutputData).save({
-    //   crmData: crm,
-    //   batchCallId: batch.id,
-    //   duration_ms: retellResponse?.duration_ms ?? null,
-    //   call_status: retellResponse?.status ?? null,
-    //   to_number: batch.mobile_number,
-    //   raw_response: retellResponse,
-    // });
-
     // 4️⃣ Push to results
     callResults.push({
       lead_id: crm.lead_id,

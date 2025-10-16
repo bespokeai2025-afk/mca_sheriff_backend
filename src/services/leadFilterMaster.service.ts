@@ -15,69 +15,7 @@ import axios from "axios";
 export class LeadFilterMasterService {
   private leadFilterRepository = AppDataSource.getRepository(LeadFilterMaster);
   private leadFilterStatusRepository = AppDataSource.getRepository(LeadFilterStatus);
-
-
-  // public async getLeadFilters(
-  //   pageSize: number,
-  //   currentPage: number,
-  //   search?: string
-  // ) {
-  //   try {
-  //     const whereCondition: any = { isDeleted: false };
-
-  //     if (search) {
-  //       whereCondition.filterName = ILike(`%${search}%`);
-  //     }
-
-  //     const [filters, totalItems] = await this.leadFilterRepository.findAndCount({
-  //       where: whereCondition,
-  //       order: { createdAt: "DESC" },
-  //       skip: (currentPage - 1) * pageSize,
-  //       take: pageSize,
-  //     });
-
-  //     const totalPages = Math.ceil(totalItems / pageSize);
-
-  //     if (totalItems >= 1 && totalPages < currentPage) {
-  //       return errorWithoutData("Page limit exceeded");
-  //     }
-
-  //     // Fetch all active, not deleted LeadFilterStatus
-  //     const statuses = await this.leadFilterStatusRepository.find({
-  //       where: { isDeleted: false, isActive: true },
-  //     });
-
-  //     // Collect all selected filter IDs
-  //     // Collect all selected values from LeadFilterStatus
-  //     const selectedIds = new Set<string>();
-  //     statuses.forEach((status) => {
-  //       if (status.new_currentstatus?.length) {
-  //         status.new_currentstatus.forEach((id) => selectedIds.add(id.toString()));
-  //       }
-  //     });
-
-  //     // Attach selected flag based on filterCode, not id
-  //     const filtersWithSelection = filters.map((filter) => ({
-  //       ...filter,
-  //       selected: selectedIds.has(filter.filterCode), // compare with filterCode
-  //     }));
-
-
-  //     return successWithData(
-  //       "Lead filters fetched successfully!",
-  //       filtersWithSelection,
-  //       {
-  //         totalItems,
-  //         totalPages,
-  //         currentPage,
-  //         pageSize,
-  //       }
-  //     );
-  //   } catch (error) {
-  //     return errorWithData("Error fetching lead filters", { error });
-  //   }
-  // }
-
+  
 
   public async getLeadFilters(
     pageSize: number,
