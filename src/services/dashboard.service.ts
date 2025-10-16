@@ -16,13 +16,16 @@ export class DashboardService {
   }
  // Total Call Minutes month-wise
  static async getTotalCallMinutes(months: number) {
-  // Step 1: Query total duration in milliseconds per month
-    const today = new Date();
-  const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+   const today = new Date();
 
-   // 2️⃣ Previous 6 months start & end dates
-  const previousStartDate = new Date(today.getFullYear(), today.getMonth() - (2 * months - 1), 1);
-  const previousEndDate = new Date(today.getFullYear(), today.getMonth() - months + 1, 0); // last day of previous 6 months
+  // 🗓️ 1️⃣ Current period (exclude current month — use last full month)
+  const endDate = new Date(today.getFullYear(), today.getMonth(), 0); // last day of previous month
+  const startDate = new Date(endDate.getFullYear(), endDate.getMonth() - (months - 1), 1);
+
+  // 🗓️ 2️⃣ Previous period (months before the current period)
+  const previousEndDate = new Date(startDate.getFullYear(), startDate.getMonth(), 0);
+  const previousStartDate = new Date(previousEndDate.getFullYear(), previousEndDate.getMonth() - (months - 1), 1);
+
 
   const rawResult: { month_number: number; year: number; total_ms: number }[] =
     await AppDataSource.query(`
@@ -39,14 +42,25 @@ export class DashboardService {
     `);
 
     // Step 2: Query previous 6 months
-  const previousRaw: { total_ms: number }[] = await AppDataSource.query(`
+  // const previousRaw: { total_ms: number }[] = await AppDataSource.query(`
+  //   SELECT COALESCE(SUM("duration_ms"), 0) AS total_ms
+  //   FROM "call_output_data"
+  //    WHERE "updatedAt" >= :previousStartDate', { previousStartDate })
+  //      AND "updatedAt" <= :previousEndDate', { previousEndDate })
+  //     AND "isActive" = TRUE
+  //     AND "isDeleted" = FALSE
+  // `);
+   // 🧮 4️⃣ Query total duration for previous N months
+  const previousRaw: { total_ms: number }[] = await AppDataSource.query(
+    `
     SELECT COALESCE(SUM("duration_ms"), 0) AS total_ms
     FROM "call_output_data"
-     WHERE "updatedAt" >= :previousStartDate', { previousStartDate })
-       AND "updatedAt" <= :previousEndDate', { previousEndDate })
+    WHERE "updatedAt" BETWEEN $1 AND $2
       AND "isActive" = TRUE
       AND "isDeleted" = FALSE
-  `);
+  `,
+    [previousStartDate, previousEndDate]
+  );
 
   const previousTotalMinutes = previousRaw[0]?.total_ms
     ? previousRaw[0].total_ms / 1000 / 60
