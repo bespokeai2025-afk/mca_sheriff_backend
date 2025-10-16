@@ -307,7 +307,7 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
           },
           {
             headers: {
-              Authorization: `Bearer ${process.env.STATIC_API_TOKEN}`,
+              // Authorization: `Bearer ${process.env.STATIC_API_TOKEN}`,
               "Content-Type": "application/json",
             },
           }
