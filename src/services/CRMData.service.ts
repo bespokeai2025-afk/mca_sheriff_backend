@@ -140,13 +140,30 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
     const collection = calendlyResponse.data.collection || [];
     if (collection.length === 0) {
       // Send email if no slots returned
-      await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
-        to: process.env.EMAIL_TO,
-        cc: process.env.EMAIL_CC || "",
-        bcc: process.env.EMAIL_BCC || "",
-        subject: "No Calendly Slots Available",
-        body: `<h3>No Calendly slot available for the next ${daysAhead} days</h3>`,
-      });
+      // await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
+      //   to: process.env.EMAIL_TO,
+      //   cc: process.env.EMAIL_CC || "",
+      //   bcc: process.env.EMAIL_BCC || "",
+      //   subject: "No Calendly Slots Available",
+      //   body: `<h3>No Calendly slot available for the next ${daysAhead} days</h3>`,
+      // });
+       try {
+        const emailResponse = await axios.post(`${process.env.API_BASE_URL}/email-Log/send-Email`, {
+          to: process.env.EMAIL_TO,
+          cc: process.env.EMAIL_CC || "",
+          bcc: process.env.EMAIL_BCC || "",
+          subject: "No Calendly Slots Available",
+          body: `<h3>No Calendly slot available for the next ${daysAhead} days</h3>`,
+        });
+
+        console.log(`[Email Log ✅] Alert email sent successfully`);
+        console.log(`Status: ${emailResponse.status}`);
+        console.log(`Response:`, emailResponse.data);
+      } catch (emailError: any) {
+        console.error(`[Email Log ❌] Failed to send alert email`);
+        console.error(`Error: ${emailError.message}`);
+        console.error(`Response:`, emailError.response?.data || "No response data");
+      }
       return null;
     }
 
