@@ -981,6 +981,128 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
       return errorWithData("Something went wrong", errorMessage);
     }
   }
+  // public static async uploadCRMCSVFile(dataArray: any[], fileName: string) {
+  //   const crmRepository = AppDataSource.getRepository(CRMData);
+  //   const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+  //   const historyRepository = AppDataSource.getRepository(ExcelHistory);
+
+  //   const insertedRecords: CRMData[] = [];
+  //   const updatedRecords: CRMData[] = [];
+  //   const failedRecords: any[] = [];
+
+  //   let failCount = 0;
+
+  //   for (const item of dataArray) {
+  //     try {
+  //       const now = new Date();
+  //       const email = (item.emailaddress1 || "").toLowerCase();
+  //       const mobile = item.mobilephone || "";
+
+  //       // Skip empty rows
+  //       if (!email && !mobile) {
+  //         failCount++;
+  //         continue;
+  //       }
+
+  //       // Generate leadId if not provided
+  //       const timestampPart = `${now.getFullYear()}${(now.getMonth() + 1)
+  //         .toString()
+  //         .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}${now
+  //           .getHours()
+  //           .toString()
+  //           .padStart(2, "0")}${now.getMinutes().toString().padStart(2, "0")}${now
+  //             .getSeconds()
+  //             .toString()
+  //             .padStart(2, "0")}${now
+  //               .getMilliseconds()
+  //               .toString()
+  //               .padStart(3, "0")}`;
+
+  //       const leadId = item.leadid || `${timestampPart}`;
+
+  //       // Check if lead_id already exists
+  //       const existingRecord = await crmRepository.findOne({
+  //         where: { lead_id: leadId },
+  //       });
+
+  //       if (existingRecord) {
+  //         // ✅ Update existing record
+  //         const updatedData = mapIncomingCRMData({
+  //           ...existingRecord,
+  //           ...item,
+  //           email,
+  //           mobile_number: mobile,
+  //         });
+
+  //         await crmRepository.update(existingRecord.id, updatedData);
+
+  //         const updatedRecord = await crmRepository.findOne({
+  //           where: { id: existingRecord.id },
+  //         });
+
+  //         if (updatedRecord) updatedRecords.push(updatedRecord);
+  //         console.log(`Updated existing lead_id: ${leadId}`);
+  //       } else {
+  //         // ✅ Insert new record
+  //         const mappedData = mapIncomingCRMData({
+  //           ...item,
+  //           email,
+  //           mobile_number: mobile,
+  //           lead_id: leadId,
+  //           unique_id: leadId,
+  //         });
+
+  //         const savedRecord = await crmRepository.save(
+  //           crmRepository.create(mappedData)
+  //         );
+  //         insertedRecords.push(savedRecord);
+
+  //         // Create CallOutputData for each new CRM record
+  //         const callOutput = callOutputRepository.create({
+  //           crmData: savedRecord,
+  //           name: savedRecord.name,
+  //           toNumber: savedRecord.mobile_number,
+  //           lead_id: savedRecord.lead_id,
+  //           callStatus: "need_to_call",
+  //         });
+  //         await callOutputRepository.save(callOutput);
+
+  //         console.log(`Inserted new lead_id: ${leadId}`);
+  //       }
+  //     } catch (error: unknown) {
+  //       const errMsg = error instanceof Error ? error.message : String(error);
+  //       failedRecords.push({ item, error: errMsg });
+  //       failCount++;
+  //       console.error("Error processing record:", errMsg);
+  //     }
+  //   }
+
+  //   // Save Excel history (link to first CRM record if available)
+  //   const firstRecord = insertedRecords[0] || updatedRecords[0];
+  //   const historyRecord = historyRepository.create({
+  //     file_name: fileName,
+  //     fail_count: failCount,
+  //     correct_count: insertedRecords.length + updatedRecords.length,
+  //     lead_id: firstRecord?.lead_id,
+  //     crm_data: firstRecord,
+  //   });
+  //   await historyRepository.save(historyRecord);
+
+  //   return {
+  //     result: true,
+  //     statuscode: 200,
+  //     message: "CRM data processed successfully",
+  //     data: {
+  //       insertedCount: insertedRecords.length,
+  //       updatedCount: updatedRecords.length,
+  //       failedCount: failCount,
+  //       insertedRecords,
+  //       updatedRecords,
+  //       failedRecords,
+  //     },
+  //   };
+  // }
+
   public static async uploadCRMCSVFile(dataArray: any[], fileName: string) {
     const crmRepository = AppDataSource.getRepository(CRMData);
     const callOutputRepository = AppDataSource.getRepository(CallOutputData);
@@ -996,7 +1118,12 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
       try {
         const now = new Date();
         const email = (item.emailaddress1 || "").toLowerCase();
-        const mobile = item.mobilephone || "";
+
+        //  Normalize mobile
+        let mobile = String(item.mobilephone ?? "").trim();
+        if (mobile && !mobile.startsWith("+")) {
+          mobile = `+${mobile}`;
+        }
 
         // Skip empty rows
         if (!email && !mobile) {
@@ -1004,60 +1131,48 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
           continue;
         }
 
-        // Generate leadId if not provided
+        // Generate unique lead ID
         const timestampPart = `${now.getFullYear()}${(now.getMonth() + 1)
           .toString()
           .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}${now
             .getHours()
             .toString()
-            .padStart(2, "0")}${now.getMinutes().toString().padStart(2, "0")}${now
-              .getSeconds()
-              .toString()
-              .padStart(2, "0")}${now
-                .getMilliseconds()
-                .toString()
-                .padStart(3, "0")}`;
+            .padStart(2, "0")}${now.getMinutes().toString()
+              .padStart(2, "0")}${now.getSeconds().toString()
+                .padStart(2, "0")}${now.getMilliseconds().toString().padStart(3, "0")}`;
 
         const leadId = item.leadid || `${timestampPart}`;
 
-        // Check if lead_id already exists
-        const existingRecord = await crmRepository.findOne({
-          where: { lead_id: leadId },
-        });
+        const existingRecord = await crmRepository.findOne({ where: { lead_id: leadId } });
 
         if (existingRecord) {
-          // ✅ Update existing record
+          // Update
           const updatedData = mapIncomingCRMData({
             ...existingRecord,
             ...item,
             email,
-            mobile_number: mobile,
+            mobile_number: mobile, // string with '+'
           });
 
           await crmRepository.update(existingRecord.id, updatedData);
-
-          const updatedRecord = await crmRepository.findOne({
-            where: { id: existingRecord.id },
-          });
-
+          const updatedRecord = await crmRepository.findOne({ where: { id: existingRecord.id } });
           if (updatedRecord) updatedRecords.push(updatedRecord);
+
           console.log(`Updated existing lead_id: ${leadId}`);
         } else {
-          // ✅ Insert new record
+          // Insert
           const mappedData = mapIncomingCRMData({
             ...item,
             email,
-            mobile_number: mobile,
+            mobile_number: mobile, // string with '+'
             lead_id: leadId,
             unique_id: leadId,
           });
 
-          const savedRecord = await crmRepository.save(
-            crmRepository.create(mappedData)
-          );
+          const savedRecord = await crmRepository.save(crmRepository.create(mappedData));
           insertedRecords.push(savedRecord);
 
-          // Create CallOutputData for each new CRM record
+          // Create CallOutputData
           const callOutput = callOutputRepository.create({
             crmData: savedRecord,
             name: savedRecord.name,
@@ -1077,16 +1192,18 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
       }
     }
 
-    // Save Excel history (link to first CRM record if available)
+    // Save Excel history
     const firstRecord = insertedRecords[0] || updatedRecords[0];
-    const historyRecord = historyRepository.create({
-      file_name: fileName,
-      fail_count: failCount,
-      correct_count: insertedRecords.length + updatedRecords.length,
-      lead_id: firstRecord?.lead_id,
-      crm_data: firstRecord,
-    });
-    await historyRepository.save(historyRecord);
+    if (firstRecord) {
+      const historyRecord = historyRepository.create({
+        file_name: fileName,
+        fail_count: failCount,
+        correct_count: insertedRecords.length + updatedRecords.length,
+        lead_id: firstRecord.lead_id,
+        crm_data: firstRecord,
+      });
+      await historyRepository.save(historyRecord);
+    }
 
     return {
       result: true,
