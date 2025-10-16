@@ -126,7 +126,7 @@ export class leadFilterStatus {
     const tenantId = process.env.DYNAMICS_TENANT_ID;
     const clientId = process.env.DYNAMICS_CLIENT_ID;
     const clientSecret = process.env.DYNAMICS_CLIENT_SECRET;
-    const scope = process.env.DYNAMICS_SCOPE;
+    const scope = process.env.DYNAMICS_RESOURCE;
 
     const url = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
 
