@@ -4,7 +4,7 @@ import { validateRequest } from "../middlewares/otp.validation";
 import { validateCSVFile } from "../middlewares/validateCSVFile";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 import { verifyStaticToken } from "../middlewares/verifyStaticToken";
-import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMCSV,getCRMDataStatic } from "../controllers/CRMData.controller";
+import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMCSVFile,getCRMDataStatic } from "../controllers/CRMData.controller";
 import { validatecrmdata, validateUserID } from "../middlewares/crmdata.validation";
 import csvUpload from "../config/csvUpload"; 
 // Import file upload configuration
@@ -23,7 +23,7 @@ router.post(
   "/upload-excel",
   csvUpload.single("file"), // multer in memory
   validateCSVFile,          // check file exists and type
-  uploadCRMCSV              // controller
+  uploadCRMCSVFile              // controller
 );
 
 router.get("/get-crm-data", verifyAccessToken, getUsercrmData);

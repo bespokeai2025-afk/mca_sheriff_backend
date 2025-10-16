@@ -981,7 +981,7 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
       return errorWithData("Something went wrong", errorMessage);
     }
   }
-  public static async insertCRMData(dataArray: any[], fileName: string) {
+  public static async uploadCRMCSVFile(dataArray: any[], fileName: string) {
     const crmRepository = AppDataSource.getRepository(CRMData);
     const callOutputRepository = AppDataSource.getRepository(CallOutputData);
     const historyRepository = AppDataSource.getRepository(ExcelHistory);

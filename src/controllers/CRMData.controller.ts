@@ -107,7 +107,7 @@ export const createCRMDataWithoutAuth = async (req: Request, res: Response): Pro
     return res.status(500).json(response);
   }
 };
-export const uploadCRMCSV = async (req: Request, res: Response): Promise<void> => {
+export const uploadCRMCSVFile = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.file) {
       res.status(400).json({
@@ -143,7 +143,7 @@ export const uploadCRMCSV = async (req: Request, res: Response): Promise<void> =
     }
 
     // Call your service
-    const result = await CRMDataService.insertCRMData(data, req.file.originalname);
+    const result = await CRMDataService.uploadCRMCSVFile(data, req.file.originalname);
 
     res.status(200).json(result);
   } catch (error: unknown) {
