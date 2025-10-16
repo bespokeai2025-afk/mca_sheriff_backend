@@ -1,6 +1,6 @@
 import express from "express";
 import { validateRequest } from "../middlewares/otp.validation";
-import { validateExcelFile } from "../middlewares/validateExcelFile";
+import { validateCSVFile } from "../middlewares/validateCSVFile";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 import {getLeadFilters,getLeadFilterById,updateLeadFilterStatus, getDataFromDynamicsQuery } from "../controllers/leadFilterMaster.controller";
 
