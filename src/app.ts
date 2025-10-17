@@ -43,9 +43,14 @@ const PORT =
 
 // Configure middleware
 //app.use(cors()); // Enable CORS for all routes
-app.use(express.urlencoded({ extended: true })); // Parse form-data fields
-app.use(express.json()); // Parse JSON bodies
+//app.use(express.urlencoded({ extended: true })); // Parse form-data fields
+//app.use(express.json()); // Parse JSON bodies
 app.use(cookieParser());
+
+const MAX_BODY_SIZE = process.env.MAX_BODY_SIZE || '5mb';
+
+app.use(express.json({ limit: MAX_BODY_SIZE }));
+app.use(express.urlencoded({ limit: MAX_BODY_SIZE, extended: true }));
 
 const allowedOrigins = [
     'http://localhost:4173',
