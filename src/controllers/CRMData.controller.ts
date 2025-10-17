@@ -35,6 +35,36 @@ export const getCRMData = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+const STATIC_TOKEN = "MY_STATIC_TEST_TOKEN_123";
+
+export const clearAllCRMData = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const token = req.headers["x-test-token"] as string;
+
+    if (!token || token !== STATIC_TOKEN) {
+      const response = errorWithData("Unauthorized access", {});
+      return res.status(401).json(response);
+    }
+
+    // Truncate tables with CASCADE
+    await AppDataSource.manager.query(`
+      TRUNCATE TABLE 
+        batch_calling,
+        call_output_history_data,
+        call_output_data,
+        crm_data
+      CASCADE
+    `);
+
+    const response = successWithData("All CRM-related data cleared successfully", {});
+    return res.status(200).json(response);
+
+  } catch (error: any) {
+    const response = errorWithData("Failed to clear CRM data", { error: error.message || error });
+    return res.status(500).json(response);
+  }
+};
+
 
 
 export const getUsercrmData = async (req: Request, res: Response): Promise<any> => {
