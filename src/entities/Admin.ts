@@ -25,8 +25,8 @@ export class Admin {
     @Column({ type: "varchar", length: 255, unique: false, nullable: true })
     password: string
 
-     @Column({ type: "text", nullable: true })
-    accessToken: string;
+    //  @Column({ type: "text", nullable: true })
+    // accessToken: string;
 
     @Column({ type: "boolean", default: false })
     is_otp_verified: boolean
