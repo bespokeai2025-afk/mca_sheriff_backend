@@ -395,14 +395,34 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
   const startOfDay = new Date(today.setHours(0, 0, 0, 0));
   const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-  const crmWhere: any = { need_to_call: true, isDeleted: false };
-  if (verifyUser.user_exist) crmWhere.isActive = true;
+  // const crmWhere: any = { need_to_call: true, isDeleted: false };
+  // if (verifyUser.user_exist) crmWhere.isActive = true;
 
-  // 1️⃣ Fetch CRM data
-  const crmDataList = await this.CRMDataRepository.find({
-    where: crmWhere,
-    order: { createdAt: "DESC" },
-  });
+  // // 1️⃣ Fetch CRM data
+  // const crmDataList = await this.CRMDataRepository.find({
+  //   where: crmWhere,
+  //   order: { createdAt: "DESC" },
+  // });
+
+
+today.setHours(0, 0, 0, 0);
+const tomorrow = new Date(today);
+tomorrow.setDate(today.getDate() + 1);
+
+const crmDataList = await this.CRMDataRepository.createQueryBuilder("crm")
+  .leftJoinAndSelect(
+    "call_output_history_data", // table name
+    "coh",
+    "coh.lead_id = crm.lead_id AND coh.call_status = :status AND coh.createdAt >= :start AND coh.createdAt < :end",
+    { status: "not_connected", start: today, end: tomorrow }
+  )
+  .where("crm.need_to_call = :needToCall", { needToCall: true })
+  .andWhere("crm.isDeleted = :isDeleted", { isDeleted: false })
+  .andWhere(verifyUser.user_exist ? "crm.isActive = :isActive" : "1=1", { isActive: true })
+  .orderBy("crm.createdAt", "DESC")
+  .getMany();
+
+console.log(crmDataList, "crmDataListcrmDataListcrm============");
 
   if (!crmDataList.length) return [];
   // Sync CRM data with BatchCalling table
