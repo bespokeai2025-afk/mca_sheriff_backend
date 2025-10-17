@@ -513,7 +513,7 @@ private async startBatchCalls(batchRecords: any[], calendlySlots: any) {
 
   return callResults;
 }
- public async getCRMData(verifyUser: any, batchLimit: number = 2) {
+ public async getCRMData(verifyUser: any, batchLimit: number = Number(process.env.BATCH_LIMIT)) {
   try {
     console.log(" Starting getCRMData() process...");
 
