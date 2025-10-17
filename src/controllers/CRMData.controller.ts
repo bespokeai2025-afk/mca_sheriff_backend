@@ -52,7 +52,7 @@ export const clearAllCRMData = async (req: Request, res: Response): Promise<any>
         batch_calling,
         call_output_history_data,
         call_output_data,
-        crm_data
+        CRM_data
       CASCADE
     `);
 
