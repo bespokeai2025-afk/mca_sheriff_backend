@@ -47,12 +47,12 @@ export const clearAllCRMData = async (req: Request, res: Response): Promise<any>
     }
 
     // Truncate tables with CASCADE
-    await AppDataSource.manager.query(`
+  await AppDataSource.manager.query(`
   TRUNCATE TABLE 
-    batch_calling,
-    call_output_history_data,
-    call_output_data,
-    "CRM_data"
+    public.batch_calling,
+    public.call_output_history_data,
+    public.call_output_data,
+    public."CRM_data"
   CASCADE
 `);
 
