@@ -82,7 +82,7 @@ export class CallFrequencySettingController {
  
   static async update(req: Request, res: Response) {
     try {
-      const { id, call_frequency_setting, timeZone, label, isActive } = req.body;
+      const { id, call_frequency_setting, timeZone, label, isActive, cronValue } = req.body;
  
       if (!id)
         return res.status(400).json(errorWithData("ID is required", null, 400));
@@ -102,7 +102,7 @@ export class CallFrequencySettingController {
         }
       }
  
-      const payload = { call_frequency_setting, timeZone, label, isActive };
+      const payload = { call_frequency_setting, timeZone, label, isActive, cronValue };
       const updated = await service.updateOrInsert(id, payload);
  
       res.status(200).json(

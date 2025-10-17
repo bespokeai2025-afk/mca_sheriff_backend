@@ -22,6 +22,9 @@ export class CallFrequencySetting {
   call_frequency_setting: string;
   
   @Column({ type: "text", nullable: true })
+  cronValue: string;
+  
+  @Column({ type: "text", nullable: true })
   timeZone: string;
   @Column({ type: "text", nullable: true })
   label: string;

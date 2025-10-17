@@ -213,6 +213,7 @@ dotenv.config();
  
 interface CallFrequencyInput {
   call_frequency_setting: string;
+  cronValue: string;
   timeZone: string;
   label: string;
   isActive?: boolean;
@@ -298,6 +299,7 @@ export class CallFrequencySettingService {
       existing = this.repo.create({
         id,
         call_frequency_setting: awsCron,
+        cronValue: data.cronValue,
         timeZone: data.timeZone,
         label: data.label,
         isActive: data.isActive ?? true,
@@ -306,6 +308,7 @@ export class CallFrequencySettingService {
       existing.call_frequency_setting = awsCron;
       existing.timeZone = data.timeZone;
       existing.label = data.label;
+      existing.cronValue= data.cronValue;
       if (data.isActive !== undefined) existing.isActive = data.isActive;
     }
  
