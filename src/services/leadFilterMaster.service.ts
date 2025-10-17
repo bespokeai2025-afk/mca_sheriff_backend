@@ -179,13 +179,16 @@ public async updateLeadFilterStatus(id: string, data: any) {
       ? parsedStatus.map((v) => `(new_currentstatus eq ${v})`).join(" or ")
       : "";
 
-    // 4️⃣ Safely build full query using existing env (which already includes $select)
-    // Ensure we only append the $filter once
+    // 4️⃣ Safely build full query using .env (which already includes $select)
     const baseUrl = process.env.FILTER_STATUS_UPDATE?.trim();
     const hasFilter = baseUrl?.includes("&$filter=");
     const separator = hasFilter ? " and " : "&$filter=";
 
-    const fullQuery = `${baseUrl}${filterPart ? `${separator}${filterPart}` : ""}`;
+    // 🧩 Read pagination limit from env (default 20 if missing)
+    const topValue = process.env.FILTER_STATUS_TOP || "20";
+    const pagination = `&$top=${topValue}`;
+
+    const fullQuery = `${baseUrl}${filterPart ? `${separator}${filterPart}` : ""}${pagination}`;
 
     // 5️⃣ Assign masterData and computed fields
     Object.assign(status, masterData);
@@ -195,7 +198,7 @@ public async updateLeadFilterStatus(id: string, data: any) {
     // 6️⃣ Save updated entity
     await this.leadFilterStatusRepository.save(status);
 
-    // 7️⃣ Send webhook
+    // 7️⃣ Notify webhook
     await axios.post(`${process.env.BESPOKE_WEBHOOK_LEAD_STATUS}`, {
       id: status.id,
       query: fullQuery,
@@ -221,6 +224,7 @@ public async updateLeadFilterStatus(id: string, data: any) {
     return errorWithData("Error updating lead filter status", { error });
   }
 }
+
 
 
 
