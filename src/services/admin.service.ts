@@ -173,38 +173,73 @@ export class AdminService {
     }
 
 
+    // public async loginAdminWithEmailPassword(data: { email?: string; password?: string }) {
+    //     if (!data.email || !data.password) {
+    //         return errorWithoutData("Email and password are required");
+    //     }
+
+    //     const user = await this.adminRepository.findOneBy({ email: data.email });
+    //     if (!user) {
+    //         return errorWithoutData("Invalid email or password");
+    //     }
+
+    //     if (!user.isActive || user.isDeleted) {
+    //         return errorWithoutData("User is not allowed to login");
+    //     }
+
+    //     //  compare hashed password
+    //     const isMatch = await bcrypt.compare(data.password, user.password);
+    //     if (!isMatch) {
+    //         return errorWithoutData("Invalid email or password");
+    //     }
+
+    //     const { accessToken, refreshToken } = await generateTokens(user);
+
+    //     return successWithData("Login successful", {
+    //         id: user.id,
+    //         email: user.email,
+    //         mobile: user.mobile,
+    //         accessToken,
+    //         refreshToken,
+    //     });
+    // }
+
+
     public async loginAdminWithEmailPassword(data: { email?: string; password?: string }) {
-        if (!data.email || !data.password) {
-            return errorWithoutData("Email and password are required");
-        }
-
-        const user = await this.adminRepository.findOneBy({ email: data.email });
-        if (!user) {
-            return errorWithoutData("Invalid email or password");
-        }
-
-        if (!user.isActive || user.isDeleted) {
-            return errorWithoutData("User is not allowed to login");
-        }
-
-        //  compare hashed password
-        const isMatch = await bcrypt.compare(data.password, user.password);
-        if (!isMatch) {
-            return errorWithoutData("Invalid email or password");
-        }
-
-        const { accessToken, refreshToken } = await generateTokens(user);
-
-        return successWithData("Login successful", {
-            id: user.id,
-            email: user.email,
-            mobile: user.mobile,
-            accessToken,
-            refreshToken,
-        });
+    if (!data.email || !data.password) {
+        return errorWithoutData("Email and password are required");
     }
 
+    const user = await this.adminRepository.findOneBy({ email: data.email });
+    if (!user) {
+        return errorWithoutData("Invalid email or password");
+    }
 
+    if (!user.isActive || user.isDeleted) {
+        return errorWithoutData("User is not allowed to login");
+    }
+
+    // Compare hashed password
+    const isMatch = await bcrypt.compare(data.password, user.password);
+    if (!isMatch) {
+        return errorWithoutData("Invalid email or password");
+    }
+
+    // Generate tokens
+    const { accessToken, refreshToken } = await generateTokens(user);
+
+    // Store accessToken in DB
+    user.accessToken = accessToken;
+    await this.adminRepository.save(user);
+
+    return successWithData("Login successful", {
+        id: user.id,
+        email: user.email,
+        mobile: user.mobile,
+        accessToken,
+        refreshToken,
+    });
+}
 
 
     public async changePassword(
