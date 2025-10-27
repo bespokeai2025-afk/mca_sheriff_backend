@@ -338,8 +338,11 @@ static async getUsercallingHistory(
         return errorWithoutData("Invalid request: raw_data is missing or malformed");
       }
 
+      
       //  Map raw data to entity
       const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw, reqBody);
+      console.log(reqBody, "reqBodyreqBodyreqBodyreqBodyreqBody==============================");
+      
       console.log("📥 Mapped Data:", mappedData);
 
       //  Find related CRM record by toNumber
