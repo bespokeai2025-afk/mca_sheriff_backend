@@ -315,6 +315,8 @@ static async getUsercallingHistory(
   public async createCallOutputData(reqBody: any) {
     try {
       // Extract raw data
+      console.log(reqBody, "reqBodyreqBodyreqBody==========================");
+      
       let raw = reqBody.raw_data;
       console.log(raw, "rawrawrawrawraw");
       
