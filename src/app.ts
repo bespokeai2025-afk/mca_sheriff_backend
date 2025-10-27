@@ -59,7 +59,9 @@ const allowedOrigins = [
     'https://uat.trakify.in',
     'https://devadmin.trakify.in',
     'http://localhost:3003',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'https://uat.webespokeai.com',
+    'http://uat.webespokeai.com'
 ];
 app.use(cors({
     origin: allowedOrigins,
