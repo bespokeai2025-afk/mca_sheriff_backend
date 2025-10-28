@@ -18,10 +18,10 @@ export class CRMData {
   @Column({ type: 'text' })
   name: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text',nullable: true,default:null  })
   firstname: string;
 
-    @Column({ type: 'text' })
+    @Column({  type: 'text',nullable: true,default:null })
   lastname: string;
   
   @Column({ type: 'text',nullable: true,default:null })
