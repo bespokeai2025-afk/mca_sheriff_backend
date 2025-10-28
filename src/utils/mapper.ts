@@ -3,10 +3,10 @@ export const mapCallOutputData = async (raw: any,reqBody: any) => {
   const { appointment_date, appointment_time, booking_status, calendly_booking_url } = reqBody;
 
    // 👇 Conditional logic for booking_status
-  let finalBookingStatus = "";
-  if (appointment_date && appointment_date.trim() !== "") {
-    finalBookingStatus = "success"; // ✅ only when date exists
-  }
+  // let finalBookingStatus = "";
+  // if (appointment_date && appointment_date.trim() !== "") {
+  //   finalBookingStatus = "success"; // ✅ only when date exists
+  // }
 
   return {
     event: event || "",
@@ -31,8 +31,8 @@ export const mapCallOutputData = async (raw: any,reqBody: any) => {
     lead_id: call?.retell_llm_dynamic_variables?.lead_id || "", 
       appointment_date: appointment_date || "",
     appointment_time: appointment_time || "",
-    // booking_status: booking_status || "",
-     booking_status: finalBookingStatus, // ✅ controlled here
+    booking_status: booking_status || "",
+    //  booking_status: finalBookingStatus, // ✅ controlled here
     calendly_booking_url: calendly_booking_url || "",
     crm_data_id: null as string | null,   // ✅ fix here
   };
