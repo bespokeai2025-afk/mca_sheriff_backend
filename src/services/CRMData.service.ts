@@ -518,6 +518,7 @@ export class CRMDataService {
       const task = {
         to_number: batch.mobile_number,
         retell_llm_dynamic_variables: {
+          bedrooms: crm.bedrooms ?? "",
           email: crm.email ?? "",
           name: crm.name ?? "", 
           mobile: crm.mobile_number ?? "", 
@@ -528,6 +529,8 @@ export class CRMDataService {
           last_name: crm.lastname ?? "",
           unique_id: crm.unique_id ?? "",
           property_type: crm.property_type ?? "",
+          property_address: crm.new_propinfo_street2 + "" + crm.new_propinfo_street3 +"" + crm.new_propinfo_city + "" + crm.new_propinfo_stateorprovince + "" + crm.new_propinfo_postalcode, 
+          contact_address: crm.address1_line1 + "" + crm.address1_line2 + "" + crm.address1_city + "" + crm.address1_postalcode + "" + crm.address1_stateorprovince ,
           property_address_line2: crm.new_propinfo_street2 ?? "",
           property_address_line3: crm.address1_line2 ?? "",
           city: crm.new_propinfo_city ?? "",

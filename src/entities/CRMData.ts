@@ -42,12 +42,20 @@ export class CRMData {
   @Column({ type: 'text', nullable: true })
   lead_id: string;
 
+  
+  @Column({ type: 'text', nullable: true ,default:null})
+  bedrooms: string;
+
   @Column({ type: 'text', nullable: true })
   new_propinfo_street2: string;
 
-  @Column({ type: 'text', nullable: true })
+
+  @Column({ type: 'text', nullable: true , default:null})
   address1_city: string;
 
+   @Column({ type: 'text', nullable: true , default:null})
+  address1_postalcode: string;
+  
   @Column({ type: 'text', nullable: true })
   address1_line2: string;
 
@@ -59,20 +67,23 @@ export class CRMData {
   @Column({ type: 'text', nullable: true })
   yomifullname: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true,default:null })
   new_propinfo_stateorprovince: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true ,default:null})
   address1_stateorprovince: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true , default:null })
   new_propinfo_street3: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true ,default:null})
   address1_line1: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true ,default:null})
   new_propinfo_city: string;
+
+    @Column({ type: 'text', nullable: true ,default:null})
+  new_propinfo_postalcode: string;
 
   @Column({ type: 'text', nullable: true })
   property_type: string;
