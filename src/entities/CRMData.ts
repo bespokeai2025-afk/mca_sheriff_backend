@@ -19,6 +19,15 @@ export class CRMData {
   name: string;
 
   @Column({ type: 'text' })
+  firstname: string;
+
+    @Column({ type: 'text' })
+  lastname: string;
+  
+  @Column({ type: 'text',nullable: true,default:null })
+  title: string;
+  
+  @Column({ type: 'text' })
   mobile_number: string;
 
   @Column({ type: 'text', nullable: true })
@@ -42,8 +51,7 @@ export class CRMData {
   @Column({ type: 'text', nullable: true })
   address1_line2: string;
 
-  @Column({ type: 'text', nullable: true })
-  lastname: string;
+
 
   @Column({ type: 'text', nullable: true })
   address1_composite: string;

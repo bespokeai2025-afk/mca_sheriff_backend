@@ -2,14 +2,16 @@ export const mapIncomingCRMData = (rawData: any) => {
   return {
      unique_id: rawData["@odata.etag"] || null,
      lead_id: rawData.leadid ||  "",
+    title: rawData.title ||  "",
     name: rawData.fullname ||  "",
+    firstname: rawData.firstname ||  "",
+    lastname: rawData.lastname ||  "",
     email: rawData.emailaddress1 || "",
     mobile_number: rawData.mobilephone || "",
     
     new_propinfo_street2: rawData.new_propinfo_street2 ||  "",
     address1_city: rawData.address1_city ||  "",
     address1_line2: rawData.new_propinfo_street3 ||  "",
-    lastname: rawData.lastname ||  "",
     address1_composite: rawData.address1_composite || "",
     yomifullname: rawData.yomifullname || "",
     new_propinfo_stateorprovince: rawData.new_propinfo_stateorprovince || "",
