@@ -19,7 +19,7 @@ export class callOutputDataService {
   public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
     let whereCondition = {};
     if (verifyUser.user_exist) {
-      whereCondition = { isActive: true, isDeleted: false };
+      whereCondition = { isActive: true, isDeleted: false, clear_all_data:false };
     }
     if (verifyUser.admin_exist) {
       whereCondition = { isDeleted: false };
@@ -260,7 +260,7 @@ export class callOutputDataService {
     try {
       let whereCondition: any = {};
       if (verifyUser.user_exist) {
-        whereCondition = { isActive: true, isDeleted: false };
+        whereCondition = { isActive: true, isDeleted: false, clear_all_data: false };
       }
       if (verifyUser.admin_exist) {
         whereCondition = { isDeleted: false };
