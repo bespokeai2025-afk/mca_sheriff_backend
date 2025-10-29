@@ -390,8 +390,9 @@ export class callOutputDataService {
       console.log("📝 History record saved");
 
       //  if (crmRecord && savedCall.callStatus !== "not_connected"  && savedCall.durationMs !== null) {
+      // if ((crmRecord && savedCall.callStatus !== "not_connected" && savedCall.durationMs !== null) && (crmRecord && savedCall.callStatus !== "unkown" && savedCall.durationMs < 10000)) {
 
-      if ((crmRecord && savedCall.callStatus !== "not_connected" && savedCall.durationMs !== null) && (crmRecord && savedCall.callStatus !== "unkown" && savedCall.durationMs < 10)) {
+      if ((crmRecord && savedCall.callStatus !== "not_connected" && savedCall.durationMs !== null) || (crmRecord && savedCall.callStatus !== "unkown" && savedCall.durationMs < 10000)) {
         crmRecord.need_to_call = false;
         await this.CRMDataRepository.save(crmRecord);
 
