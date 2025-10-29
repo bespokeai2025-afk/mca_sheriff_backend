@@ -31,5 +31,5 @@ router.get("/ok", verifyAccessToken, getUsercrmData);
 
 router.get("/clearAllDataForTesting",clearAllCRMData);
 
-router.delete("/clear-all", verifyAccessToken, clearAllCRMLeadData);
+router.delete("/clear-all-crm-data", verifyAccessToken, clearAllCRMLeadData);
 export default router;
