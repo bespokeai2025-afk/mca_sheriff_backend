@@ -199,6 +199,8 @@ export class AdminService {
             id: user.id,
             email: user.email,
             mobile: user.mobile,
+             name: user.name,
+              lastName: user.lastName,
             accessToken,
             refreshToken,
         });
