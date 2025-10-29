@@ -18,9 +18,7 @@ export class callOutputDataService {
   //Yet to Call
   public async getUsercallingData(verifyUser: any, pageSize: number, currentPage: number) {
     let whereCondition = {};
-    if (verifyUser.user_exist) {
-      whereCondition = { isActive: true, isDeleted: false, clear_all_data:false };
-    }
+
     if (verifyUser.admin_exist) {
       whereCondition = { isDeleted: false };
     }
@@ -31,6 +29,7 @@ export class callOutputDataService {
       .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted", {
         isActive: true,
         isDeleted: false,
+        clear_all_data:false
       })
       .orderBy("call_output.createdAt", "DESC")
       .skip((currentPage - 1) * pageSize)
