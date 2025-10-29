@@ -581,7 +581,7 @@ export class CRMDataService {
           });
           return {
             ...crm,
-            retellResponse: result.retellResponse || null,
+            // retellResponse: result.retellResponse || null,
           };
         })
       );
