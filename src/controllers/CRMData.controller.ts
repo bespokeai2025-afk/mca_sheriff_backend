@@ -363,8 +363,29 @@ export const clearAllCRMLeadData = async (req: Request, res: Response): Promise<
     return res.status(500).json(response);
   }
 };
+export const deleteSelectedCRMLeadData = async (req: Request, res: Response): Promise<any> => {
+  try {
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed", 401);
+      return res.status(response.statuscode).json(response);
+    }
 
+    const { lead_id } = req.body;
 
+    if (!Array.isArray(lead_id) || lead_id.length === 0) {
+      const response = errorWithoutData("lead_id must be a non-empty array", 400);
+      return res.status(response.statuscode).json(response);
+    }
+
+    const response = await crmdataservice.deleteSelectedCRMLeadData(lead_id);
+
+    return res.status(response.statuscode ?? (response.result ? 200 : 500)).json(response);
+  } catch (error) {
+    console.error("Error in deleteSelectedCRMLeadData:", error);
+    const response = errorWithData("Something went wrong", { error });
+    return res.status(500).json(response);
+  }
+};
 
 
 

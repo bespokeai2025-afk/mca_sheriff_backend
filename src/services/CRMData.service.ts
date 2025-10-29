@@ -5,6 +5,7 @@ import {
   successWithoutData,
   successEmptyData
 } from "../config/ApiResponse";
+import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { CRMData } from "../entities/CRMData";
 import axios from "axios";
@@ -1298,5 +1299,34 @@ public async clearAllCRMLeadData() {
   }
 }
 
+   public async deleteSelectedCRMLeadData(leadIds: (string | number)[]) {
+    try {
+      const crmRecords = await this.CRMDataRepository.findBy({
+        lead_id: In(leadIds),
+        isDeleted: false,
+      });
 
+      if (crmRecords.length === 0) {
+        return successEmptyData("No CRM records found for the provided lead_id values");
+      }
+
+      const currentDate = new Date();
+
+      await this.CRMDataRepository
+        .createQueryBuilder()
+        .update(CRMData)
+        .set({
+          isDeleted: true,
+          isDeleted_date: currentDate,
+        })
+        .where("lead_id IN (:...leadIds)", { leadIds })
+        .andWhere("isDeleted = :isDeleted", { isDeleted: false })
+        .execute();
+
+      return successWithoutData("Selected CRM leads marked as deleted successfully");
+    } catch (error) {
+      console.error("Error in deleteSelectedCRMLeadData:", error);
+      return errorWithData("Something went wrong while deleting CRM leads", { error });
+    }
+  }
 }
