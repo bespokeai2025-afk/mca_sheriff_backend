@@ -26,7 +26,7 @@ export class callOutputDataService {
     const queryBuilder = this.callOutputRepository
       .createQueryBuilder("call_output")
       .leftJoinAndSelect("call_output.crmData", "crm")
-      .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted", {
+      .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted AND crm.clear_all_data = :clear_all_data", {
         isActive: true,
         isDeleted: false,
         clear_all_data:false
