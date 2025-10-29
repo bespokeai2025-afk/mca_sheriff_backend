@@ -404,25 +404,37 @@ private async getCalendlyAvailableSlot(daysAhead: number = 7): Promise<{ preferr
   //   order: { createdAt: "DESC" },
   // });
 
-
 today.setHours(0, 0, 0, 0);
 const tomorrow = new Date(today);
 tomorrow.setDate(today.getDate() + 1);
 
+const crmWhere: any = { need_to_call: true, isDeleted: false };
+if (verifyUser.user_exist) crmWhere.isActive = true;
+
 const crmDataList = await this.CRMDataRepository.createQueryBuilder("crm")
-  .leftJoinAndSelect(
-    "call_output_history_data", // table name
-    "coh",
-    "coh.lead_id = crm.lead_id AND coh.call_status = :status AND coh.createdAt >= :start AND coh.createdAt < :end",
-    { status: "not_connected", start: today, end: tomorrow }
+  .leftJoin(
+    qb => qb
+      .from("call_output_history_data", "coh")
+      .select("coh.lead_id", "lead_id")
+      .addSelect("COUNT(coh.id)", "call_count")
+      .where("coh.createdAt >= :start", { start: startOfDay })
+      .andWhere("coh.createdAt < :end", { end: endOfDay })
+      // ✅ Only count calls with relevant statuses
+      .andWhere("coh.call_status IN (:...statuses)", { statuses: ["not_connected", "call_started"] })
+      .groupBy("coh.lead_id"),
+    "call_summary",
+    "call_summary.lead_id = crm.lead_id"
   )
   .where("crm.need_to_call = :needToCall", { needToCall: true })
   .andWhere("crm.isDeleted = :isDeleted", { isDeleted: false })
   .andWhere(verifyUser.user_exist ? "crm.isActive = :isActive" : "1=1", { isActive: true })
+  // ✅ Exclude leads that already have 3 or more relevant calls today
+  .andWhere("(call_summary.call_count IS NULL OR call_summary.call_count < 3)")
   .orderBy("crm.createdAt", "DESC")
   .getMany();
 
 console.log(crmDataList, "crmDataListcrmDataListcrm============");
+
 
   if (!crmDataList.length) return [];
   // Sync CRM data with BatchCalling table

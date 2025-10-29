@@ -150,75 +150,153 @@ export class LeadFilterMasterService {
     }
   }
 
-  public async updateLeadFilterStatus(id: string, data: any) {
-    try {
-      // Destructure incoming data
-      const { new_currentstatus, ...masterData } = data;
+public async updateLeadFilterStatus(id: string, data: any) {
+  try {
+    const { new_currentstatus, ...masterData } = data;
 
-      // 1️⃣ Fetch existing status
-      const status = await this.leadFilterStatusRepository.findOne({
-        where: { id, isDeleted: false },
-        relations: ["leadFilterMaster"],
-      });
+    // 1️⃣ Fetch existing record
+    const status = await this.leadFilterStatusRepository.findOne({
+      where: { id, isDeleted: false },
+      relations: ["leadFilterMaster"],
+    });
 
-      if (!status) {
-        return errorWithoutData("Lead filter status not found");
-      }
+    if (!status) {
+      return errorWithoutData("Lead filter status not found");
+    }
 
-      // 2️⃣ Normalize input array
-      const parsedStatus: string[] = Array.isArray(new_currentstatus)
-        ? new_currentstatus
-        : new_currentstatus
-          ? String(new_currentstatus)
+    // 2️⃣ Normalize input array
+    const parsedStatus: string[] = Array.isArray(new_currentstatus)
+      ? new_currentstatus
+      : new_currentstatus
+        ? String(new_currentstatus)
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean)
-          : [];
+        : [];
 
-      // 3️⃣ Build CRM query
-      const filterPart = parsedStatus.length
-        ? `(${parsedStatus.map((v) => `new_currentstatus eq ${v}`).join(" and ")})`
-        : "";
+    // 3️⃣ Build filter condition
+    const filterPart = parsedStatus.length
+      ? parsedStatus.map((v) => `(new_currentstatus eq ${v})`).join(" or ")
+      : "";
 
-      const fullQuery = `${process.env.FILTER_STATUS_UPDATE}${filterPart ? ` and ${filterPart}` : ""})`;
+    // 4️⃣ Safely build full query using .env (which already includes $select)
+    const baseUrl = process.env.FILTER_STATUS_UPDATE?.trim();
+    const hasFilter = baseUrl?.includes("&$filter=");
+    const separator = hasFilter ? " and " : "&$filter=";
 
+    // 🧩 Read pagination limit from env (default 20 if missing)
+    const topValue = process.env.FILTER_STATUS_TOP || "20";
+    const pagination = `&$top=${topValue}`;
 
-      // 4️⃣ Assign masterData first (avoid overwriting computed fields)
-      Object.assign(status, masterData);
+    const fullQuery = `${baseUrl}${filterPart ? `${separator}${filterPart}` : ""}${pagination}`;
 
-      // 5️⃣ Assign parsed array and query explicitly
-      status.new_currentstatus = parsedStatus;
-      status.query = fullQuery;
+    // 5️⃣ Assign masterData and computed fields
+    Object.assign(status, masterData);
+    status.new_currentstatus = parsedStatus;
+    status.query = fullQuery;
 
-      // 6️⃣ Save entity
-      await this.leadFilterStatusRepository.save(status);
-      console.log("process.env.BESPOKE_WEBHOOK_LEAD_STATUS", process.env.BESPOKE_WEBHOOK_LEAD_STATUS);
-      
-      await axios.post(`${process.env.BESPOKE_WEBHOOK_LEAD_STATUS}`, {
-        id: status.id,
-        query: fullQuery,
-        new_currentstatus: parsedStatus,
-        leadFilterMasterId: status.leadFilterMaster?.id || null,
-      });
+    // 6️⃣ Save updated entity
+    await this.leadFilterStatusRepository.save(status);
 
-      // 7️⃣ Return response
-      return {
-        result: true,
-        statuscode: 200,
-        message: "Lead filter query updated successfully!",
-        data: [
-          {
-            query: fullQuery,
-            new_currentstatus: parsedStatus,
-            leadFilterMaster: status.leadFilterMaster || null,
-          },
-        ],
-      };
-    } catch (error) {
-      console.error("Error updating lead filter status:", error);
-      return errorWithData("Error updating lead filter status", { error });
-    }
+    // 7️⃣ Notify webhook
+    await axios.post(`${process.env.BESPOKE_WEBHOOK_LEAD_STATUS}`, {
+      id: status.id,
+      query: fullQuery,
+      new_currentstatus: parsedStatus,
+      leadFilterMasterId: status.leadFilterMaster?.id || null,
+    });
+
+    // 8️⃣ Return success response
+    return {
+      result: true,
+      statuscode: 200,
+      message: "Lead filter query updated successfully!",
+      data: [
+        {
+          query: fullQuery,
+          new_currentstatus: parsedStatus,
+          leadFilterMaster: status.leadFilterMaster || null,
+        },
+      ],
+    };
+  } catch (error) {
+    console.error("Error updating lead filter status:", error);
+    return errorWithData("Error updating lead filter status", { error });
   }
+}
+
+
+
+
+  // public async updateLeadFilterStatus(id: string, data: any) {
+  //   try {
+  //     // Destructure incoming data
+  //     const { new_currentstatus, ...masterData } = data;
+
+  //     // 1️⃣ Fetch existing status
+  //     const status = await this.leadFilterStatusRepository.findOne({
+  //       where: { id, isDeleted: false },
+  //       relations: ["leadFilterMaster"],
+  //     });
+
+  //     if (!status) {
+  //       return errorWithoutData("Lead filter status not found");
+  //     }
+
+  //     // 2️⃣ Normalize input array
+  //     const parsedStatus: string[] = Array.isArray(new_currentstatus)
+  //       ? new_currentstatus
+  //       : new_currentstatus
+  //         ? String(new_currentstatus)
+  //           .split(",")
+  //           .map((s) => s.trim())
+  //           .filter(Boolean)
+  //         : [];
+
+  //     // 3️⃣ Build CRM query
+  //     const filterPart = parsedStatus.length
+  //       ? `(${parsedStatus.map((v) => `new_currentstatus eq ${v}`).join(" and ")})`
+  //       : "";
+
+  //     const fullQuery = `${process.env.FILTER_STATUS_UPDATE}${filterPart ? ` and ${filterPart}` : ""})`;
+
+
+  //     // 4️⃣ Assign masterData first (avoid overwriting computed fields)
+  //     Object.assign(status, masterData);
+
+  //     // 5️⃣ Assign parsed array and query explicitly
+  //     status.new_currentstatus = parsedStatus;
+  //     status.query = fullQuery;
+
+  //     // 6️⃣ Save entity
+  //     await this.leadFilterStatusRepository.save(status);
+  //     console.log("process.env.BESPOKE_WEBHOOK_LEAD_STATUS", process.env.BESPOKE_WEBHOOK_LEAD_STATUS);
+      
+  //     await axios.post(`${process.env.BESPOKE_WEBHOOK_LEAD_STATUS}`, {
+  //       id: status.id,
+  //       query: fullQuery,
+  //       new_currentstatus: parsedStatus,
+  //       leadFilterMasterId: status.leadFilterMaster?.id || null,
+  //     });
+
+  //     // 7️⃣ Return response
+  //     return {
+  //       result: true,
+  //       statuscode: 200,
+  //       message: "Lead filter query updated successfully!",
+  //       data: [
+  //         {
+  //           query: fullQuery,
+  //           new_currentstatus: parsedStatus,
+  //           leadFilterMaster: status.leadFilterMaster || null,
+  //         },
+  //       ],
+  //     };
+  //   } catch (error) {
+  //     console.error("Error updating lead filter status:", error);
+  //     return errorWithData("Error updating lead filter status", { error });
+  //   }
+  // }
 
 
 
