@@ -1,7 +1,9 @@
 export const mapIncomingCRMData = (rawData: any) => {
   return {
-    unique_id: rawData["@odata.etag"] || null,
-    lead_id: rawData.leadid || "",
+    // unique_id: rawData["@odata.etag"] || null,
+    // lead_id: rawData.leadid || "",
+     unique_id: rawData.unique_id || rawData["@odata.etag"] || null,
+    lead_id: rawData.lead_id || rawData.leadid || "",
     title: rawData.title || "",
     name: rawData.fullname || "",
     firstname: rawData.firstname || "",
