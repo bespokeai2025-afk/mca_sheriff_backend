@@ -315,6 +315,8 @@ export class callOutputDataService {
   public async createCallOutputData(reqBody: any) {
     try {
       // Extract raw data
+      console.log(reqBody, "reqBodyreqBodyreqBody==========================");
+      
       let raw = reqBody.raw_data;
       console.log(raw, "rawrawrawrawraw");
 
@@ -338,8 +340,11 @@ export class callOutputDataService {
         return errorWithoutData("Invalid request: raw_data is missing or malformed");
       }
 
+      
       //  Map raw data to entity
       const mappedData: DeepPartial<CallOutputData> = await mapCallOutputData(raw, reqBody);
+      console.log(reqBody, "reqBodyreqBodyreqBodyreqBodyreqBody==============================");
+      
       console.log("📥 Mapped Data:", mappedData);
 
       //  Find related CRM record by toNumber
