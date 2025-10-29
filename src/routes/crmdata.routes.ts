@@ -4,7 +4,7 @@ import { validateRequest } from "../middlewares/otp.validation";
 import { validateCSVFile } from "../middlewares/validateCSVFile";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 import { verifyStaticToken } from "../middlewares/verifyStaticToken";
-import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMCSVFile,getCRMDataStatic, clearAllCRMData } from "../controllers/CRMData.controller";
+import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMCSVFile,getCRMDataStatic, clearAllCRMData, clearAllCRMLeadData } from "../controllers/CRMData.controller";
 import { validatecrmdata, validateUserID } from "../middlewares/crmdata.validation";
 import csvUpload from "../config/csvUpload"; 
 // Import file upload configuration
@@ -31,5 +31,5 @@ router.get("/ok", verifyAccessToken, getUsercrmData);
 
 router.get("/clearAllDataForTesting",clearAllCRMData);
 
-
+router.delete("/clear-all", verifyAccessToken, clearAllCRMLeadData);
 export default router;

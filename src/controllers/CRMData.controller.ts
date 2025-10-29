@@ -345,6 +345,26 @@ export const getCRMDataStatic = async (req: Request, res: Response): Promise<voi
   }
 };
 
+export const clearAllCRMLeadData = async (req: Request, res: Response): Promise<any> => {
+  try {
+    if (!req.user) {
+      const response = errorWithoutData("Authentication failed", 401);
+      return res.status(response.statuscode).json(response);
+    }
+
+    const response = await crmdataservice.clearAllCRMLeadData();
+
+    // send same code as in the response object
+    return res.status(response.statuscode ?? (response.result ? 200 : 500)).json(response);
+
+  } catch (error) {
+    console.error("Error in clearAllCRMLeadData:", error);
+    const response = errorWithData("Something went wrong", { error });
+    return res.status(500).json(response);
+  }
+};
+
+
 
 
 

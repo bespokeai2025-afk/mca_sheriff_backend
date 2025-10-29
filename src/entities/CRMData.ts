@@ -97,6 +97,15 @@ export class CRMData {
   @Column({ type: "boolean", default: false })
   isDeleted: boolean;
 
+   @Column({ type: "boolean", default: false })
+   clear_all_data: boolean;
+
+  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  isDeleted_date: Date;
+
+   @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+   clear_all_date: Date;
+
   @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 

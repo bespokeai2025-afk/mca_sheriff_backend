@@ -3,6 +3,7 @@ import {
   errorWithoutData,
   successWithData,
   successWithoutData,
+  successEmptyData
 } from "../config/ApiResponse";
 import { AppDataSource } from "../config/database";
 import { CRMData } from "../entities/CRMData";
@@ -1264,4 +1265,38 @@ export class CRMDataService {
       },
     };
   }
+
+public async clearAllCRMLeadData() {
+  try {
+    const crmRecords = await this.CRMDataRepository.find({
+      where: { need_to_call: true, isDeleted: false },
+    });
+
+    if (crmRecords.length === 0) {
+      // 404 — nothing found, not a server error
+      return successEmptyData("No CRM records found with need to call true");
+    }
+
+    const currentDate = new Date();
+
+    await this.CRMDataRepository
+      .createQueryBuilder()
+      .update(CRMData)
+      .set({
+        clear_all_data: true,
+        clear_all_date: currentDate,
+        need_to_call: false,
+      })
+      .where("need_to_call = :needToCall", { needToCall: true })
+      .andWhere("isDeleted = :isDeleted", { isDeleted: false })
+      .execute();
+
+    return successWithoutData("CRM records cleared successfully");
+  } catch (error) {
+    console.error("Error in clearAllCRMLeadData:", error);
+    return errorWithData("Something went wrong while clearing CRM data", { error });
+  }
+}
+
+
 }

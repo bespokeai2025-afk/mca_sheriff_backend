@@ -94,6 +94,16 @@ export const successWithoutData = <T>(
         data: null,
     };
 };
+// Method to create a successful response without data
+export const successEmptyData = <T>(
+  message: string = "No content available",
+  statuscode: number = 200 
+): ApiResponse<T> => ({
+  result: true,
+  statuscode,
+  message,
+  data: null,
+});
 
 // Method to create an error response without data
 export const errorWithoutData = <T>(
