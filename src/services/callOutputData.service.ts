@@ -257,16 +257,15 @@ export class callOutputDataService {
   // To get Count Of User Call
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
     try {
-      let whereCondition: any = {
-      isDeleted: false,
-      clear_all_data: false,
-    };
-      if (verifyUser.user_exist) {
-        whereCondition = { isActive: true, isDeleted: false, clear_all_data: false };
-      }
-      if (verifyUser.admin_exist) {
-        whereCondition = { isDeleted: false };
-      }
+      
+      // let whereCondition: any = {};
+       const whereCondition: any = { isActive: true, isDeleted: false, clear_all_data: false };
+      // if (verifyUser.user_exist) {
+      //   whereCondition = { isActive: true, isDeleted: false, clear_all_data: false };
+      // }
+      // if (verifyUser.admin_exist) {
+      //   whereCondition = { isDeleted: false };
+      // }
 
       // Total calls
       const totalCall = await this.callOutputRepository.count({ where: whereCondition });
