@@ -138,7 +138,9 @@ export const createCRMDataWithoutAuth = async (req: Request, res: Response): Pro
     return res.status(500).json(response);
   }
 };
-export const uploadCRMCSVFile = async (req: Request, res: Response): Promise<void> => {
+
+
+export const uploadCRMExcelFile = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.file) {
       res.status(400).json({
@@ -149,32 +151,24 @@ export const uploadCRMCSVFile = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Convert CSV buffer to string
-    const csvString = req.file.buffer.toString("utf-8");
-
-    // Read CSV as workbook
-    const workbook = XLSX.read(csvString, { type: "string" });
+    // ✅ FIX: Read XLSX file as buffer, not utf-8 string
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-
     const data = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-    // Convert CSV buffer to string
-
-
-
 
     if (!data.length) {
       res.status(400).json({
         result: false,
         statuscode: 400,
-        message: "Uploaded CSV file is empty",
+        message: "Uploaded Excel file is empty",
       });
       return;
     }
 
-    // Call your service
-    const result = await CRMDataService.uploadCRMCSVFile(data, req.file.originalname);
+    console.log(`Parsed ${data.length} rows from Excel`);
+
+    const result = await CRMDataService.uploadCRMExcelFile(data, req.file.originalname);
 
     res.status(200).json(result);
   } catch (error: unknown) {
@@ -183,7 +177,7 @@ export const uploadCRMCSVFile = async (req: Request, res: Response): Promise<voi
     res.status(500).json({
       result: false,
       statuscode: 500,
-      message: "Failed to process CSV file",
+      message: "Failed to process Excel file",
       error: errMsg,
     });
   }

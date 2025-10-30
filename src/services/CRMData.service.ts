@@ -1148,122 +1148,122 @@ export class CRMDataService {
   //   };
   // }
 
-  public static async uploadCRMCSVFile(dataArray: any[], fileName: string) {
-    const crmRepository = AppDataSource.getRepository(CRMData);
-    const callOutputRepository = AppDataSource.getRepository(CallOutputData);
-    const historyRepository = AppDataSource.getRepository(ExcelHistory);
+  public static async uploadCRMExcelFile(dataArray: any[], fileName: string) {
+      const crmRepository = AppDataSource.getRepository(CRMData);
+      const callOutputRepository = AppDataSource.getRepository(CallOutputData);
+      const historyRepository = AppDataSource.getRepository(ExcelHistory);
 
-    const insertedRecords: CRMData[] = [];
-    const updatedRecords: CRMData[] = [];
-    const failedRecords: any[] = [];
+      const insertedRecords: CRMData[] = [];
+      const updatedRecords: CRMData[] = [];
+      const failedRecords: any[] = [];
 
-    let failCount = 0;
+      let failCount = 0;
 
-    for (const item of dataArray) {
-      try {
-        const now = new Date();
-        const email = (item.emailaddress1 || "").toLowerCase();
+      for (const item of dataArray) {
+        try {
+          const now = new Date();
+          const email = (item.emailaddress1 || "").toLowerCase();
 
-        //  Normalize mobile
-        let mobile = String(item.mobilephone ?? "").trim();
-        if (mobile && !mobile.startsWith("+")) {
-          mobile = `+${mobile}`;
-        }
+          //  Normalize mobile
+          let mobile = String(item.mobilephone ?? "").trim();
+          if (mobile && !mobile.startsWith("+")) {
+            mobile = `+${mobile}`;
+          }
 
-        // Skip empty rows
-        if (!email && !mobile) {
-          failCount++;
-          continue;
-        }
+          // Skip empty rows
+          if (!email && !mobile) {
+            failCount++;
+            continue;
+          }
 
-        // Generate unique lead ID
-        const timestampPart = `${now.getFullYear()}${(now.getMonth() + 1)
-          .toString()
-          .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}${now
-            .getHours()
+          // Generate unique lead ID
+          const timestampPart = `${now.getFullYear()}${(now.getMonth() + 1)
             .toString()
-            .padStart(2, "0")}${now.getMinutes().toString()
-              .padStart(2, "0")}${now.getSeconds().toString()
-                .padStart(2, "0")}${now.getMilliseconds().toString().padStart(3, "0")}`;
+            .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}${now
+              .getHours()
+              .toString()
+              .padStart(2, "0")}${now.getMinutes().toString()
+                .padStart(2, "0")}${now.getSeconds().toString()
+                  .padStart(2, "0")}${now.getMilliseconds().toString().padStart(3, "0")}`;
 
-        const leadId = item.leadid || `${timestampPart}`;
+          const leadId = item.leadid || `${timestampPart}`;
 
-        const existingRecord = await crmRepository.findOne({ where: { lead_id: leadId } });
+          const existingRecord = await crmRepository.findOne({ where: { lead_id: leadId } });
 
-        if (existingRecord) {
-          // Update
-          const updatedData = mapIncomingCRMData({
-            ...existingRecord,
-            ...item,
-            email,
-            mobile_number: mobile, // string with '+'
-          });
+          if (existingRecord) {
+            // Update
+            const updatedData = mapIncomingCRMData({
+              ...existingRecord,
+              ...item,
+              email,
+              mobile_number: mobile, // string with '+'
+            });
 
-          await crmRepository.update(existingRecord.id, updatedData);
-          const updatedRecord = await crmRepository.findOne({ where: { id: existingRecord.id } });
-          if (updatedRecord) updatedRecords.push(updatedRecord);
+            await crmRepository.update(existingRecord.id, updatedData);
+            const updatedRecord = await crmRepository.findOne({ where: { id: existingRecord.id } });
+            if (updatedRecord) updatedRecords.push(updatedRecord);
 
-          console.log(`Updated existing lead_id: ${leadId}`);
-        } else {
-          // Insert
-          const mappedData = mapIncomingCRMData({
-            ...item,
-            email,
-            mobile_number: mobile, // string with '+'
-            lead_id: leadId,
-            unique_id: leadId,
-          });
+            console.log(`Updated existing lead_id: ${leadId}`);
+          } else {
+            // Insert
+            const mappedData = mapIncomingCRMData({
+              ...item,
+              email,
+              mobile_number: mobile, // string with '+'
+              lead_id: leadId,
+              unique_id: leadId,
+            });
 
-          const savedRecord = await crmRepository.save(crmRepository.create(mappedData));
-          insertedRecords.push(savedRecord);
+            const savedRecord = await crmRepository.save(crmRepository.create(mappedData));
+            insertedRecords.push(savedRecord);
 
-          // Create CallOutputData
-          const callOutput = callOutputRepository.create({
-            crmData: savedRecord,
-            name: savedRecord.name,
-            toNumber: savedRecord.mobile_number,
-            lead_id: savedRecord.lead_id,
-            callStatus: "need_to_call",
-          });
-          await callOutputRepository.save(callOutput);
+            // Create CallOutputData
+            const callOutput = callOutputRepository.create({
+              crmData: savedRecord,
+              name: savedRecord.name,
+              toNumber: savedRecord.mobile_number,
+              lead_id: savedRecord.lead_id,
+              callStatus: "need_to_call",
+            });
+            await callOutputRepository.save(callOutput);
 
-          console.log(`Inserted new lead_id: ${leadId}`);
+            console.log(`Inserted new lead_id: ${leadId}`);
+          }
+        } catch (error: unknown) {
+          const errMsg = error instanceof Error ? error.message : String(error);
+          failedRecords.push({ item, error: errMsg });
+          failCount++;
+          console.error("Error processing record:", errMsg);
         }
-      } catch (error: unknown) {
-        const errMsg = error instanceof Error ? error.message : String(error);
-        failedRecords.push({ item, error: errMsg });
-        failCount++;
-        console.error("Error processing record:", errMsg);
       }
-    }
 
-    // Save Excel history
-    const firstRecord = insertedRecords[0] || updatedRecords[0];
-    if (firstRecord) {
-      const historyRecord = historyRepository.create({
-        file_name: fileName,
-        fail_count: failCount,
-        correct_count: insertedRecords.length + updatedRecords.length,
-        lead_id: firstRecord.lead_id,
-        crm_data: firstRecord,
-      });
-      await historyRepository.save(historyRecord);
+      // Save Excel history
+      const firstRecord = insertedRecords[0] || updatedRecords[0];
+      if (firstRecord) {
+        const historyRecord = historyRepository.create({
+          file_name: fileName,
+          fail_count: failCount,
+          correct_count: insertedRecords.length + updatedRecords.length,
+          lead_id: firstRecord.lead_id,
+          crm_data: firstRecord,
+        });
+        await historyRepository.save(historyRecord);
+      }
+  mapIncomingCRMData
+      return {
+        result: true,
+        statuscode: 200,
+        message: "CRM data processed successfully",
+        data: {
+          insertedCount: insertedRecords.length,
+          updatedCount: updatedRecords.length,
+          failedCount: failCount,
+          insertedRecords,
+          updatedRecords,
+          failedRecords,
+        },
+      };
     }
-
-    return {
-      result: true,
-      statuscode: 200,
-      message: "CRM data processed successfully",
-      data: {
-        insertedCount: insertedRecords.length,
-        updatedCount: updatedRecords.length,
-        failedCount: failCount,
-        insertedRecords,
-        updatedRecords,
-        failedRecords,
-      },
-    };
-  }
 
 public async clearAllCRMLeadData() {
   try {

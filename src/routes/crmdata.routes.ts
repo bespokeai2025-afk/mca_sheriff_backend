@@ -1,10 +1,10 @@
 import express from "express";
 // Import middleware for validation and authentication
 import { validateRequest } from "../middlewares/otp.validation";
-import { validateCSVFile } from "../middlewares/validateCSVFile";
+import { validateExcelFile } from "../middlewares/validateExcelFile";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 import { verifyStaticToken } from "../middlewares/verifyStaticToken";
-import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMCSVFile,getCRMDataStatic, clearAllCRMData, clearAllCRMLeadData, deleteSelectedCRMLeadData } from "../controllers/CRMData.controller";
+import { createCRMData, getCRMData, getUsercrmData, createCRMDataWithoutAuth, uploadCRMExcelFile,getCRMDataStatic, clearAllCRMData, clearAllCRMLeadData, deleteSelectedCRMLeadData } from "../controllers/CRMData.controller";
 import { validatecrmdata, validateUserID } from "../middlewares/crmdata.validation";
 import csvUpload from "../config/csvUpload"; 
 // Import file upload configuration
@@ -22,8 +22,8 @@ router.post("/create-without-auth", createCRMDataWithoutAuth);
 router.post(
   "/upload-excel",
   csvUpload.single("file"), // multer in memory
-  validateCSVFile,          // check file exists and type
-  uploadCRMCSVFile              // controller
+  validateExcelFile,          // check file exists and type
+  uploadCRMExcelFile              // controller
 );
 
 router.get("/get-crm-data", verifyAccessToken, getUsercrmData);
