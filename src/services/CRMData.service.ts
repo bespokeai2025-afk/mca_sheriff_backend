@@ -410,7 +410,7 @@ export class CRMDataService {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    const crmWhere: any = { need_to_call: true, isDeleted: false };
+    const crmWhere: any = { need_to_call: true, isDeleted: false, clear_all_data: false };
     if (verifyUser.user_exist) crmWhere.isActive = true;
 
     const crmDataList = await this.CRMDataRepository.createQueryBuilder("crm")
@@ -1286,7 +1286,7 @@ public async clearAllCRMLeadData() {
       .set({
         clear_all_data: true,
         clear_all_date: currentDate,
-        need_to_call: false,
+        
       })
       .where("need_to_call = :needToCall", { needToCall: true })
       .andWhere("isDeleted = :isDeleted", { isDeleted: false })

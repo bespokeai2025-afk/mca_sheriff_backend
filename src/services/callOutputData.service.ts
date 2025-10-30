@@ -26,7 +26,7 @@ export class callOutputDataService {
     const queryBuilder = this.callOutputRepository
       .createQueryBuilder("call_output")
       .leftJoinAndSelect("call_output.crmData", "crm")
-      .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted AND crm.clear_all_data = :clear_all_data", {
+      .where("call_output.isActive = :isActive AND call_output.isDeleted = :isDeleted AND crm.clear_all_data = :clear_all_data AND crm.isDeleted = :isDeleted", {
         isActive: true,
         isDeleted: false,
         clear_all_data:false
@@ -255,62 +255,121 @@ export class callOutputDataService {
   }
 
   // To get Count Of User Call
+  // public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
+  //   try {
+  //     let whereCondition: any = {};
+  //     if (verifyUser.user_exist) {
+  //       whereCondition = { isActive: true, isDeleted: false, clear_all_data: false };
+  //     }
+  //     if (verifyUser.admin_exist) {
+  //       whereCondition = { isDeleted: false };
+  //     }
+
+  //     // Total calls
+  //     const totalCall = await this.callOutputRepository.count({ where: whereCondition });
+
+  //     // Success count (Positive + Neutral)
+  //     const successCounts = await this.callOutputRepository
+  //       .createQueryBuilder("call")
+  //       .where(whereCondition)
+  //       .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Positive", "Neutral"] })
+  //       .getCount();
+
+  //     // Failure count (Negative)
+  //     const failureCounts = await this.callOutputRepository
+  //       .createQueryBuilder("call")
+  //       .where(whereCondition)
+  //       .andWhere("call.sentimentAnalysis = :neg", { neg: "Negative" })
+  //       .getCount();
+
+  //     // Not connected count
+  //     const notConnectedCounts = await this.callOutputRepository
+  //       .createQueryBuilder("call")
+  //       .where(whereCondition)
+  //       .andWhere("call.callStatus = :status", { status: "not_connected" })
+  //       .getCount();
+
+  //     // ✅ Need to call count (fixed)
+  //     const needToCall = await this.CRMDataRepository
+  //       .createQueryBuilder("call")
+  //       .where(whereCondition)
+  //       .andWhere("call.need_to_call = :needToCall", { needToCall: true })
+  //       .getCount();
+
+
+  //     // Return only counts
+  //     return successWithData("User call detail Count fetched successfully", {
+  //       totalCall,
+  //       successCounts,
+  //       failureCounts,
+  //       notConnectedCounts,
+  //       needToCall
+  //     });
+
+  //   } catch (error) {
+  //     console.error("Error in getUserCallDataCount:", error);
+  //     return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
+  //   }
+  // }
+
   public async getUserCallDataCount(verifyUser: any, pageSize: number, currentPage: number) {
-    try {
-      let whereCondition: any = {};
-      if (verifyUser.user_exist) {
-        whereCondition = { isActive: true, isDeleted: false, clear_all_data: false };
-      }
-      if (verifyUser.admin_exist) {
-        whereCondition = { isDeleted: false };
-      }
+  try {
+    // const totalCall = await this.callOutputRepository.count({ where: callWhereCondition });
+const totalCall = await this.CRMDataRepository.createQueryBuilder("CRM_data")
+  .innerJoin("CallOutputData", "call", "call.lead_id= CRM_data.lead_id")
+  .where("CRM_data.isActive = true")
+  .andWhere("CRM_data.isDeleted = false")
+  .andWhere("CRM_data.clear_all_data = false")
+  .getCount();
 
-      // Total calls
-      const totalCall = await this.callOutputRepository.count({ where: whereCondition });
+    // Success count (Positive + Neutral)
+    const successCounts = await this.callOutputRepository
+      .createQueryBuilder("call")
+      .where("call.isActive = :isActive", { isActive: true })
+      .andWhere("call.isDeleted = :isDeleted", { isDeleted: false })
+      .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Positive", "Neutral"] })
+      .getCount();
 
-      // Success count (Positive + Neutral)
-      const successCounts = await this.callOutputRepository
-        .createQueryBuilder("call")
-        .where(whereCondition)
-        .andWhere("call.sentimentAnalysis IN (:...allowed)", { allowed: ["Positive", "Neutral"] })
-        .getCount();
+    // Failure count (Negative)
+    const failureCounts = await this.callOutputRepository
+      .createQueryBuilder("call")
+      .where("call.isActive = :isActive", { isActive: true })
+      .andWhere("call.isDeleted = :isDeleted", { isDeleted: false })
+      .andWhere("call.sentimentAnalysis = :neg", { neg: "Negative" })
+      .getCount();
 
-      // Failure count (Negative)
-      const failureCounts = await this.callOutputRepository
-        .createQueryBuilder("call")
-        .where(whereCondition)
-        .andWhere("call.sentimentAnalysis = :neg", { neg: "Negative" })
-        .getCount();
+    // Not connected count
+    const notConnectedCounts = await this.callOutputRepository
+      .createQueryBuilder("call")
+      .where("call.isActive = :isActive", { isActive: true })
+      .andWhere("call.isDeleted = :isDeleted", { isDeleted: false })
+      .andWhere("call.callStatus = :status", { status: "not_connected" })
+      .getCount();
 
-      // Not connected count
-      const notConnectedCounts = await this.callOutputRepository
-        .createQueryBuilder("call")
-        .where(whereCondition)
-        .andWhere("call.callStatus = :status", { status: "not_connected" })
-        .getCount();
+    // ✅ Need to call count (CRMData table only)
+    const needToCall = await this.CRMDataRepository
+      .createQueryBuilder("call")
+      .where("call.isActive = :isActive", { isActive: true })
+      .andWhere("call.isDeleted = :isDeleted", { isDeleted: false })
+      .andWhere("call.clear_all_data = :clearAllData", { clearAllData: false })
+      .andWhere("call.need_to_call = :needToCall", { needToCall: true })
+      .getCount();
 
-      // ✅ Need to call count (fixed)
-      const needToCall = await this.CRMDataRepository
-        .createQueryBuilder("call")
-        .where(whereCondition)
-        .andWhere("call.need_to_call = :needToCall", { needToCall: true })
-        .getCount();
+    // ✅ Return final counts
+    return successWithData("User call detail count fetched successfully", {
+      totalCall,
+      successCounts,
+      failureCounts,
+      notConnectedCounts,
+      needToCall,
+    });
 
-
-      // Return only counts
-      return successWithData("User call detail Count fetched successfully", {
-        totalCall,
-        successCounts,
-        failureCounts,
-        notConnectedCounts,
-        needToCall
-      });
-
-    } catch (error) {
-      console.error("Error in getUserCallDataCount:", error);
-      return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
-    }
+  } catch (error) {
+    console.error("Error in getUserCallDataCount:", error);
+    return errorWithData("Failed to fetch user call data", { error: (error as Error).message });
   }
+}
+
   public async createCallOutputData(reqBody: any) {
     try {
       // Extract raw data
