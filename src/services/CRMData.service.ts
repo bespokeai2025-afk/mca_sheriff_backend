@@ -429,14 +429,12 @@ export class CRMDataService {
       )
       .where("crm.need_to_call = :needToCall", { needToCall: true })
       .andWhere("crm.isDeleted = :isDeleted", { isDeleted: false })
+      .andWhere("crm.clear_all_data = :clearAllData", { clearAllData: false })
       .andWhere(verifyUser.user_exist ? "crm.isActive = :isActive" : "1=1", { isActive: true })
       // ✅ Exclude leads that already have 3 or more relevant calls today
       .andWhere("(call_summary.call_count IS NULL OR call_summary.call_count < 3)")
       .orderBy("crm.createdAt", "DESC")
       .getMany();
-
-    console.log(crmDataList, "crmDataListcrmDataListcrm============");
-
 
     if (!crmDataList.length) return [];
     // Sync CRM data with BatchCalling table
