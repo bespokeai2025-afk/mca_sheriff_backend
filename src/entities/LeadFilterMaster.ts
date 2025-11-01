@@ -14,6 +14,7 @@ export class LeadFilterMaster {
 
   @Column({ type: "varchar", length: 100, unique: true })
   filterCode: string;
+  
 
   @Column({ type: "varchar", length: 255 })
   filterName: string;

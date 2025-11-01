@@ -3,7 +3,7 @@ import { validateUserID } from "../middlewares/user.validation";
 import { validateOTP, validateOtpRequest, validateRequest } from "../middlewares/otp.validation";
 import { verifyAccessToken } from "../middlewares/auth.middleware";
 import { validateAdmin } from "../middlewares/admin.validation";
-import { createAdmin, deleteAdmin, getAdmin, getAdminById, logoutAdmin, updateAdmin, loginAdminWithEmailPassword,changePassword } from "../controllers/admin.controller";
+import { createAdmin, deleteAdmin, getAdmin, getAdminById, logoutAdmin, updateAdmin, loginAdminWithEmailPassword,changePassword,requestPasswordReset,verifyResetToken,resetPassword } from "../controllers/admin.controller";
 import { sendOtpToAdmin, verifyOTPForAdmin } from "../controllers/otp.controller";
 
 const router = express.Router();
@@ -20,4 +20,8 @@ router.post("/verify-otp", validateOTP, validateRequest, verifyOTPForAdmin);
 router.post('/login',  loginAdminWithEmailPassword)
 router.post('/logout/:id', verifyAccessToken, validateUserID, validateRequest, logoutAdmin)
 router.post("/change-password/:id",verifyAccessToken,validateUserID,validateRequest,changePassword);
+
+router.post("/forgot-password",verifyAccessToken, requestPasswordReset);
+router.post("/verify-reset-token",verifyAccessToken, verifyResetToken);
+router.post("/reset-password",verifyAccessToken, resetPassword);
 export default router;

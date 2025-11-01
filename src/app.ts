@@ -31,6 +31,7 @@ import leadFilterStatusRoutes from "./routes/leadFilterStatus.routes";
 import contactfromdynamics from "./routes/contactfromdynamics.routes";
 import emailLogRoutes from "./routes/emailLog.routes";
 import { CallScheduler } from "./utils/scheduler";
+
 // Load environment variables
 dotenv.config()
 import { logRequest, logResponse, logError } from "./logger";

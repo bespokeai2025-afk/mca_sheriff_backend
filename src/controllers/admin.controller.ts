@@ -159,3 +159,36 @@ export const changePassword = async (req: Request, res: Response): Promise<any> 
         return res.status(500).json(response); // 500 for server errors
     }
 };
+
+
+export const requestPasswordReset = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const response = await adminService.requestPasswordReset(req.body.email);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData("Something went wrong", { error });
+        return res.status(500).json(response);
+    }
+};
+
+export const verifyResetToken = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const response = await adminService.verifyResetToken(req.body.token);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData("Something went wrong", { error });
+        return res.status(500).json(response);
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { token, newPassword, confirmPassword } = req.body;
+        const response = await adminService.resetPassword(token, newPassword, confirmPassword);
+        return res.status(response.result ? 200 : 400).json(response);
+    } catch (error) {
+        const response = errorWithData("Something went wrong", { error });
+        return res.status(500).json(response);
+    }
+};
+

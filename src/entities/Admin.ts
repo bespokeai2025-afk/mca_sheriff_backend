@@ -5,15 +5,22 @@ import { OTPVerification } from "./OtpVerification";
 
 @Entity()
 export class Admin {
-   @PrimaryGeneratedColumn("uuid")
+    @PrimaryGeneratedColumn("uuid")
     id: string
     @Column({ type: "varchar", length: 255, nullable: true })
     name: string
 
-     @Column({ type: "varchar", length: 255, nullable: true })
+    @Column({ type: "boolean", default: false })
+    isLoggedIn: boolean;
+
+    @Column({ type: "varchar", nullable: true })
+    currentSessionToken: string | null;
+
+
+    @Column({ type: "varchar", length: 255, nullable: true })
     lastName: string
 
-     @Column({ type: "varchar", length: 255, nullable: true })
+    @Column({ type: "varchar", length: 255, nullable: true })
     organization: string
 
     @Column({ type: "varchar", length: 15, unique: true })
