@@ -182,7 +182,7 @@ export class AdminService {
 
 
 
-    public async logoutAdmin(id: string, verifyUser: any) {
+   public async logoutAdmin(id: string, verifyUser: any) {
         // Only admin can logout
         if (!verifyUser.admin_exist) {
             return errorWithoutData('Only admin can use this service');
@@ -203,14 +203,15 @@ export class AdminService {
         user.isLoggedIn = false;
         user.currentSessionToken = null;
 
-        // Optional: delete refresh tokens or other session data
-        deleteUserToken(user.id);
+        // 🗑️ Optional: delete refresh tokens or other session data
+        await deleteUserToken(user.id);
 
         // Save changes
         await this.adminRepository.save(user);
 
         return successWithoutData("Admin logout successfully");
     }
+
 
 
 
@@ -248,7 +249,7 @@ export class AdminService {
     // }
 
 
-    public async loginAdminWithEmailPassword(data: { email?: string; password?: string }) {
+     public async loginAdminWithEmailPassword(data: { email?: string; password?: string }) { 
         if (!data.email || !data.password) {
             return errorWithoutData("Email and password are required");
         }
@@ -268,8 +269,9 @@ export class AdminService {
             return errorWithoutData("Invalid email or password");
         }
 
-        //  Prevent multiple sessions
-        if (user.isLoggedIn) {
+        // 🧠 Fix stale sessions
+        // If user.isLoggedIn is true but token is expired or missing, allow re-login
+        if (user.isLoggedIn && user.currentSessionToken) {
             return errorWithoutData("User is already logged in from another device.");
         }
 
@@ -291,6 +293,7 @@ export class AdminService {
             refreshToken,
         });
     }
+
 
 
 
