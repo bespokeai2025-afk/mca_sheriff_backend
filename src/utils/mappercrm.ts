@@ -5,7 +5,8 @@ export const mapIncomingCRMData = (rawData: any) => {
      unique_id: rawData.unique_id || rawData["@odata.etag"] || null,
     lead_id: rawData.lead_id || rawData.leadid || "",
     title: rawData.title || "",
-    name: rawData.fullname || "",
+    // name: rawData.fullname || "",
+    name: rawData.name || rawData.fullname || "",
     firstname: rawData.firstname || "",
     lastname: rawData.lastname || "",
     email: rawData.emailaddress1 || "",
@@ -35,3 +36,7 @@ export const mapIncomingCRMData = (rawData: any) => {
     isDeleted: false
   };
 };
+
+
+
+
