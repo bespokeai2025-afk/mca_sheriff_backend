@@ -46,3 +46,4 @@ const createLogger = (logType: string) => {
 export const accessLogger = createLogger("access");
 export const responseLogger = createLogger("response");
 export const errorLogger = createLogger("error");
+export const webhookLogger = createLogger("webhook");

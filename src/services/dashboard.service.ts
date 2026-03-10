@@ -1,5 +1,6 @@
 import { AppDataSource } from "../config/database";
 import { CallOutputData } from "../entities/CallOutputData";
+import { Lead } from "../entities/Lead";
 
 export class DashboardService {
 
@@ -296,6 +297,71 @@ static async getCallPerformance(months: number): Promise<{
 
   return result;
   }
+static async getTodayStats(months: number = 1): Promise<{
+  newLeadsToday: number;
+  callsToday: number;
+  missedCalls: number;
+  totalRequestedToday: number;
+  positiveCalls: number;
+  interestedLeads: number;
+}> {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date();
+  start.setMonth(start.getMonth() - (months - 1));
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+
+  const leadRepo = AppDataSource.getRepository(Lead);
+  const callRepo = AppDataSource.getRepository(CallOutputData);
+
+  const [newLeadsToday, totalRequestedRaw, callsToday, missedCalls, positiveCalls, interestedLeads] =
+    await Promise.all([
+      leadRepo.createQueryBuilder("lead")
+        .where("lead.createdAt >= :start AND lead.createdAt <= :end", { start, end })
+        .getCount(),
+
+      leadRepo.createQueryBuilder("lead")
+        .select("COALESCE(SUM(lead.fundingAmount), 0)", "total")
+        .where("lead.createdAt >= :start AND lead.createdAt <= :end", { start, end })
+        .getRawOne(),
+
+      callRepo.createQueryBuilder("call")
+        .where("call.createdAt >= :start AND call.createdAt <= :end", { start, end })
+        .andWhere("call.isActive = TRUE")
+        .andWhere("call.isDeleted = FALSE")
+        .getCount(),
+
+      callRepo.createQueryBuilder("call")
+        .where("call.createdAt >= :start AND call.createdAt <= :end", { start, end })
+        .andWhere("call.disconnection_reason = :reason", { reason: "dial_no_answer" })
+        .andWhere("call.isActive = TRUE")
+        .andWhere("call.isDeleted = FALSE")
+        .getCount(),
+
+      callRepo.createQueryBuilder("call")
+        .where("call.createdAt >= :start AND call.createdAt <= :end", { start, end })
+        .andWhere("call.sentiment_analysis = :sentiment", { sentiment: "Positive" })
+        .andWhere("call.isActive = TRUE")
+        .andWhere("call.isDeleted = FALSE")
+        .getCount(),
+
+      leadRepo.createQueryBuilder("lead")
+        .where("lead.createdAt >= :start AND lead.createdAt <= :end", { start, end })
+        .andWhere("lead.status = :status", { status: "interested" })
+        .getCount(),
+    ]);
+
+  return {
+    newLeadsToday,
+    callsToday,
+    missedCalls,
+    totalRequestedToday: Number(totalRequestedRaw?.total) || 0,
+    positiveCalls,
+    interestedLeads,
+  };
+}
+
 static async callDrops(months: number): Promise<{
   monthly: { month: string; user_hangup: number; agent_hangup: number; dial_no_answer: number }[];
   total: number;

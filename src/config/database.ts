@@ -43,7 +43,8 @@ const DB_NAME = isStaging ? process.env.STAGING_DB_NAME :
 
 
 // Set the path for entities based on the environment
-const entitiesPath = (isStaging) ? "dist/entities/*.js" : "src/entities/*.ts";
+const isCompiledJs = __filename.endsWith(".js");
+const entitiesPath = isCompiledJs ? "dist/entities/*.js" : "src/entities/*.ts";
 
 // Create a new DataSource instance for connecting to the database
 export const AppDataSource = new DataSource({

@@ -269,10 +269,11 @@ export class AdminService {
             return errorWithoutData("Invalid email or password");
         }
 
-        // 🧠 Fix stale sessions
-        // If user.isLoggedIn is true but token is expired or missing, allow re-login
-        if (user.isLoggedIn && user.currentSessionToken) {
-            return errorWithoutData("User is already logged in from another device.");
+        // Force-clear any existing session and allow re-login
+        if (user.isLoggedIn || user.currentSessionToken) {
+            user.isLoggedIn = false;
+            user.currentSessionToken = null;
+            await this.adminRepository.save(user);
         }
 
         // Generate tokens

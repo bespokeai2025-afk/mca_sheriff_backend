@@ -55,7 +55,18 @@ export class DashboardController {
       DashboardController.sendError(res, "Failed to fetch call performance", error, 500);
     }
   }
-// Call Drops 
+// Today stats (accepts optional months in body, defaults to 1)
+static async todayStats(req: Request, res: Response) {
+  try {
+    const months = Number(req.body?.months) || 1;
+    const data = await DashboardService.getTodayStats(months);
+    DashboardController.sendSuccess(res, "Today stats fetched successfully", data, 200);
+  } catch (error) {
+    DashboardController.sendError(res, "Failed to fetch today stats", error, 500);
+  }
+}
+
+// Call Drops
 static async callDrops(req: Request, res: Response) {
   try {
     const months = Number(req.body.months) || 6; // default: last 6 months

@@ -30,6 +30,9 @@ import areaCountRoutes from "./routes/areaCount.routes";
 import leadFilterStatusRoutes from "./routes/leadFilterStatus.routes";
 import contactfromdynamics from "./routes/contactfromdynamics.routes";
 import emailLogRoutes from "./routes/emailLog.routes";
+import outboundCallRoutes from "./routes/outboundCall.routes";
+import lead from './routes/lead.routes'
+import documentRoutes from './routes/document.routes'
 import { CallScheduler } from "./utils/scheduler";
 
 // Load environment variables
@@ -62,8 +65,18 @@ const allowedOrigins = [
     'http://localhost:3003',
     'http://localhost:3000',
     'https://uat.webespokeai.com',
-    'http://uat.webespokeai.com'
+    'http://uat.webespokeai.com',
+    // WordPress webhook & form origins
+    'http://microlearning.unikinfoways.com',
+    'https://microlearning.unikinfoways.com',
+    'https://stg-menorcayachtbrokercom-staging.kinsta.cloud',
+
 ];
+// Webhook routes need to accept requests from any origin (Gravity Forms sends server-to-server)
+app.use('/lead/webhook', cors());
+app.use('/lead/webhook-test', cors());
+
+
 app.use(cors({
     origin: allowedOrigins,
     credentials: true, // 🔑 Required to send cookies
@@ -101,6 +114,9 @@ app.use('/phoneNumber', PhoneNumbers)
 app.use("/area-count", areaCountRoutes);
 app.use("/lead-filterStatus",leadFilterStatusRoutes);
 app.use("/contactfromdynamics",contactfromdynamics );
+app.use("/outbound-call", outboundCallRoutes);
+app.use('/lead', lead);
+app.use('/document', documentRoutes);
 app.use(multerErrorHandler);
 
 app.use('/', viewsRoutes)
