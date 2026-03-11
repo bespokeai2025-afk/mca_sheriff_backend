@@ -4,7 +4,6 @@ import { AppDataSource } from "../config/database";
 import { Lead } from "../entities/Lead";
 import { Document } from "../entities/Document";
 import { successWithData } from "../config/ApiResponse";
-import { sendNewLeadNotification } from "../config/sendgridMailer";
 
 export class LeadService {
   private leadRepository = AppDataSource.getRepository(Lead);
@@ -36,16 +35,6 @@ async createLead(data: {
 
   const lead = this.leadRepository.create(leadData);
   const savedLead = await this.leadRepository.save(lead);
-
-  // Fire email notification to admin
-  sendNewLeadNotification({
-    fullName: savedLead.fullName,
-    phone: savedLead.phone,
-    email: savedLead.email,
-    fundingAmount: savedLead.fundingAmount ? Number(savedLead.fundingAmount) : undefined,
-    promoCode: savedLead.promoCode,
-    createdAt: savedLead.createdAt,
-  });
 
   return savedLead;
 }

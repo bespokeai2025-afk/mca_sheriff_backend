@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import redisClient from "../config/redis";
 import { User } from "../entities/User";
 import { errorWithData, errorWithoutData } from "../config/ApiResponse";
 import { verifyToken } from "../utils/jwtUtils";
@@ -31,14 +30,6 @@ export const verifyAccessToken = async (req: Request, res: Response, next: Funct
         }
 
         const decoded_token = await jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-
-        const cachedToken = await redisClient.get(`jwt_${decoded_token.id}`);
-        if (cachedToken !== token) {
-            const response = errorWithoutData("Authentication failed")
-
-            return res.status(response.result ? 200 : 401).json(response)
-
-        }
 
         const decoded = await verifyToken(token, process.env.JWT_SECRET as string);
         if (!decoded) {

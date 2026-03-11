@@ -2,11 +2,13 @@ import axios from "axios";
 import { AppDataSource } from "../config/database";
 import { Lead } from "../entities/Lead";
 import { Call } from "../entities/Call";
+import { Document } from "../entities/Document";
 import {
   errorWithoutData,
   successWithData,
   successWithoutData,
 } from "../config/ApiResponse";
+import { sendCallCompletedNotification } from "../config/sendgridMailer";
 
 // Hardcoded agent / caller details — set these in .env
 const HARDCODED_AGENT_ID   = process.env.OUTBOUND_AGENT_ID   || "";
@@ -16,8 +18,9 @@ const HARDCODED_FROM_NUMBER = process.env.OUTBOUND_FROM_NUMBER || process.env.RE
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class OutboundCallService {
-  private leadRepository = AppDataSource.getRepository(Lead);
-  private callRepository = AppDataSource.getRepository(Call);
+  private leadRepository   = AppDataSource.getRepository(Lead);
+  private callRepository   = AppDataSource.getRepository(Call);
+  private documentRepository = AppDataSource.getRepository(Document);
 
   // ─────────────────────────────────────────────────────────────────────────
   // START BATCH CALLING
@@ -565,6 +568,36 @@ async startBatchCalling() {
         callRecord = await this.callRepository.save(existingCall);
       } else {
         callRecord = await this.callRepository.save(this.callRepository.create(callFields));
+      }
+
+      // Send admin notification when call is fully qualified with all info gathered
+      if (callOutcome === "qualified_complete") {
+        try {
+          const documents = await this.documentRepository.find({
+            where: { lead: { id: lead.id } },
+          });
+
+          sendCallCompletedNotification({
+            fullName:            lead.fullName,
+            phone:               lead.phone,
+            email:               lead.email,
+            companyName:         lead.companyName,
+            businessEin:         lead.businessEin,
+            ownerSsnLast4:       lead.ownerSsnLast4,
+            businessStartDate:   lead.businessStartDate,
+            monthlyRevenue:      lead.monthlyRevenue ? Number(lead.monthlyRevenue) : undefined,
+            fundingAmount:       lead.fundingAmount  ? Number(lead.fundingAmount)  : undefined,
+            businessType:        lead.businessType,
+            businessAddress:     lead.businessAddress,
+            stateName:           lead.stateName,
+            ownerDob:            lead.ownerDob,
+            ownershipPercentage: lead.ownershipPercentage,
+            callSummary:         callRecord.callSummary ?? undefined,
+            bankStatements:      documents.map((d) => ({ fileName: d.fileName, s3Key: d.s3Key })),
+          });
+        } catch (emailErr: any) {
+          console.error("[Email] Failed to trigger call completed notification:", emailErr.message);
+        }
       }
 
       return successWithData("Outbound call saved successfully", {
