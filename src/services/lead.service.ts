@@ -5,6 +5,30 @@ import { Lead } from "../entities/Lead";
 import { Document } from "../entities/Document";
 import { successWithData } from "../config/ApiResponse";
 
+// Numbers that bypass the +1 prefix rule (test / non-US numbers).
+const PHONE_EXEMPT = new Set([
+  "+919348558063",
+  "+919662080370",
+  "+918490008633",
+  "+447353303364",
+]);
+
+/**
+ * Normalises an incoming phone number:
+ *  - Strips spaces, dashes, parentheses
+ *  - If the number is in the exempt list → returned as-is
+ *  - If it already starts with +1          → returned as-is
+ *  - Otherwise                             → +1 is prepended
+ *    (any leading + is removed first so we never get ++1...)
+ */
+export function normalizePhone(raw: string): string {
+  const cleaned = raw.replace(/[\s\-().]/g, "");
+  if (PHONE_EXEMPT.has(cleaned)) return cleaned;
+  if (cleaned.startsWith("+1"))  return cleaned;
+  // Strip a stray leading + before adding +1
+  return "+1" + cleaned.replace(/^\+/, "");
+}
+
 export class LeadService {
   private leadRepository = AppDataSource.getRepository(Lead);
 
@@ -15,17 +39,11 @@ async createLead(data: {
   fundingAmount?: number;
   promoCode?: string;
 }) {
-  const existingLead = await this.leadRepository.findOne({
-    where: { phone: data.phone },
-  });
-
-  if (existingLead) {
-    throw new Error("Lead with this phone number already exists");
-  }
+  const phone = normalizePhone(data.phone);
 
   const leadData: Partial<Lead> = {
     fullName: data.fullName,
-    phone: data.phone,
+    phone,
     email: data.email,
     fundingAmount: data.fundingAmount,
     promoCode: data.promoCode,
@@ -117,8 +135,9 @@ async createLead(data: {
   async getLeadsDashboard(page: number = 1, pageSize: number = 10) {
     const documentRepository = AppDataSource.getRepository(Document);
 
-    // Paginated leads with documents
+    // Only show leads with positive sentiment in the Qualified section
     const [leads, totalItems] = await this.leadRepository.findAndCount({
+      where: { sentiment: "positive" },
       relations: ["documents"],
       order: { createdAt: "DESC" },
       skip: (page - 1) * pageSize,
@@ -127,18 +146,21 @@ async createLead(data: {
 
     const totalPages = Math.ceil(totalItems / pageSize);
 
-    // Stats — run across full table, not just current page
+    // Stats — scoped to positive sentiment leads only
     const totalLeads = totalItems;
 
     const fundsResult = await this.leadRepository
       .createQueryBuilder("lead")
       .select("SUM(lead.fundingAmount)", "total")
+      .where("lead.sentiment = :sentiment", { sentiment: "positive" })
       .getRawOne();
     const totalFundsRequested = Number(fundsResult?.total) || 0;
 
     const withDocuments = await documentRepository
       .createQueryBuilder("doc")
+      .innerJoin("doc.lead", "lead")
       .select("COUNT(DISTINCT doc.leadId)", "count")
+      .where("lead.sentiment = :sentiment", { sentiment: "positive" })
       .getRawOne();
     const withDocsCount = Number(withDocuments?.count) || 0;
     const withoutDocsCount = totalLeads - withDocsCount;

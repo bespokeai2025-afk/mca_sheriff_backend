@@ -60,6 +60,40 @@ export const saveOutboundCallFromN8n = async (req: Request, res: Response): Prom
 };
 
 /**
+ * PATCH /outbound-call/lead/:leadId/do-not-call
+ * Marks a lead as "do_not_call" — it will be skipped in future batch calling.
+ */
+export const markLeadDoNotCall = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { leadId } = req.params;
+    const response = await outboundCallService.markLeadDoNotCall(leadId);
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    console.error("Error in markLeadDoNotCall controller:", error);
+    return res
+      .status(500)
+      .json(errorWithData("Internal Server Error", { error: (error as Error).message }));
+  }
+};
+
+/**
+ * DELETE /outbound-call/lead/:leadId
+ * Permanently deletes a lead and all its related calls and documents.
+ */
+export const deleteLead = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { leadId } = req.params;
+    const response = await outboundCallService.deleteLead(leadId);
+    return res.status(response.result ? 200 : 400).json(response);
+  } catch (error) {
+    console.error("Error in deleteLead controller:", error);
+    return res
+      .status(500)
+      .json(errorWithData("Internal Server Error", { error: (error as Error).message }));
+  }
+};
+
+/**
  * POST /outbound-call/webhook
  * Retell AI calls this when a call ends — updates call status and lead status.
  * No auth required (Retell calls this directly).

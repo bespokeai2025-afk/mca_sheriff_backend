@@ -15,7 +15,7 @@ import adminRoutes from './routes/admin.routes'
 import emailVerificationRoutes from './routes/EmailVerification.routes'
 import multerErrorHandler from "./middlewares/multerErrorHandler"; //  Import the middleware
 import viewsRoutes from './routes/viewPages.routes'
-// import cron from "node-cron";
+import cron from "node-cron";
 import cookieParser from "cookie-parser";
 import limiter from './config/rate-limit';
 import callOutputDataRoutes from './routes/callOutputDataUser.routes'
@@ -34,6 +34,7 @@ import outboundCallRoutes from "./routes/outboundCall.routes";
 import lead from './routes/lead.routes'
 import documentRoutes from './routes/document.routes'
 import { CallScheduler } from "./utils/scheduler";
+import { OutboundCallService } from "./services/outboundCall.service";
 
 // Load environment variables
 dotenv.config()
@@ -66,6 +67,9 @@ const allowedOrigins = [
     'http://localhost:3000',
     'https://uat.webespokeai.com',
     'http://uat.webespokeai.com',
+    'https://mcasheriff-api.webespokeai.com',
+    'https://mcasheriff.webespokeai.com',
+
     // WordPress webhook & form origins
     'http://microlearning.unikinfoways.com',
     'https://microlearning.unikinfoways.com',
@@ -139,6 +143,13 @@ AppDataSource.initialize()
            // This now works fine
         // await CallScheduler.initialize();
         // console.log("All call frequency schedulers initialized!");
+
+        // Auto-call new leads within 30 minutes of being added
+        const outboundCallService = new OutboundCallService();
+        cron.schedule("* * * * *", async () => {
+          await outboundCallService.callNewLeads();
+        });
+        console.log("[AutoCall] Cron job started — checking for new leads every minute.");
     })
     .catch((err) => {
         console.error("Error Connecting Database", err);

@@ -9,6 +9,7 @@ import {
   successWithoutData,
 } from "../config/ApiResponse";
 import { sendCallCompletedNotification } from "../config/sendgridMailer";
+import { normalizePhone } from "./lead.service";
 
 // Hardcoded agent / caller details — set these in .env
 const HARDCODED_AGENT_ID   = process.env.OUTBOUND_AGENT_ID   || "";
@@ -200,6 +201,104 @@ async startBatchCalling() {
     details: { initiated, skipped, failed },
   });
 }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUTO-CALL NEW LEADS (cron — runs every minute)
+  // Finds leads created in the last 30 minutes that have never been called
+  // and initiates an outbound call for each of them.
+  // ─────────────────────────────────────────────────────────────────────────
+  async callNewLeads(): Promise<void> {
+    const apiKey = process.env.API_KEY_RETELL;
+    if (!apiKey || !HARDCODED_FROM_NUMBER || !HARDCODED_AGENT_ID) return;
+
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+    // Leads added within the last 30 min that are safe to auto-call:
+    //   1. status must still be "need_to_call" — excludes "calling" (manual or
+    //      previous cron run), "completed", "not_interested", "do_not_call", etc.
+    //   2. No outbound call record in ANY terminal/active status — second safety
+    //      net in case lead.status was not updated (e.g. mid-flight crash).
+    const newLeads = await this.leadRepository
+      .createQueryBuilder("lead")
+      .leftJoin(
+        "lead.calls",
+        "existingCall",
+        "existingCall.callType = 'outbound' AND existingCall.callStatus IN ('initiated','completed','no_answer','busy','failed')"
+      )
+      .where("lead.createdAt >= :since", { since: thirtyMinutesAgo })
+      .andWhere("lead.status = :status", { status: "need_to_call" })
+      .andWhere("existingCall.id IS NULL")
+      .getMany();
+
+    if (!newLeads.length) return;
+
+    console.log(`[AutoCall] Found ${newLeads.length} new lead(s) to call.`);
+
+    for (const lead of newLeads) {
+      try {
+        if (!lead.phone) continue;
+
+        const toNumber = lead.phone.startsWith("+") ? lead.phone : `+${lead.phone}`;
+        const firstName = lead.fullName ? lead.fullName.trim().split(" ")[0] : "";
+        const formattedAmount = lead.fundingAmount
+          ? `$${Number(lead.fundingAmount).toLocaleString()}`
+          : "";
+
+        const payload = {
+          from_number: HARDCODED_FROM_NUMBER,
+          to_number: toNumber,
+          agent_id: HARDCODED_AGENT_ID,
+          retell_llm_dynamic_variables: {
+            First_name: firstName,
+            phone_number: toNumber,
+            email: lead.email || "",
+            ammount_requested: formattedAmount,
+          },
+        };
+
+        let retellResponse: any = null;
+        try {
+          const response = await axios.post(
+            "https://api.retellai.com/v2/create-phone-call",
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          retellResponse = response.data;
+          console.log(`[AutoCall] Call created for lead ${lead.id}:`, retellResponse?.call_id);
+        } catch (err: any) {
+          console.error(`[AutoCall] Retell API error for lead ${lead.id}:`, err.response?.data || err.message);
+          continue;
+        }
+
+        const call = this.callRepository.create({
+          lead,
+          callType: "outbound",
+          callStatus: "initiated",
+          retellCallId: retellResponse?.call_id || null,
+          fromNumber: HARDCODED_FROM_NUMBER,
+          toNumber,
+          agentId: HARDCODED_AGENT_ID,
+          agentName: HARDCODED_AGENT_NAME,
+          startedAt: new Date(),
+        });
+        await this.callRepository.save(call);
+
+        lead.status = "calling";
+        lead.attemptCount = (lead.attemptCount || 0) + 1;
+        lead.lastCalledAt = new Date();
+        await this.leadRepository.save(lead);
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } catch (err: any) {
+        console.error(`[AutoCall] Unexpected error for lead ${lead.id}:`, err.message);
+      }
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // GET OUTBOUND CALLS LIST + STATS
@@ -396,11 +495,12 @@ async startBatchCalling() {
       const data = Array.isArray(payload) ? payload[0] : payload;
 
       const retellCallId: string = data?.call_id || "";
-      const phoneNumber: string =
+      const rawPhone: string =
         data?.phone_number ||
         data?.custom_analysis_data?.phone_number ||
         data?.to_number ||
         "";
+      const phoneNumber: string = rawPhone ? normalizePhone(rawPhone) : "";
 
       if (!phoneNumber) return errorWithoutData("Missing phone_number in payload");
       if (!retellCallId) return errorWithoutData("Missing call_id in payload");
@@ -570,14 +670,18 @@ async startBatchCalling() {
         callRecord = await this.callRepository.save(this.callRepository.create(callFields));
       }
 
-      // Send admin notification when call is fully qualified with all info gathered
+      // Send admin notification only when call is qualified AND bank statements are uploaded
       if (callOutcome === "qualified_complete") {
         try {
           const documents = await this.documentRepository.find({
-            where: { lead: { id: lead.id } },
+            where: { lead: { id: lead.id }, documentType: "bank_statement" },
+            order: { createdAt: "ASC" },
           });
 
-          sendCallCompletedNotification({
+          if (!documents.length) {
+            console.log(`[Email] Skipped — lead ${lead.id} has no bank statements uploaded.`);
+          } else {
+          await sendCallCompletedNotification({
             fullName:            lead.fullName,
             phone:               lead.phone,
             email:               lead.email,
@@ -595,6 +699,7 @@ async startBatchCalling() {
             callSummary:         callRecord.callSummary ?? undefined,
             bankStatements:      documents.map((d) => ({ fileName: d.fileName, s3Key: d.s3Key })),
           });
+          } // end else (documents exist)
         } catch (emailErr: any) {
           console.error("[Email] Failed to trigger call completed notification:", emailErr.message);
         }
@@ -611,5 +716,40 @@ async startBatchCalling() {
       console.error("Error saving outbound call from n8n:", error.message);
       return errorWithoutData("Failed to save outbound call");
     }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // MARK LEAD AS DO NOT CALL
+  // Sets lead.status = "do_not_call" so it is skipped in future batch calling.
+  // ─────────────────────────────────────────────────────────────────────────
+  async markLeadDoNotCall(leadId: string) {
+    const lead = await this.leadRepository.findOne({ where: { id: leadId } });
+    if (!lead) return errorWithoutData("Lead not found", 404);
+
+    lead.status = "do_not_call";
+    await this.leadRepository.save(lead);
+    return successWithoutData("Lead marked as do not call");
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DELETE LEAD
+  // Permanently removes the lead and all its related calls and documents.
+  // ─────────────────────────────────────────────────────────────────────────
+  async deleteLead(leadId: string) {
+    const lead = await this.leadRepository.findOne({
+      where: { id: leadId },
+      relations: ["calls", "documents"],
+    });
+    if (!lead) return errorWithoutData("Lead not found", 404);
+
+    if (lead.calls?.length) {
+      await this.callRepository.remove(lead.calls);
+    }
+    if (lead.documents?.length) {
+      await this.documentRepository.remove(lead.documents);
+    }
+    await this.leadRepository.remove(lead);
+
+    return successWithoutData("Lead deleted successfully");
   }
 }

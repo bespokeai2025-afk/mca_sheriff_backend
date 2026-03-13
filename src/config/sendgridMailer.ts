@@ -93,11 +93,23 @@ export interface CallCompletedEmailData {
   bankStatements?: Array<{ fileName: string; s3Key: string }>;
 }
 
-/** Download a file from S3 and return its content as a base64 string. */
-async function fetchS3FileAsBase64(s3Key: string): Promise<string> {
+/**
+ * Extract the bare S3 object key from either a full S3 URL or a plain key.
+ * "https://bucket.s3.region.amazonaws.com/bank-statements/file.pdf" → "bank-statements/file.pdf"
+ */
+function resolveS3Key(value: string): string {
+  try {
+    return new URL(value).pathname.replace(/^\//, "");
+  } catch {
+    return value;
+  }
+}
+
+/** Download a private S3 object using AWS credentials and return it as base64. */
+async function fetchS3FileAsBase64(s3Url: string): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME as string,
-    Key: s3Key,
+    Key: resolveS3Key(s3Url),
   });
   const response = await s3.send(command);
   const chunks: Uint8Array[] = [];
@@ -125,7 +137,7 @@ function row(label: string, value: string, shaded: boolean) {
 }
 
 export const sendCallCompletedNotification = async (data: CallCompletedEmailData) => {
-  const adminEmail = "james@mcasheriff.com";
+  const adminEmails = ["james@mcasheriff.com", "gyanranjan.das@invennico.com"];
   const senderEmail = process.env.SENDER_MAIL || "rohit.hajare@invennico.com";
 
   const yearsInBusiness = computeYearsInBusiness(data.businessStartDate);
@@ -204,7 +216,7 @@ export const sendCallCompletedNotification = async (data: CallCompletedEmailData
   }
 
   const msg: any = {
-    to: adminEmail,
+    to: adminEmails,
     from: senderEmail,
     subject: `Call Completed — ${data.fullName || data.phone} | MCA Sheriff`,
     html,
@@ -213,7 +225,7 @@ export const sendCallCompletedNotification = async (data: CallCompletedEmailData
 
   try {
     await sgMail.send(msg);
-    console.log(`[SendGrid] Call completed notification sent to ${adminEmail}`);
+    console.log(`[SendGrid] Call completed notification sent to ${adminEmails.join(", ")}`);
   } catch (error: any) {
     console.error("[SendGrid] Failed to send call completed notification:", error?.response?.body || error?.message || error);
   }
