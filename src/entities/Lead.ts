@@ -34,13 +34,13 @@ export class Lead {
   @Column({ type: "decimal", precision: 12, scale: 2, nullable: true })
   fundingAmount: number;
 
-  // ── Business Info (collected during call) ─────────────────────────────────
+  // ── Business Info ─────────────────────────────────────────────────────────
 
   @Column({ type: "varchar", length: 200, nullable: true })
   stateName: string;
 
   @Column({ type: "varchar", length: 100, nullable: true })
-  businessStartDate: string; // e.g. "2024-03"
+  businessStartDate: string;
 
   @Column({ type: "varchar", length: 100, nullable: true })
   businessType: string;
@@ -54,25 +54,31 @@ export class Lead {
   @Column({ type: "varchar", length: 50, nullable: true })
   businessEin: string;
 
-  @Column({ type: "varchar", length: 10, nullable: true })
+  @Column({ type: "varchar", length: 20, nullable: true }) // ✅ increased from 10
   ownershipPercentage: string;
 
   @Column({ type: "varchar", length: 50, nullable: true })
   ownerDob: string;
 
-  @Column({ type: "varchar", length: 10, nullable: true })
+  @Column({ type: "varchar", length: 20, nullable: true }) // ✅ increased from 10
   ownerSsnLast4: string;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  homeAddress: string;
+
+  @Column({ type: "varchar", length: 20, nullable: true })
+  homeNumber: string;
 
   // ── Lead Qualification ────────────────────────────────────────────────────
 
   @Column({ type: "varchar", nullable: true })
-  callOutcome: string; // e.g. "qualified_complete", "not_qualified", "callback_requested"
+  callOutcome: string;
 
   @Column({ type: "boolean", nullable: true })
   bankStatementsUploaded: boolean;
 
   @Column({ type: "varchar", length: 50, nullable: true })
-  bankStatementsStatus: string; // "uploaded_now", "not_uploaded", etc.
+  bankStatementsStatus: string;
 
   @Column({ type: "boolean", nullable: true })
   sentToUnderwriting: boolean;

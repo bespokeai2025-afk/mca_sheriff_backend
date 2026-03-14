@@ -85,6 +85,8 @@ export interface CallCompletedEmailData {
   monthlyRevenue?: number;
   fundingAmount?: number;
   businessType?: string;
+  homeNumber?: string;
+  homeAddress?: string;
   businessAddress?: string;
   stateName?: string;
   ownerDob?: string;
@@ -145,17 +147,23 @@ export const sendCallCompletedNotification = async (data: CallCompletedEmailData
   const rows = [
     row("Full Name",            data.fullName || "N/A",                                          false),
     row("Phone",                data.phone || "N/A",                                             true),
+    row("Home Phone",           data.homeNumber || "N/A",                                        false),
+    row("Home Address",         data.homeAddress || "N/A",                                       true),
     row("Email",                data.email || "N/A",                                             false),
-    row("Business EIN",         data.businessEin || "N/A",                                       true),
+    row("Business EIN",         data.businessEin ? data.businessEin.replace(/^(\d{2})(\d{7})$/, "$1-$2") : "N/A", true),
     row("Owner SSN (Last 4)",   data.ownerSsnLast4 || "N/A",                                     false),
     row("Business Type",        data.businessType || "N/A",                                      false),
-    row("Business Start Date",  data.businessStartDate || "N/A",                                 true),
+    row("Business Start Date (MM-DD-YYYY)", (() => {
+      if (!data.businessStartDate) return "N/A";
+      const m = data.businessStartDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[2]}-${m[3]}-${m[1]}` : data.businessStartDate;
+    })(),                                                                                         true),
     row("Years in Business",    yearsInBusiness,                                                 false),
     row("Monthly Revenue",      data.monthlyRevenue ? `$${Number(data.monthlyRevenue).toLocaleString()}` : "N/A", true),
     row("Funding Amount",       data.fundingAmount  ? `$${Number(data.fundingAmount).toLocaleString()}`  : "N/A", false),
     row("Business Address",     data.businessAddress || "N/A",                                   true),
     row("State",                data.stateName || "N/A",                                         false),
-    row("Owner DOB",            data.ownerDob || "N/A",                                          true),
+    row("Owner DOB (MM-DD-YYYY)", data.ownerDob || "N/A",                                        true),
     row("Ownership %",          data.ownershipPercentage ? `${data.ownershipPercentage}%` : "N/A", false),
     row("Bank Statements",      data.bankStatements?.length ? `${data.bankStatements.length} file(s) attached` : "None", true),
   ].join("\n");
@@ -173,8 +181,7 @@ export const sendCallCompletedNotification = async (data: CallCompletedEmailData
         Lead Details
       </h2>
       <p style="color:#555;font-size:15px;">
-        An outbound call has been completed and all business information has been collected.
-        Please review the details below and process the application.
+        An application has been submitted and all business information and bank statements have been collected. Please review the details below and attached and process the application. Thank you.
       </p>
 
       <table style="width:100%;border-collapse:collapse;margin-top:16px;">

@@ -170,4 +170,23 @@ export class LeadController {
       });
     }
   }
+
+  async deleteLead(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const result = await leadService.deleteLead(id);
+      return res.status(200).json({
+        result: true,
+        message: "Lead deleted successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      const status = error.message === "Lead not found" ? 404 : 500;
+      return res.status(status).json({
+        result: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  }
 }

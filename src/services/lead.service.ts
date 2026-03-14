@@ -24,6 +24,7 @@ const PHONE_EXEMPT = new Set([
 export function normalizePhone(raw: string): string {
   const cleaned = raw.replace(/[\s\-().]/g, "");
   if (PHONE_EXEMPT.has(cleaned)) return cleaned;
+  if (cleaned === "9662080370") return "+919662080370";
   if (cleaned.startsWith("+1"))  return cleaned;
   // Strip a stray leading + before adding +1
   return "+1" + cleaned.replace(/^\+/, "");
@@ -63,6 +64,13 @@ async createLead(data: {
     });
   }
 
+  async deleteLead(id: string) {
+    const lead = await this.leadRepository.findOne({ where: { id } });
+    if (!lead) throw new Error("Lead not found");
+    await this.leadRepository.remove(lead);
+    return { deleted: true, id };
+  }
+
   async getLeadById(id: string) {
     const lead = await this.leadRepository.findOne({
       where: { id },
@@ -91,6 +99,8 @@ async createLead(data: {
       ownerDob: lead.ownerDob,
       ownerSsnLast4: lead.ownerSsnLast4,
       ownershipPercentage: lead.ownershipPercentage,
+      homeAddress: lead.homeAddress || null,
+      homeNumber: lead.homeNumber || null,
       // Financial
       fundingAmount: lead.fundingAmount ? Number(lead.fundingAmount) : null,
       monthlyRevenue: lead.monthlyRevenue ? Number(lead.monthlyRevenue) : null,
@@ -135,24 +145,35 @@ async createLead(data: {
   async getLeadsDashboard(page: number = 1, pageSize: number = 10) {
     const documentRepository = AppDataSource.getRepository(Document);
 
-    // Only show leads with positive sentiment in the Qualified section
-    const [leads, totalItems] = await this.leadRepository.findAndCount({
-      where: { sentiment: "positive" },
-      relations: ["documents"],
-      order: { createdAt: "DESC" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
+    // Qualified = positive or neutral sentiment (skip negative)
+    // + all required business/owner fields must be filled
+    const qualifiedCondition = `
+      lead.sentiment IN ('positive', 'neutral')
+      AND lead.businessType     IS NOT NULL AND lead.businessType     != ''
+      AND lead.ownershipPercentage IS NOT NULL AND lead.ownershipPercentage != ''
+      AND lead.ownerDob         IS NOT NULL AND lead.ownerDob         != ''
+      AND lead.businessEin      IS NOT NULL AND lead.businessEin      != ''
+      AND lead.ownerSsnLast4    IS NOT NULL AND lead.ownerSsnLast4    != ''
+      AND lead.homeAddress      IS NOT NULL AND lead.homeAddress      != ''
+      AND lead.businessAddress  IS NOT NULL AND lead.businessAddress  != ''
+    `;
+
+    const [leads, totalItems] = await this.leadRepository
+      .createQueryBuilder("lead")
+      .leftJoinAndSelect("lead.documents", "documents")
+      .where(qualifiedCondition)
+      .orderBy("lead.createdAt", "DESC")
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
 
     const totalPages = Math.ceil(totalItems / pageSize);
-
-    // Stats — scoped to positive sentiment leads only
     const totalLeads = totalItems;
 
     const fundsResult = await this.leadRepository
       .createQueryBuilder("lead")
       .select("SUM(lead.fundingAmount)", "total")
-      .where("lead.sentiment = :sentiment", { sentiment: "positive" })
+      .where(qualifiedCondition)
       .getRawOne();
     const totalFundsRequested = Number(fundsResult?.total) || 0;
 
@@ -160,7 +181,7 @@ async createLead(data: {
       .createQueryBuilder("doc")
       .innerJoin("doc.lead", "lead")
       .select("COUNT(DISTINCT doc.leadId)", "count")
-      .where("lead.sentiment = :sentiment", { sentiment: "positive" })
+      .where(qualifiedCondition)
       .getRawOne();
     const withDocsCount = Number(withDocuments?.count) || 0;
     const withoutDocsCount = totalLeads - withDocsCount;
@@ -179,6 +200,8 @@ async createLead(data: {
       attemptCount: lead.attemptCount,
       lastCalledAt: lead.lastCalledAt,
       createdAt: lead.createdAt,
+      homeAddress: lead.homeAddress || null,
+      homeNumber: lead.homeNumber || null,
       statements: (lead.documents || []).map((doc, i) => ({
         month: doc.fileName || `Statement ${i + 1}`,
         url: doc.s3Key,

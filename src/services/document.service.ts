@@ -3,6 +3,7 @@ import { Document } from "../entities/Document";
 import { Lead } from "../entities/Lead";
 import { Call } from "../entities/Call";
 import { successWithData, errorWithoutData } from "../config/ApiResponse";
+import { sendCallCompletedNotification } from "../config/sendgridMailer";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -64,6 +65,47 @@ export class DocumentService {
     lead.bankStatementsUploaded = true;
     lead.statementStatus        = "uploaded";
     await this.leadRepository.save(lead);
+
+    // If the call already ended as qualified, send the admin email now
+    // (covers the case where lead uploads statements AFTER the call)
+    if (lead.callOutcome === "qualified_complete") {
+      try {
+        const allDocs = await this.documentRepository.find({
+          where: { lead: { id: resolvedId }, documentType: "bank_statement" },
+          order: { createdAt: "ASC" },
+        });
+
+        // Fetch latest call summary for this lead
+        const latestCall = await this.callRepository.findOne({
+          where: { lead: { id: resolvedId } },
+          order: { createdAt: "DESC" },
+        });
+
+        await sendCallCompletedNotification({
+          fullName:            lead.fullName,
+          phone:               lead.phone,
+          email:               lead.email,
+          companyName:         lead.companyName,
+          businessEin:         lead.businessEin,
+          ownerSsnLast4:       lead.ownerSsnLast4,
+          homeNumber:          lead.homeNumber,
+          homeAddress:         lead.homeAddress,
+          businessStartDate:   lead.businessStartDate,
+          monthlyRevenue:      lead.monthlyRevenue ? Number(lead.monthlyRevenue) : undefined,
+          fundingAmount:       lead.fundingAmount  ? Number(lead.fundingAmount)  : undefined,
+          businessType:        lead.businessType,
+          businessAddress:     lead.businessAddress,
+          stateName:           lead.stateName,
+          ownerDob:            lead.ownerDob,
+          ownershipPercentage: lead.ownershipPercentage,
+          callSummary:         latestCall?.callSummary ?? undefined,
+          bankStatements:      allDocs.map((d) => ({ fileName: d.fileName, s3Key: d.s3Key })),
+        });
+        console.log(`[Email] Post-upload notification sent for qualified lead ${resolvedId}`);
+      } catch (emailErr: any) {
+        console.error("[Email] Failed to send post-upload notification:", emailErr.message);
+      }
+    }
 
     return successWithData("Bank statements uploaded successfully", {
       leadId: resolvedId,

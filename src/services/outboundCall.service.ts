@@ -23,6 +23,9 @@ export class OutboundCallService {
   private callRepository   = AppDataSource.getRepository(Call);
   private documentRepository = AppDataSource.getRepository(Document);
 
+  // Prevents overlapping cron executions when cron runs every 3 seconds
+  private static cronRunning = false;
+
   // ─────────────────────────────────────────────────────────────────────────
   // START BATCH CALLING
   // Called when admin clicks "Start Calling" button.
@@ -208,6 +211,18 @@ async startBatchCalling() {
   // and initiates an outbound call for each of them.
   // ─────────────────────────────────────────────────────────────────────────
   async callNewLeads(): Promise<void> {
+    // Skip if a previous cron tick is still running (prevents duplicate calls at 3s interval)
+    if (OutboundCallService.cronRunning) return;
+    OutboundCallService.cronRunning = true;
+
+    try {
+      await this._callNewLeadsInternal();
+    } finally {
+      OutboundCallService.cronRunning = false;
+    }
+  }
+
+  private async _callNewLeadsInternal(): Promise<void> {
     const apiKey = process.env.API_KEY_RETELL;
     if (!apiKey || !HARDCODED_FROM_NUMBER || !HARDCODED_AGENT_ID) return;
 
@@ -256,6 +271,12 @@ async startBatchCalling() {
           },
         };
 
+        // Mark as "calling" in DB BEFORE the API call so concurrent cron ticks skip this lead
+        lead.status = "calling";
+        lead.attemptCount = (lead.attemptCount || 0) + 1;
+        lead.lastCalledAt = new Date();
+        await this.leadRepository.save(lead);
+
         let retellResponse: any = null;
         try {
           const response = await axios.post(
@@ -271,6 +292,9 @@ async startBatchCalling() {
           retellResponse = response.data;
           console.log(`[AutoCall] Call created for lead ${lead.id}:`, retellResponse?.call_id);
         } catch (err: any) {
+          // Revert status so it can be retried on next cron tick
+          lead.status = "need_to_call";
+          await this.leadRepository.save(lead);
           console.error(`[AutoCall] Retell API error for lead ${lead.id}:`, err.response?.data || err.message);
           continue;
         }
@@ -287,11 +311,6 @@ async startBatchCalling() {
           startedAt: new Date(),
         });
         await this.callRepository.save(call);
-
-        lead.status = "calling";
-        lead.attemptCount = (lead.attemptCount || 0) + 1;
-        lead.lastCalledAt = new Date();
-        await this.leadRepository.save(lead);
 
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (err: any) {
@@ -489,7 +508,7 @@ async startBatchCalling() {
   // n8n forwards the full Retell call_analyzed payload here after a call ends.
   // Finds or creates the lead, updates business info, upserts the call record.
   // ─────────────────────────────────────────────────────────────────────────
-  async saveOutboundCallFromN8n(payload: any) {
+async saveOutboundCallFromN8n(payload: any) {
     try {
       // Support both flat payload and n8n-wrapped array payload
       const data = Array.isArray(payload) ? payload[0] : payload;
@@ -568,6 +587,13 @@ async startBatchCalling() {
       const ownerSsnLast4 = analysis.owner_ssn_last4 || data?.owner_ssn_last4 || "";
       if (ownerSsnLast4) lead.ownerSsnLast4 = ownerSsnLast4;
 
+      // ✅ ADDED — Home address
+      const homeAddress = analysis.home_address || data?.home_address || "";
+      if (homeAddress) lead.homeAddress = homeAddress;
+
+        const homeNumber = analysis.home_number || data?.home_number || "";
+      if (homeNumber) lead.homeNumber = homeNumber;
+
       const bankStatementsUploaded =
         analysis.bank_statements_uploaded ?? data?.bank_statements_uploaded ?? null;
       if (bankStatementsUploaded !== null) {
@@ -638,27 +664,27 @@ async startBatchCalling() {
         callStatus:              resolvedCallStatus,
         retellCallId,
         agentId:                 data?.agent_id                   || "",
-        agentName:               data?.agent_name                  || "",
-        agentVersion:            data?.agent_version               ?? null,
-        fromNumber:              data?.from_number                 || "",
-        toNumber:                data?.to_number                   || phoneNumber,
+        agentName:               data?.agent_name                 || "",
+        agentVersion:            data?.agent_version              ?? null,
+        fromNumber:              data?.from_number                || "",
+        toNumber:                data?.to_number                  || phoneNumber,
         durationSeconds,
         durationMs,
-        startedAt:               startTs ? new Date(startTs)       : undefined,
-        endedAt:                 endTs   ? new Date(endTs)         : new Date(),
-        disconnectionReason:     data?.disconnection_reason        || null,
+        startedAt:               startTs ? new Date(startTs)      : undefined,
+        endedAt:                 endTs   ? new Date(endTs)        : new Date(),
+        disconnectionReason:     data?.disconnection_reason       || null,
         callOutcome,
-        callSuccessful:          data?.call_successful             ?? null,
-        inVoicemail:             data?.in_voicemail                ?? null,
-        lastNode:                data?.last_node                   || null,
-        sentiment:               (rawSentiment || null)            as Call["sentiment"],
-        transcript:              data?.transcript                   || null,
-        callSummary:             data?.call_summary                || null,
-        recordingS3Key:          data?.recording_url               || null,
+        callSuccessful:          data?.call_successful            ?? null,
+        inVoicemail:             data?.in_voicemail               ?? null,
+        lastNode:                data?.last_node                  || null,
+        sentiment:               (rawSentiment || null)           as Call["sentiment"],
+        transcript:              data?.transcript                  || null,
+        callSummary:             data?.call_summary               || null,
+        recordingS3Key:          data?.recording_url              || null,
         recordingMultiChannelUrl: data?.recording_multi_channel_url || null,
-        publicLogUrl:            data?.public_log_url              || null,
-        callCostTotal:           data?.call_cost_total             ?? null,
-        callCostDurationSeconds: data?.call_cost_duration_seconds  ?? null,
+        publicLogUrl:            data?.public_log_url             || null,
+        callCostTotal:           data?.call_cost_total            ?? null,
+        callCostDurationSeconds: data?.call_cost_duration_seconds ?? null,
         rawPayload:              data,
       };
 
@@ -670,7 +696,7 @@ async startBatchCalling() {
         callRecord = await this.callRepository.save(this.callRepository.create(callFields));
       }
 
-      // Send admin notification only when call is qualified AND bank statements are uploaded
+      // ── Send admin notification only when qualified AND bank statements uploaded ──
       if (callOutcome === "qualified_complete") {
         try {
           const documents = await this.documentRepository.find({
@@ -681,25 +707,27 @@ async startBatchCalling() {
           if (!documents.length) {
             console.log(`[Email] Skipped — lead ${lead.id} has no bank statements uploaded.`);
           } else {
-          await sendCallCompletedNotification({
-            fullName:            lead.fullName,
-            phone:               lead.phone,
-            email:               lead.email,
-            companyName:         lead.companyName,
-            businessEin:         lead.businessEin,
-            ownerSsnLast4:       lead.ownerSsnLast4,
-            businessStartDate:   lead.businessStartDate,
-            monthlyRevenue:      lead.monthlyRevenue ? Number(lead.monthlyRevenue) : undefined,
-            fundingAmount:       lead.fundingAmount  ? Number(lead.fundingAmount)  : undefined,
-            businessType:        lead.businessType,
-            businessAddress:     lead.businessAddress,
-            stateName:           lead.stateName,
-            ownerDob:            lead.ownerDob,
-            ownershipPercentage: lead.ownershipPercentage,
-            callSummary:         callRecord.callSummary ?? undefined,
-            bankStatements:      documents.map((d) => ({ fileName: d.fileName, s3Key: d.s3Key })),
-          });
-          } // end else (documents exist)
+            await sendCallCompletedNotification({
+              fullName:            lead.fullName,
+              phone:               lead.phone,
+              email:               lead.email,
+              companyName:         lead.companyName,
+              businessEin:         lead.businessEin,
+              ownerSsnLast4:       lead.ownerSsnLast4,
+              homeNumber:          lead.homeNumber,
+              homeAddress:         lead.homeAddress,
+              businessStartDate:   lead.businessStartDate,
+              monthlyRevenue:      lead.monthlyRevenue ? Number(lead.monthlyRevenue) : undefined,
+              fundingAmount:       lead.fundingAmount  ? Number(lead.fundingAmount)  : undefined,
+              businessType:        lead.businessType,
+              businessAddress:     lead.businessAddress,
+              stateName:           lead.stateName,
+              ownerDob:            lead.ownerDob,
+              ownershipPercentage: lead.ownershipPercentage,
+              callSummary:         callRecord.callSummary ?? undefined,
+              bankStatements:      documents.map((d) => ({ fileName: d.fileName, s3Key: d.s3Key })),
+            });
+          }
         } catch (emailErr: any) {
           console.error("[Email] Failed to trigger call completed notification:", emailErr.message);
         }

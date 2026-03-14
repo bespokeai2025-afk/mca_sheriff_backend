@@ -57,4 +57,9 @@ router.get("/:id", verifyAccessToken, (req, res) =>
   leadController.getLeadById(req, res)
 );
 
+// DELETE /lead/:id — remove a lead permanently
+router.delete("/:id", verifyAccessToken, (req, res) =>
+  leadController.deleteLead(req, res)
+);
+
 export default router;

@@ -146,10 +146,10 @@ AppDataSource.initialize()
 
         // Auto-call new leads within 30 minutes of being added
         const outboundCallService = new OutboundCallService();
-        cron.schedule("* * * * *", async () => {
+        cron.schedule("*/3 * * * * *", async () => {
           await outboundCallService.callNewLeads();
         });
-        console.log("[AutoCall] Cron job started — checking for new leads every minute.");
+        console.log("[AutoCall] Cron job started — checking for new leads every 3 seconds.");
     })
     .catch((err) => {
         console.error("Error Connecting Database", err);
